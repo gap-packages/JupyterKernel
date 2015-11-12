@@ -3,4 +3,5 @@
 #
 # Reading the implementation part of the package.
 #
+ReadPackage( "JupyterZMQ", "gap/uuid.gi");
 ReadPackage( "JupyterZMQ", "gap/JupyterZMQ.gi");

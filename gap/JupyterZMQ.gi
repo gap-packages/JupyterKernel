@@ -4,21 +4,6 @@
 # Implementations
 #
 
-#XXX Move to library
-Intersperse := function(lst, e)
-    local x, res;
-    if Length(lst) = 0 then
-        res := [];
-    else
-        res := [lst[1]];
-        for x in lst{[2..Length(lst)]} do
-            Add(res, e);
-            Add(res, x);
-        od;
-    fi;
-    return res;
-end;
-
 hdlr := AtomicRecord(rec(
 
     kernel_info_request := function(kernel, msg)
@@ -113,7 +98,7 @@ handle_shell_msg := function(kernel, msg)
     reply.parent_header := msg.header;
     reply.header := StructuralCopy(msg.header);
     reply.metadata := msg.metadata;
-    reply.header.uuid := StringUUID(RandomUUID());
+    reply.header.uuid := String(RandomUUID());
     reply.content := msg.content;
 
     t := msg.header.msg_type;

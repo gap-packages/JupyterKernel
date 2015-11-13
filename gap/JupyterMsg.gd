@@ -6,8 +6,9 @@
 
 #X Timeouts on receive?
 
-DeclareGlobalFunction("DecodeJupyterMsg");
-DeclareGlobalFunction("EncodeJupyterMsg");
+DeclareGlobalFunction("JupyterMsgDecode");
+DeclareGlobalFunction("JupyterMsgEncode");
+DeclareGlobalFunction("JupyterMsgReply");
 
 DeclareGlobalFunction("ZmqRecvMsg");
 DeclareGlobalFunction("ZmqSendMsg");

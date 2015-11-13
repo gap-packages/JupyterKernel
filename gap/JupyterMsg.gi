@@ -3,7 +3,7 @@
 #
 # Implementations
 #
-InstallGlobalFunction( DecodeJupyterMsg,
+InstallGlobalFunction( JupyterMsgDecode,
     function(raw)
         return rec( uuid := raw[1]
                 , sep := raw[2]
@@ -16,7 +16,7 @@ InstallGlobalFunction( DecodeJupyterMsg,
                 );
     end);
 
-InstallGlobalFunction( EncodeJupyterMsg,
+InstallGlobalFunction( JupyterMsgEncode,
     function(msg)
         local raw;
 
@@ -36,10 +36,27 @@ InstallGlobalFunction(ZmqRecvMsg,
     function(sock)
         local raw;
         raw := ZmqReceiveList(sock);
-        return (DecodeJupyterMsg(raw));
+        return JupyterMsgDecode(raw);
     end);
 
 InstallGlobalFunction(ZmqSendMsg,
     function(sock, msg)
-        ZmqSend(sock, EncodeJupyterMsg(msg));
+        ZmqSend(sock, JupyterMsgEncode(msg));
+    end);
+
+# Construct a reply for msg
+InstallGlobalFunction(JupyterMsgReply,
+    function(msg)
+        local reply;
+
+        reply := rec();
+        reply.header := StructuralCopy(msg.header);
+        reply.header.uuid := StringUUID(RandomUUID());
+        reply.uuid := msg.uuid;
+        reply.sep := "<IDS|MSG>";
+        reply.hmac := "";
+        reply.parent_header := msg.header;
+        reply.metadata := msg.metadata;
+
+        return reply;
     end);

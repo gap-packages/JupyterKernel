@@ -32,37 +32,6 @@ jupyter_kernel_conf := rec( transport := "tcp"
                             , key := ""
                             );
 
-
-jpy_msg_reply := function(msg)
-    local reply;
-
-    reply := rec();
-    reply.header := StructuralCopy(msg.header);
-    reply.header.uuid := StringUUID(RandomUUID());
-    reply.uuid := msg.uuid;
-    reply.sep := "<IDS|MSG>";
-    reply.hmac := "";
-    reply.parent_header := msg.header;
-    reply.metadata := msg.metadata;
-    
-    return reply;
-end;
-
-heartbeat_thread := function(thread, sock)
-    local msg, zmq;
-
-    zmq := ZmqRouterSocket(sock);
-    #XXX Error handling
-   
-    #XXX Exit handling?
-    while true do
-        msg := ZmqReceiveList(zmq);
-        Print("hb: ping.");
-        ZmqSend(zmq, msg);
-        Print(" pong.\n");
-    od;
-end;
-
 hdlr := AtomicRecord(rec(
 
     kernel_info_request := function(kernel, msg)
@@ -109,7 +78,7 @@ hdlr := AtomicRecord(rec(
 
         atomic kernel.iopub do
             Print("publishing...");
-            publ := jpy_msg_reply(msg);
+            publ := JupyterMsgReply(msg);
             publ.header.msg_type := "display_data";
             publ.content := rec( source := ""
                                  , data := rec( text\/plain := res
@@ -119,7 +88,7 @@ hdlr := AtomicRecord(rec(
 
             ZmqSendMsg(kernel.iopub, publ);
 
-            publ := jpy_msg_reply(msg);
+            publ := JupyterMsgReply(msg);
             publ.header.msg_type := "status";
             publ.content := rec( execution_state := "idle" );
             ZmqSendMsg(kernel.iopub, publ);

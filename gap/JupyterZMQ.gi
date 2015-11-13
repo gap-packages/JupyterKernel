@@ -35,9 +35,10 @@ hdlr := AtomicRecord(rec(
                                 , codemirror_mode := ""
                                 , nbconvert_exporter := ""
                                 )
-                        , banner := """
-                            Jupyter HPC-GAP of TODAY
-                            """
+                        , banner := Concatenation(
+                                "HPC-GAP JupterZMQ kernel\n",
+                                "Running on ", GAPInfo.BuildVersion, "\n",
+                                "built on   ", GAPInfo.BuildDateTime, "\n" )
                         );
     end,
 

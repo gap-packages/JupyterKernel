@@ -7,3 +7,5 @@
 #! @Description
 #!   Generate a random UUID
 DeclareGlobalFunction("RandomUUID");
+DeclareGlobalFunction("StringUUID");
+

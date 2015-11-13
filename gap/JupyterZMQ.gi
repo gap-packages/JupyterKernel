@@ -19,18 +19,6 @@ Intersperse := function(lst, e)
     return res;
 end;
 
-uuid_str := function(uuid)
-    local hex;
-    hex := LowercaseString(HexStringBlist(uuid));
-    return Concatenation(
-                    hex{[1..8]}, "-",
-                    hex{[9..12]}, "-",
-                    hex{[13..16]}, "-",
-                    hex{[17..20]}, "-",
-                    hex{[20..32]}
-                   );
-end;
-
 # Default kernel config for experimentation. We'll have to
 # find a way to read this into a gap session.
 jupyter_kernel_conf := rec( transport := "tcp"

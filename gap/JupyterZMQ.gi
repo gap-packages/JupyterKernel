@@ -27,7 +27,10 @@ jupyter_kernel_conf := rec( transport := "tcp"
                             , control_port := 5679
                             , shell_port   := 5680
                             , stdin_port   := 5681
-                            , hb_port      := 5682);
+                            , hb_port      := 5682
+                            , signature_scheme := "hmac-sha256"
+                            , key := ""
+                            );
 
 
 jpy_msg_reply := function(msg)
@@ -208,26 +211,17 @@ setup_jupyter_kernel := function(conf)
     local address, kernel;
 
     address := Concatenation(conf.transport, "://", conf.ip, ":");
-    
-    kernel := AtomicRecord( rec( uuid := `StringUUID(RandomUUID())));
-    
+
+    kernel := AtomicRecord( rec( config := `conf
+                               , uuid   := `StringUUID(RandomUUID())));
+
     kernel.iopub   := ShareObj(ZmqPublisherSocket(`Concatenation(address, String(conf.iopub_port))));
     kernel.control := CreateThread(control_thread, kernel, `Concatenation(address, String(conf.control_port)));
     kernel.shell   := CreateThread(shell_thread, kernel, `Concatenation(address, String(conf.shell_port)));
     kernel.stdin   := ShareObj(ZmqRouterSocket(`Concatenation(address, String(conf.stdin_port))));
-    kernel.hb      := CreateThread(heartbeat_thread, kernel, `Concatenation(address, String(conf.hb_port)));
+    kernel.hb      := CreateThread(JupyterHBThreadFunc, kernel);
     
     kernel.execution_count := 0;
     
-    
     return kernel;
 end;
-
-jkernel := setup_jupyter_kernel(jupyter_kernel_conf);
-Print("""
- /!\ Jupyter kernel started up. Start jupyter /!\
-
-   jupyter notebook --existing /tmp/xxx.json
-
-""");
-

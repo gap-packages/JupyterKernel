@@ -36,7 +36,7 @@ InstallGlobalFunction(ZmqRecvMsg,
     function(sock)
         local raw;
         raw := ZmqReceiveList(sock);
-        return (ZmqDecode(raw));
+        return (DecodeJupyterMsg(raw));
     end);
 
 InstallGlobalFunction(ZmqSendMsg,

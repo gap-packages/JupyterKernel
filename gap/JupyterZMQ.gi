@@ -35,7 +35,7 @@ jpy_msg_reply := function(msg)
 
     reply := rec();
     reply.header := StructuralCopy(msg.header);
-    reply.header.uuid := uuid_str(uuid());
+    reply.header.uuid := StringUUID(RandomUUID());
     reply.uuid := msg.uuid;
     reply.sep := "<IDS|MSG>";
     reply.hmac := "";
@@ -153,7 +153,7 @@ handle_shell_msg := function(kernel, msg)
     reply.parent_header := msg.header;
     reply.header := StructuralCopy(msg.header);
     reply.metadata := msg.metadata;
-    reply.header.uuid := uuid_str(uuid());
+    reply.header.uuid := StringUUID(RandomUUID());
     reply.content := msg.content;
 
     t := msg.header.msg_type;
@@ -172,7 +172,7 @@ shell_thread := function(kernel, sock)
 
     zmq := ZmqRouterSocket(sock, kernel.uuid);
     while true do
-        msg := ZmqRecvMsg(sock);
+        msg := ZmqRecvMsg(zmq);
         Print("received msg: ", msg.header.msg_type,
               " id: ", msg.header.msg_id,
               " length: ", Length(msg.remainder),
@@ -182,7 +182,7 @@ shell_thread := function(kernel, sock)
         if res = fail then
             Print("failed to handle message\n");
         else
-            ZmqSendMsg(res);
+            ZmqSendMsg(zmq, res);
         fi;
 
     od;
@@ -209,7 +209,7 @@ setup_jupyter_kernel := function(conf)
 
     address := Concatenation(conf.transport, "://", conf.ip, ":");
     
-    kernel := AtomicRecord( rec( uuid := `uuid_str(uuid()) ) );
+    kernel := AtomicRecord( rec( uuid := `StringUUID(RandomUUID())));
     
     kernel.iopub   := ShareObj(ZmqPublisherSocket(`Concatenation(address, String(conf.iopub_port))));
     kernel.control := CreateThread(control_thread, kernel, `Concatenation(address, String(conf.control_port)));
@@ -230,5 +230,4 @@ Print("""
    jupyter notebook --existing /tmp/xxx.json
 
 """);
-:
 

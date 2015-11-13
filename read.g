@@ -9,7 +9,7 @@ ReadPackage( "JupyterZMQ", "gap/JupyterHB.gi");
 ReadPackage( "JupyterZMQ", "gap/JupyterZMQ.gi");
 
 #X Hack
-jkernel := setup_jupyter_kernel(jupyter_kernel_conf);
+jkernel := JupyterKernelStart(JupyterDefaultKernelConfig);
 Print("""
  /!\ Jupyter kernel started up. Start jupyter /!\
 

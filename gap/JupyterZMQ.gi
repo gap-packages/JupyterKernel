@@ -19,19 +19,6 @@ Intersperse := function(lst, e)
     return res;
 end;
 
-# Default kernel config for experimentation. We'll have to
-# find a way to read this into a gap session.
-jupyter_kernel_conf := rec( transport := "tcp"
-                            , ip := "127.0.0.1"
-                            , iopub_port   := 5678
-                            , control_port := 5679
-                            , shell_port   := 5680
-                            , stdin_port   := 5681
-                            , hb_port      := 5682
-                            , signature_scheme := "hmac-sha256"
-                            , key := ""
-                            );
-
 hdlr := AtomicRecord(rec(
 
     kernel_info_request := function(kernel, msg)
@@ -176,21 +163,22 @@ stdin_thread := function(kernel, sock)
     kernel.stdin_sock := ShareObj(ZmqRouterSocket(sock));
 end;
 
-setup_jupyter_kernel := function(conf)
-    local address, kernel;
+InstallGlobalFunction( JupyterKernelStart,
+    function(conf)
+        local address, kernel;
 
-    address := Concatenation(conf.transport, "://", conf.ip, ":");
+        address := Concatenation(conf.transport, "://", conf.ip, ":");
 
-    kernel := AtomicRecord( rec( config := `conf
-                               , uuid   := `StringUUID(RandomUUID())));
+        kernel := AtomicRecord( rec( config := `conf
+                                , uuid   := `StringUUID(RandomUUID())));
 
-    kernel.iopub   := ShareObj(ZmqPublisherSocket(`Concatenation(address, String(conf.iopub_port))));
-    kernel.control := CreateThread(control_thread, kernel, `Concatenation(address, String(conf.control_port)));
-    kernel.shell   := CreateThread(shell_thread, kernel, `Concatenation(address, String(conf.shell_port)));
-    kernel.stdin   := ShareObj(ZmqRouterSocket(`Concatenation(address, String(conf.stdin_port))));
-    kernel.hb      := CreateThread(JupyterHBThreadFunc, kernel);
-    
-    kernel.execution_count := 0;
-    
-    return kernel;
-end;
+        kernel.iopub   := ShareObj(ZmqPublisherSocket(`Concatenation(address, String(conf.iopub_port))));
+        kernel.control := CreateThread(control_thread, kernel, `Concatenation(address, String(conf.control_port)));
+        kernel.shell   := CreateThread(shell_thread, kernel, `Concatenation(address, String(conf.shell_port)));
+        kernel.stdin   := ShareObj(ZmqRouterSocket(`Concatenation(address, String(conf.stdin_port))));
+        kernel.hb      := CreateThread(JupyterHBThreadFunc, kernel);
+
+        kernel.execution_count := 0;
+
+        return kernel;
+    end);

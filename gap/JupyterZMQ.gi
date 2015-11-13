@@ -158,12 +158,6 @@ control_thread := function(kernel, sock)
     od;
 end;
 
-stdin_thread := function(kernel, sock)
-    local msg, zmq;
-
-    kernel.stdin_sock := ShareObj(ZmqRouterSocket(sock));
-end;
-
 InstallGlobalFunction( JupyterKernelStart,
     function(conf)
         local address, kernel;
@@ -171,7 +165,7 @@ InstallGlobalFunction( JupyterKernelStart,
         address := Concatenation(conf.transport, "://", conf.ip, ":");
 
         kernel := AtomicRecord( rec( config := `conf
-                                , uuid   := `StringUUID(RandomUUID())));
+                                , uuid   := `String(RandomUUID())));
 
         kernel.iopub   := ShareObj(ZmqPublisherSocket(`Concatenation(address, String(conf.iopub_port))));
         kernel.control := CreateThread(control_thread, kernel, `Concatenation(address, String(conf.control_port)));

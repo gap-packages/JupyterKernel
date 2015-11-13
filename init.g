@@ -5,4 +5,5 @@
 #
 
 ReadPackage( "JupyterZMQ", "gap/uuid.gd");
+ReadPackage( "JupyterZMQ", "gap/JupyterMsg.gd");
 ReadPackage( "JupyterZMQ", "gap/JupyterZMQ.gd");

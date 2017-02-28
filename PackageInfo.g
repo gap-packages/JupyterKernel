@@ -62,7 +62,8 @@ Dependencies := rec(
   GAP := ">= 4.6",
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.5" ]
                          , [ "json",   ">= 0.0" ]
-                         , [ "uuid",   ">= 0.0" ] ],
+                         , [ "uuid",   ">= 0.0" ]
+                         , [ "zeromq", ">= 0.0" ] ],
 
   SuggestedOtherPackages := [ ],
   ExternalConditions := [ ],

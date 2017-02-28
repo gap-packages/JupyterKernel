@@ -8,9 +8,9 @@ ReadPackage( "JupyterZMQ", "gap/JupyterHB.gi");
 ReadPackage( "JupyterZMQ", "gap/JupyterZMQ.gi");
 
 #X Hack
-jkernel := JupyterKernelStart(JupyterDefaultKernelConfig);
+# jkernel := JupyterKernelStart(JupyterDefaultKernelConfig);
 Print("""
- /!\ Jupyter kernel started up. Start jupyter /!\
+ /!\ To Start Jupyter kernel start JupyterKernelStart /!\
 
    jupyter notebook --existing /tmp/xxx.json
 

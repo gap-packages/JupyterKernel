@@ -149,16 +149,70 @@ InstallGlobalFunction( JupyterKernelStart,
 
         address := Concatenation(conf.transport, "://", conf.ip, ":");
 
-        kernel := AtomicRecord( rec( config := `conf
-                                , uuid   := `String(RandomUUID())));
+        kernel := AtomicRecord( rec( config := Immutable(conf)
+                                   , uuid   := Immutable(String(RandomUUID()))));
 
-        kernel.iopub   := ShareObj(ZmqPublisherSocket(`Concatenation(address, String(conf.iopub_port))));
-        kernel.control := CreateThread(control_thread, kernel, `Concatenation(address, String(conf.control_port)));
-        kernel.shell   := CreateThread(shell_thread, kernel, `Concatenation(address, String(conf.shell_port)));
-        kernel.stdin   := ShareObj(ZmqRouterSocket(`Concatenation(address, String(conf.stdin_port))));
-        kernel.hb      := CreateThread(JupyterHBThreadFunc, kernel);
+#        kernel.iopub   := ShareObj(ZmqPublisherSocket(Concatenation(address, String(conf.iopub_port))));
+#        kernel.control := CreateThread(control_thread, kernel, Concatenation(address, String(conf.control_port)));
+#        kernel.shell   := CreateThread(shell_thread, kernel, Concatenation(address, String(conf.shell_port)));
+#        kernel.stdin   := ShareObj(ZmqRouterSocket(Concatenation(address, String(conf.stdin_port))));
+#        kernel.hb      := CreateThread(JupyterHBThreadFunc, kernel);
 
         kernel.execution_count := 0;
 
         return kernel;
     end);
+
+InstallGlobalFunction( JupyterKernelStart2,
+function(conf)
+    local address, kernel;
+
+    address := Concatenation(conf.transport, "://", conf.ip, ":");
+
+    kernel := AtomicRecord( rec( config := Immutable(conf)
+                               , uuid   := Immutable(String(RandomUUID()))));
+
+    kernel.iopub   := ZmqPublisherSocket(Concatenation(address, String(conf.iopub_port)));
+    kernel.control := ZmqRouterSocket(Concatenation(address, String(conf.control_port)));
+    kernel.shell   := ZmqRouterSocket(Concatenation(address, String(conf.shell_port)));
+    kernel.stdin   := ZmqRouterSocket(Concatenation(address, String(conf.stdin_port)));
+    kernel.hb      := ZmqRouterSocket(Concatenation(address, String(conf.hb_port)));
+
+    kernel.execution_count := 0;
+
+    return kernel;
+end);
+
+InstallGlobalFunction(JupyterKernelLoop,
+function(kernel)
+    local topoll, poll, i, msg, res;
+
+    topoll := [kernel.control, kernel.shell, kernel.stdin, kernel.hb];
+    while true do
+        Print("Jupyter: polling: ");
+        poll := ZmqPoll(topoll, [], 5000);
+        Print(poll, "\n");
+        if 4 in poll then
+            Print("heartbeat\n");
+            msg := ZmqReceiveList(kernel.hb);
+            ZmqSend(kernel.hb, msg);
+        fi;
+        if 2 in poll then
+            msg := ZmqRecvMsg(topoll[2]);
+            res := handle_shell_msg(kernel, msg);
+            if res = fail then
+                Print("failed to handle message\n");
+            else
+                ZmqSendMsg(topoll[2], res);
+            fi;
+        fi;
+        if 1 in poll then
+            msg := ZmqReceiveList(topoll[1]);
+        fi;
+        if 3 in poll then
+            msg := ZmqReceiveList(topoll[3]);
+        fi;
+    od;
+end);
+
+

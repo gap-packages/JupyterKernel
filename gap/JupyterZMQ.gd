@@ -17,4 +17,9 @@ BindGlobal( "JupyterDefaultKernelConfig",
        , signature_scheme := "hmac-sha256"
        , key := "" )
     );
+
 DeclareGlobalFunction( "JupyterKernelStart" );
+DeclareGlobalFunction( "JupyterKernelStart2" );
+
+DeclareGlobalFunction("JupyterKernelLoop");
+

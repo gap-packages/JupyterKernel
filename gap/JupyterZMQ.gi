@@ -58,7 +58,9 @@ hdlr := AtomicRecord(rec(
                 publ.header.msg_type := "display_data";
                 publ.content := rec( source := ""
                                    , data := rec( text\/plain := ViewString(r[2])
+# TODO: Support rich viewing by using JUPYTER_ViewString
 #                                                , text\/html := "<b>HTML!</b>"
+#                                                , text\/latex := "$\\left< (1,2,3), (4,6) \\right>$"
                                                 )
                                    , metadata := rec() );
 

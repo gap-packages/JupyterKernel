@@ -6,3 +6,5 @@
 ReadPackage( "JupyterZMQ", "gap/JupyterMsg.gi");
 ReadPackage( "JupyterZMQ", "gap/JupyterHB.gi");
 ReadPackage( "JupyterZMQ", "gap/JupyterZMQ.gi");
+ReadPackage( "JupyterZMQ", "gap/JupyterJson.gi");
+ReadPackage( "JupyterZMQ", "gap/JupyterUtil.gi");

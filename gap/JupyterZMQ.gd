@@ -18,8 +18,8 @@ BindGlobal( "JupyterDefaultKernelConfig",
        , key := "" )
     );
 
-DeclareGlobalFunction( "JupyterKernelStart" );
-DeclareGlobalFunction( "JupyterKernelStart2" );
+DeclareGlobalFunction( "JUPYTER_KernelStart_HPC" );
 
-DeclareGlobalFunction("JupyterKernelLoop");
-
+# Maybe these two should be one function
+DeclareGlobalFunction( "JUPYTER_KernelStart_GAP" );
+DeclareGlobalFunction( "JUPYTER_KernelLoop");

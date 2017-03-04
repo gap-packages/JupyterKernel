@@ -54,7 +54,6 @@ hdlr := AtomicRecord(rec(
         
         for r in res do
             if r[1] = true then
-                Print("publishing...");
                 publ := JupyterMsgReply(msg);
                 publ.header.msg_type := "display_data";
                 publ.content := rec( source := ""
@@ -171,25 +170,42 @@ control_thread := function(kernel, sock)
 end;
 
 InstallGlobalFunction( JUPYTER_KernelStart_HPC,
-    function(conf)
-        local address, kernel;
-        
-        Error("HPC-GAP is not supported with this code.");
-        
+function(conf)
+    Error("HPC-GAP is not supported with this code.");
+end);
 
-#        address := Concatenation(conf.transport, "://", conf.ip, ":");
-#        kernel := AtomicRecord( rec( config := Immutable(conf)
-#                                   , uuid   := Immutable(String(RandomUUID()))));
-#        kernel.iopub   := ShareObj(ZmqPublisherSocket(Concatenation(address, String(conf.iopub_port))));
-#        kernel.control := CreateThread(control_thread, kernel, Concatenation(address, String(conf.control_port)));
-#        kernel.shell   := CreateThread(shell_thread, kernel, Concatenation(address, String(conf.shell_port)));
-#        kernel.stdin   := ShareObj(ZmqRouterSocket(Concatenation(address, String(conf.stdin_port))));
-#        kernel.hb      := CreateThread(JupyterHBThreadFunc, kernel);
 
-        kernel.execution_count := 0;
 
-        return kernel;
-    end);
+InstallGlobalFunction( JUPYTER_KernelLoop,
+function(kernel)
+    local topoll, poll, i, msg, res;
+
+    topoll := [kernel.control, kernel.shell, kernel.stdin, kernel.hb];
+    while true do
+        poll := ZmqPoll(topoll, [], 5000);
+        if 1 in poll then
+            msg := ZmqReceiveList(topoll[1]);
+        fi;
+        if 2 in poll then
+            msg := ZmqRecvMsg(topoll[2]);
+            res := handle_shell_msg(kernel, msg);
+            if res = fail then
+                Print("failed to handle message\n");
+            else
+                res.key := kernel.key;
+                ZmqSendMsg(topoll[2], res);
+            fi;
+        fi;
+        if 3 in poll then
+            msg := ZmqReceiveList(topoll[3]);
+        fi;
+        if 4 in poll then
+            msg := ZmqRecvMsg(topoll[4]);
+            msg.key := kernel.key;
+            ZmqSendMsg(kernel.hb, msg);
+        fi;
+    od;
+end);
 
 InstallGlobalFunction( JUPYTER_KernelStart_GAP,
 function(conf)
@@ -209,37 +225,5 @@ function(conf)
 
     kernel.execution_count := 0;
 
-    return kernel;
-end);
-
-InstallGlobalFunction( JUPYTER_KernelLoop,
-function(kernel)
-    local topoll, poll, i, msg, res;
-
-    topoll := [kernel.control, kernel.shell, kernel.stdin, kernel.hb];
-    while true do
-        poll := ZmqPoll(topoll, [], 5000);
-        Print(poll, "\n");
-        if 4 in poll then
-            msg := ZmqRecvMsg(topoll[4]);
-            msg.key := kernel.key;
-            ZmqSendMsg(kernel.hb, msg);
-        fi;
-        if 2 in poll then
-            msg := ZmqRecvMsg(topoll[2]);
-            res := handle_shell_msg(kernel, msg);
-            if res = fail then
-                Print("failed to handle message\n");
-            else
-                res.key := kernel.key;
-                ZmqSendMsg(topoll[2], res);
-            fi;
-        fi;
-        if 1 in poll then
-            msg := ZmqReceiveList(topoll[1]);
-        fi;
-        if 3 in poll then
-            msg := ZmqReceiveList(topoll[3]);
-        fi;
-    od;
+    JUPYTER_KernelLoop(kernel);
 end);

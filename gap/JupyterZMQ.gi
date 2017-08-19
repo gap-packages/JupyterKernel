@@ -25,12 +25,12 @@ hdlr := AtomicRecord(rec(
                         , implementation := "ihpcgap"
                         , implementation_version := "0.0.0"
                         , language_info := rec (
-                                name := "HPC-GAP"
+                                name := "GAP (native)"
                                 , version := GAPInfo.Version
                                 , mimetype := "text/gap"
                                 , file_extension := ".g"
                                 , pygments_lexer := ""
-                                , codemirror_mode := ""
+                                , codemirror_mode := "gap"
                                 , nbconvert_exporter := ""
                                 )
                         , banner := Concatenation(
@@ -210,8 +210,11 @@ function(kernel)
 end);
 
 InstallGlobalFunction( JUPYTER_KernelStart_GAP,
-function(conf)
-    local address, kernel, s;
+function(configfile)
+    local instream, conf, address, kernel, s;
+
+    instream := InputTextFile(configfile);
+    conf := JsonStreamToGap(instream);
 
     address := Concatenation(conf.transport, "://", conf.ip, ":");
 
@@ -229,3 +232,4 @@ function(conf)
 
     JUPYTER_KernelLoop(kernel);
 end);
+

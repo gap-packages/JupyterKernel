@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo "GAP Jupyter Kernel Starting"
+$JUPYTER_GAP_EXECUTABLE -q <<EOF
+   LoadPackage("JupyterZMQ");
+   JUPYTER_KernelStart_GAP("$1");
+   QUIT_GAP(0);
+EOF

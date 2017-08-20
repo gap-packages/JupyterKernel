@@ -1,10 +1,10 @@
 #
-# JupyterZMQ: Jupyter kernel using ZeroMQ
+# JupyterKernel: Jupyter kernel written in GAP
 #
 # Reading the declaration part of the package.
 #
-ReadPackage( "JupyterZMQ", "gap/JupyterMsg.gd");
-ReadPackage( "JupyterZMQ", "gap/JupyterHB.gd");
-ReadPackage( "JupyterZMQ", "gap/JupyterZMQ.gd");
-ReadPackage( "JupyterZMQ", "gap/JupyterJson.gd");
-ReadPackage( "JupyterZMQ", "gap/JupyterUtil.gd");
+ReadPackage( "JupyterKernel", "gap/JupyterMsg.gd");
+ReadPackage( "JupyterKernel", "gap/JupyterHB.gd");
+ReadPackage( "JupyterKernel", "gap/JupyterKernel.gd");
+ReadPackage( "JupyterKernel", "gap/JupyterJson.gd");
+ReadPackage( "JupyterKernel", "gap/JupyterUtil.gd");

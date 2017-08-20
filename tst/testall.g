@@ -1,11 +1,11 @@
 #
-# JupyterZMQ: Jupyter kernel using ZeroMQ
+# JupyterKernel: Jupyter kernel using ZeroMQ
 #
 # This file runs package tests. It is also referenced in the package
 # metadata in PackageInfo.g.
 #
-LoadPackage( "JupyterZMQ" );
-dirs := DirectoriesPackageLibrary( "JupyterZMQ", "tst" );
+LoadPackage( "JupyterKernel" );
+dirs := DirectoriesPackageLibrary( "JupyterKernel", "tst" );
 
 HasSuffix := function(list, suffix)
   local len;

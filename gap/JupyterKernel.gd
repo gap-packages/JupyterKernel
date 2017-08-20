@@ -1,5 +1,5 @@
 #
-# JupyterZMQ: Jupyter kernel using ZeroMQ
+# JupyterKernel: Jupyter kernel using ZeroMQ
 #
 # Declarations
 #

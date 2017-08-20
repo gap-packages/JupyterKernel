@@ -1,5 +1,5 @@
 #
-# JupyterZMQ: Jupyter kernel using ZeroMQ
+# JupyterKernel: Jupyter kernel written in GAP
 #
 # This file contains package meta data. For additional information on
 # the meaning and correct usage of these fields, please consult the
@@ -8,10 +8,10 @@
 #
 SetPackageInfo( rec(
 
-PackageName := "JupyterZMQ",
-Subtitle := "Jupyter kernel using ZeroMQ",
+PackageName := "JupyterKernel",
+Subtitle := "Jupyter kernel written in GAP",
 Version := "0.1",
-Date := "12/11/2015", # dd/mm/yyyy format
+Date := "20/08/2017", # dd/mm/yyyy format
 
 Persons := [
   rec(
@@ -27,11 +27,11 @@ Persons := [
   ),
 ],
 
-PackageWWWHome := "http://gap-packages.github.io/JupyterZMQ/",
+PackageWWWHome := "http://gap-packages.github.io/JupyterKernel/",
 
-ArchiveURL     := Concatenation("https://github.com/gap-packages/JupyterZMQ/",
+ArchiveURL     := Concatenation("https://github.com/gap-packages/JupyterKernel/",
                                 "releases/download/v", ~.Version,
-                                "/JupyterZMQ-", ~.Version),
+                                "/JupyterKernel-", ~.Version),
 README_URL     := Concatenation( ~.PackageWWWHome, "README" ),
 PackageInfoURL := Concatenation( ~.PackageWWWHome, "PackageInfo.g" ),
 
@@ -50,16 +50,16 @@ Status := "dev",
 AbstractHTML   :=  "",
 
 PackageDoc := rec(
-  BookName  := "JupyterZMQ",
+  BookName  := "JupyterKernel",
   ArchiveURLSubset := ["doc"],
   HTMLStart := "doc/chap0.html",
   PDFFile   := "doc/manual.pdf",
   SixFile   := "doc/manual.six",
-  LongTitle := "Jupyter kernel using ZeroMQ",
+  LongTitle := "Jupyter kernel written in GAP",
 ),
 
 Dependencies := rec(
-  GAP := ">= 4.6",
+  GAP := ">= 4.9",
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.5" ]
                          , [ "json",   ">= 0.0" ]
                          , [ "uuid",   ">= 0.0" ]

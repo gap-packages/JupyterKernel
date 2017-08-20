@@ -1,5 +1,5 @@
 #
-# JupyterZMQ: Jupyter kernel using ZeroMQ
+# JupyterKernel: Jupyter kernel using ZeroMQ
 #
 # Implementations
 #
@@ -55,7 +55,7 @@ hdlr := AtomicRecord(rec(
                 else
                     data := rec();
                 fi;
-                publ.content := rec( source := ""
+                publ.content := rec( transient := "stdout"
                                    , data := data
                                    , metadata := rec() );
                 publ.key := kernel.key;
@@ -67,6 +67,13 @@ hdlr := AtomicRecord(rec(
                 publ.key := kernel.key;
                 ZmqSendMsg(kernel.iopub, publ);
                 kernel.execution_count := kernel.execution_count + 1;
+            else
+                publ := JupyterMsgReply(msg);
+                publ.header.msg_type := "stream";
+                publ.content := rec( name := "stderr"
+                                   , text := "An error happened" );
+                publ.key := kernel.key;
+                ZmqSendMsg(kernel.iopub, publ);
             fi;
         od;
 
@@ -87,6 +94,11 @@ hdlr := AtomicRecord(rec(
         msg.header.msg_type := "complete_reply";
         msg.content := JUPYTER_Complete( msg.content.code
                                        , msg.content.cursor_pos );
+    end,
+
+    history_request := function(kernel, msg)
+        msg.header.msg_type := "history_reply";
+        msg.content := rec();
     end,
 
     is_complete_request := function(kernel, msg)

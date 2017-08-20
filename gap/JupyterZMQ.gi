@@ -46,15 +46,18 @@ hdlr := AtomicRecord(rec(
             if r[1] = true then
                 publ := JupyterMsgReply(msg);
                 publ.header.msg_type := "display_data";
-                if IsBound(r[2].json) and r[2].json then
-                    data := r[2].data;
+                if Length(r) = 2 then
+                    if IsRecord(r[2]) and IsBound(r[2].json) and r[2].json then
+                        data := r[2].data;
+                    else
+                        data := rec( text\/plain := ViewString(r[2]));
+                    fi;
                 else
-                    data := rec( text\/plain := ViewString(r[2]));
+                    data := rec();
                 fi;
                 publ.content := rec( source := ""
                                    , data := data
                                    , metadata := rec() );
-
                 publ.key := kernel.key;
                 ZmqSendMsg(kernel.iopub, publ);
 

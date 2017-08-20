@@ -61,10 +61,11 @@ PackageDoc := rec(
 Dependencies := rec(
   GAP := ">= 4.9",
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.5" ]
-                         , [ "json",   ">= 0.0" ]
-                         , [ "uuid",   ">= 0.0" ]
-                         , [ "zeromq", ">= 0.0" ]
-                         , [ "crypting", ">= 0.0"] ],
+                         , [ "io",     ">= 4.4.6" ]
+                         , [ "json",   ">= 1.1.0" ]
+                         , [ "uuid",   ">= 0.3" ]
+                         , [ "zeromq", ">= 0.3" ]
+                         , [ "crypting", ">= 0.6"] ],
 
   SuggestedOtherPackages := [ ],
   ExternalConditions := [ ],

@@ -268,7 +268,7 @@ HELP_VIEWER_INFO.jupyter_online :=
              p := data[3];
 
              for r in GAPInfo.RootPaths do
-                 p := ReplacedString(data[3], r, "https://cloud.gap-system.org/");
+                 p := ReplacedString(data[3], r, "https://www.gap-system.org/Manuals/");
              od;
              return rec( json := true
                        , source := "gap"

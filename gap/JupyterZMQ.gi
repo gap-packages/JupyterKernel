@@ -5,7 +5,6 @@
 #
 
 hdlr := AtomicRecord(rec(
-
     kernel_info_request := function(kernel, msg)
         msg.header.msg_type := "kernel_info_reply";
         msg.content := rec( protocol_version := "5.0.0"
@@ -14,7 +13,7 @@ hdlr := AtomicRecord(rec(
                         , language_info := rec (
                                 name := "GAP (native)"
                                 , version := GAPInfo.Version
-                                , mimetype := "text/gap"
+                                , mimetype := "text/x-gap"
                                 , file_extension := ".g"
                                 , pygments_lexer := ""
                                 , codemirror_mode := "gap"
@@ -24,7 +23,10 @@ hdlr := AtomicRecord(rec(
                                 "GAP JupterZMQ kernel\n",
                                 "Running on GAP ", GAPInfo.BuildVersion, "\n",
                                 "built on       ", GAPInfo.BuildDateTime, "\n" )
-                        , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/") ]
+                        , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
+                                        , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
+                                        , rec( text := "GAP tutorial", url := "https://www.gap-system.org/Manuals/doc/chap0.html")
+                                        , rec( text := "GAP reference", url := "https://www.gap-system.org/Manuals/doc/ref/chap0.html") ]
                         );
     end,
 
@@ -34,22 +36,23 @@ hdlr := AtomicRecord(rec(
     end,
 
     execute_request := function(kernel, msg)
-        local publ, res, str, r;
+        local publ, res, str, r, data;
 
         str := InputTextString(msg.content.code);
 
         res := READ_ALL_COMMANDS(str, false);
-        
+
         for r in res do
             if r[1] = true then
                 publ := JupyterMsgReply(msg);
                 publ.header.msg_type := "display_data";
+                if IsBound(r[2].json) and r[2].json then
+                    data := r[2].data;
+                else
+                    data := rec( text\/plain := ViewString(r[2]));
+                fi;
                 publ.content := rec( source := ""
-                                   , data := rec( text\/plain := ViewString(r[2])
-# TODO: Support rich viewing by using JUPYTER_ViewString
-#                                                , text\/html := "<b>HTML!</b>"
-#                                                , text\/latex := "$\\left< (1,2,3), (4,6) \\right>$"
-                                                )
+                                   , data := data
                                    , metadata := rec() );
 
                 publ.key := kernel.key;
@@ -101,7 +104,7 @@ hdlr := AtomicRecord(rec(
 
 handle_shell_msg := function(kernel, msg)
     local hdl_dict, f, t, reply;
-    
+
     reply := rec();
     reply.uuid := msg.uuid;
     reply.sep := msg.sep;
@@ -160,8 +163,6 @@ function(conf)
     Error("HPC-GAP is not supported with this code.");
 end);
 
-
-
 InstallGlobalFunction( JUPYTER_KernelLoop,
 function(kernel)
     local topoll, poll, i, msg, res;
@@ -215,20 +216,20 @@ function(configfile)
     kernel.execution_count := 0;
 
     # Try redirecting stdout/Print output
-    MakeReadWriteGlobal("Print");
-    UnbindGlobal("Print");
-    BindGlobal("Print",
-              function(args...)
-                  local str, ostream, prt;
-                  str := "";
-                  ostream := OutputTextString(str, false);
-                  Add(args, ostream, 1);
-                  CallFuncList(PrintTo, args);
-                  JUPYTER_print(rec( status := "ok",
-                                     result := rec( name := "stdout"
-                                                  , text := str )));
-              end);
-    MakeReadOnlyGlobal("Print");
+#    MakeReadWriteGlobal("Print");
+#    UnbindGlobal("Print");
+#    BindGlobal("Print",
+#              function(args...)
+#                  local str, ostream, prt;
+#                  str := "";
+#                  ostream := OutputTextString(str, false);
+#                  Add(args, ostream, 1);
+#                  CallFuncList(PrintTo, args);
+#                  JUPYTER_print(rec( status := "ok",
+#                                     result := rec( name := "stdout"
+#                                                  , text := str )));
+#              end);
+#    MakeReadOnlyGlobal("Print");
 
     JUPYTER_KernelLoop(kernel);
 end);

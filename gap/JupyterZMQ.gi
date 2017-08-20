@@ -4,19 +4,6 @@
 # Implementations
 #
 
-DeclareGlobalFunction("JUPYTER_completion");
-InstallGlobalFunction(JUPYTER_completion,
-function(tok)
-    local i, ident, scan;
-
-    i := Length(tok);
-    while (not (tok[i] in [' ', '.', '='])) and (i > 0) do i := i - 1; od;
-
-    tok := tok{ [i+1..Length(tok)]};
-
-    return Filtered(IDENTS_BOUND_GVARS(), c -> PositionSublist(c, tok) = 1);
-end);
-
 hdlr := AtomicRecord(rec(
 
     kernel_info_request := function(kernel, msg)
@@ -37,6 +24,7 @@ hdlr := AtomicRecord(rec(
                                 "GAP JupterZMQ kernel\n",
                                 "Running on GAP ", GAPInfo.BuildVersion, "\n",
                                 "built on       ", GAPInfo.BuildDateTime, "\n" )
+                        , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/") ]
                         );
     end,
 
@@ -85,18 +73,14 @@ hdlr := AtomicRecord(rec(
 
     inspect_request := function(kernel, msg)
         msg.header.msg_type := "inspect_reply";
-        msg.content := rec( status := "ok"
-                            , found := false
-                            , data := rec()
-                            , metadata := rec()
-                            );
+        msg.content := JUPYTER_Inspect( msg.content.code
+                                      , msg.content.cursor_pos );
     end,
 
-    complete_request := function(kernel,msg)
+    complete_request := function(kernel, msg)
         msg.header.msg_type := "complete_reply";
-        msg.content := rec( status := "ok"
-                          , cursor_start := 5
-                          , matches := JUPYTER_completion(msg.content.code) );
+        msg.content := JUPYTER_Complete( msg.content.code
+                                       , msg.content.cursor_pos );
     end,
 
     is_complete_request := function(kernel, msg)
@@ -229,6 +213,22 @@ function(configfile)
     kernel.key     := conf.key;
 
     kernel.execution_count := 0;
+
+    # Try redirecting stdout/Print output
+    MakeReadWriteGlobal("Print");
+    UnbindGlobal("Print");
+    BindGlobal("Print",
+              function(args...)
+                  local str, ostream, prt;
+                  str := "";
+                  ostream := OutputTextString(str, false);
+                  Add(args, ostream, 1);
+                  CallFuncList(PrintTo, args);
+                  JUPYTER_print(rec( status := "ok",
+                                     result := rec( name := "stdout"
+                                                  , text := str )));
+              end);
+    MakeReadOnlyGlobal("Print");
 
     JUPYTER_KernelLoop(kernel);
 end);

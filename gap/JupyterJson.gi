@@ -48,6 +48,7 @@ end);
 InstallMethod(ToJsonStream, "for a list",
 [IsOutputTextStream, IsList],
 function(os, l)
+    local i;
     AppendTo(os, "[");
     if Length(l) > 0 then
         for i in [1..Length(l)-1] do

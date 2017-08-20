@@ -9,4 +9,13 @@ DeclareOperation("JUPYTER_ViewString", [IsObject]);
 #!   Jupyter printing
 DeclareGlobalFunction("JUPYTER_print");
 
+#! @Description
+#!   Jupyter completion
+DeclareGlobalFunction("JUPYTER_Complete");
+
+#! @Description
+#!   Jupyter inspection
+DeclareGlobalFunction("JUPYTER_Inspect");
+
+
 

@@ -1,11 +1,11 @@
 # Load some help stuff (Experimental)
-_JUPYTER_HelpXML := ParseTreeXMLFile("/home/makx/ac/jupyter-gap/jupyter_kernel_gap/gap/help.xml");;
-CheckAndCleanGapDocTree(_JUPYTER_HelpXML);;
-_JUPYTER_ManSections := XMLElements(_JUPYTER_HelpXML, "ManSection");;
-_JUPYTER_FindManSection := function(name)
-    local p, s, res;
+_JUPYTER_FindManSection := function(file, name)
+    local xml, sections, p, s, res;
+    xml := ParseTreeXMLFile(file);
+    CheckAndCleanGapDocTree(xml);
+    sections := XMLElements(xml, "ManSection");;
     res := [];
-    for s in _JUPYTER_ManSections do
+    for s in sections do
         if IsBound(s.content) then
             p := PositionProperty(s.content, x ->
                                                IsBound(x.attributes) and

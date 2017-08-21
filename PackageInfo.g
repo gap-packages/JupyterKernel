@@ -64,7 +64,7 @@ Dependencies := rec(
                          , [ "io",     ">= 4.4.6" ]
                          , [ "json",   ">= 1.1.0" ]
                          , [ "uuid",   ">= 0.3" ]
-                         , [ "zeromq", ">= 0.3" ]
+                         , [ "ZeroMQInterface", ">= 0.6" ]
                          , [ "crypting", ">= 0.6"] ],
 
   SuggestedOtherPackages := [ ],

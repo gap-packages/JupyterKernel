@@ -56,3 +56,11 @@ cd ZeroMQInterface
 ./configure $CONFIGFLAGS
 make -j4 V=1
 cd ..
+
+# install latest version of json
+git clone https://github.com/gap-packages/json
+cd json
+./autogen.sh
+./configure $CONFIGFLAGS
+make -j4 V=1
+cd ..

@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/gap-packages/ZeroMQInterface.svg?branch=master)](https://travis-ci.org/gap-packages/ZeroMQInterface)
-[![Code Coverage](https://codecov.io/github/gap-packages/ZeroMQInterface/coverage.svg?branch=master&token=)](https://codecov.io/gh/gap-packages/ZeroMQInterface)
+[![Build Status](https://travis-ci.org/gap-packages/JupyterKernel.svg?branch=master)](https://travis-ci.org/gap-packages/JupyterKernel)
+[![Code Coverage](https://codecov.io/github/gap-packages/JupyterKernel/coverage.svg?branch=master&token=)](https://codecov.io/gh/gap-packages/JupyterKernel)
 # The JupyterKernel GAP package 
 
 This package implements the [Jupyter](https://www.jupyter.org) protocol in GAP.

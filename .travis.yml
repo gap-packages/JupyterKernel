@@ -13,6 +13,8 @@ addons:
     - libreadline-dev:i386
     - gcc-multilib
     - g++-multilib
+    - libzmq-dev
+    - libzmq-dev:i386
 
 matrix:
   include:

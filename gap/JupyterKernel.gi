@@ -3,210 +3,260 @@
 #
 # Implementations
 #
+# TODO:
+#  * InfoLevel and Debug messages
 
-hdlr := AtomicRecord(rec(
-    kernel_info_request := function(kernel, msg)
-        msg.header.msg_type := "kernel_info_reply";
-        msg.content := rec( protocol_version := "5.0.0"
-                        , implementation := "ihpcgap"
-                        , implementation_version := "0.0.0"
-                        , language_info := rec (
-                                name := "GAP (native)"
-                                , version := GAPInfo.Version
-                                , mimetype := "text/x-gap"
-                                , file_extension := ".g"
-                                , pygments_lexer := ""
-                                , codemirror_mode := "gap"
-                                , nbconvert_exporter := ""
-                                )
-                        , banner := Concatenation(
-                                "GAP JupterZMQ kernel\n",
-                                "Running on GAP ", GAPInfo.BuildVersion, "\n",
-                                "built on       ", GAPInfo.BuildDateTime, "\n" )
-                        , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
-                                        , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
-                                        , rec( text := "GAP tutorial", url := "https://www.gap-system.org/Manuals/doc/chap0.html")
-                                        , rec( text := "GAP reference", url := "https://www.gap-system.org/Manuals/doc/ref/chap0.html") ]
-                        );
-    end,
+InstallGlobalFunction( NewJupyterKernel,
+function(conf)
+    local address, kernel;
 
-    history_request := function(kernel, msg)
-        msg.header.msg_type := "history_reply";
-        msg.content := rec( history := [] );
-    end,
+    address := Concatenation(conf.transport, "://", conf.ip, ":");
 
-    execute_request := function(kernel, msg)
-        local publ, res, str, r, data;
+    kernel := rec( config := Immutable(conf)
+                 , Username := "username"
+                 , ProtocolVersion := "5.0"
+                 , ZmqIdentity := HexStringUUID( RandomUUID() )
+                 , SessionKey := conf.key
+                 , SessionID := ""
+                 , ExecutionCount := 0);
 
-        str := InputTextString(msg.content.code);
+    kernel.IOPub   := ZmqPublisherSocket( Concatenation(address, String(conf.iopub_port))
+                                        , kernel.ZmqIdentity);
+    kernel.Control := ZmqRouterSocket( Concatenation(address, String(conf.control_port))
+                                     , kernel.ZmqIdentity);
+    kernel.Shell   := ZmqDealerSocket( Concatenation(address, String(conf.shell_port))
+                                     , kernel.ZmqIdentity);
+    kernel.StdIn   := ZmqRouterSocket( Concatenation(address, String(conf.stdin_port))
+                                     , kernel.ZmqIdentity);
+    kernel.HB      := ZmqRouterSocket( Concatenation(address, String(conf.hb_port))
+                                     , kernel.ZmqIdentity);
 
-        res := READ_ALL_COMMANDS(str, false);
+    kernel.MsgHandlers := rec( kernel_info_request := function(msg)
+                                 local reply;
 
-        for r in res do
-            if r[1] = true then
-                publ := JupyterMsgReply(msg);
-                publ.header.msg_type := "display_data";
-                if Length(r) = 2 then
-                    if IsRecord(r[2]) and IsBound(r[2].json) and r[2].json then
-                        data := r[2].data;
-                    else
-                        data := rec( text\/plain := ViewString(r[2]));
-                    fi;
+                                 kernel!.SessionID := msg.header.session;
+                                 reply := JupyterMsgReply(kernel, msg.header, "kernel_info_reply");
+                                 reply.content := rec( protocol_version := kernel!.ProtocolVersion
+                                                     , implementation := "GAP"
+                                                     , implementation_version := "1.0.0"
+                                                     , language_info := rec( name := "GAP (native)"
+                                                                           , version := GAPInfo.Version
+                                                                           , mimetype := "text/x-gap"
+                                                                           , file_extension := ".g"
+                                                                           , pygments_lexer := "gap"
+                                                                           , codemirror_mode := "gap"
+                                                                           , nbconvert_exporter := "" )
+                                                     , banner := Concatenation( "GAP JupterZMQ kernel\n",
+                                                                                "Running on GAP ", GAPInfo.BuildVersion, "\n",
+                                                                                "built on       ", GAPInfo.BuildDateTime, "\n" )
+                                                     , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
+                                                                     , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
+                                                                     , rec( text := "GAP tutorial", url := "https://www.gap-system.org/Manuals/doc/chap0.html")
+                                                                     , rec( text := "GAP reference", url := "https://www.gap-system.org/Manuals/doc/ref/chap0.html") ]
+                                                     , status := "ok"
+                                                     );
+                                 return reply;
+                               end,
+
+                               history_request := function(msg)
+                                   msg.header.msg_type := "history_reply";
+                                   msg.content := rec( history := [] );
+                               end,
+
+                               execute_request := function(msg)
+                                   local publ, res, str, r, data;
+
+                                   publ := JupyterMsgReply(kernel, msg.header, "execute_input");
+                                   publ.content := rec( code := msg.content.code
+                                                      , execution_count := kernel!.ExecutionCount );
+                                   ZmqSendMsg(kernel!.IOPub, publ);
+
+                                   str := InputTextString(msg.content.code);
+
+                                   res := READ_ALL_COMMANDS(str, false);
+                                   for r in res do
+                                       if r[1] = true then
+                                           kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
+                                           publ := JupyterMsgReply(kernel, msg.header, "execute_result");
+                                           publ.execution_count := kernel!.ExecutionCount;
+
+                                           if Length(r) = 2 then
+                                               if IsRecord(r[2]) and IsBound(r[2].json) and r[2].json then
+                                                   data := r[2].data;
+                                               else
+                                                   data := rec( text\/plain := ViewString(r[2]));
+                                               fi;
+                                           else
+                                               data := rec();
+                                           fi;
+                                           publ.content := rec( transient := "stdout"
+                                                              , data := data
+                                                              , metadata := rec()
+                                                              , execution_count := kernel!.ExecutionCount );
+                                           ZmqSendMsg(kernel!.IOPub, publ);
+                                       else
+                                           publ := JupyterMsgReply(kernel, msg.header, "stream");
+                                           publ.content := rec( name := "stderr"
+                                                              , text := "An error happind" );
+                                           ZmqSendMsg(kernel!.IOPub, publ);
+                                       fi;
+                                   od;
+                                   publ := JupyterMsgReply(kernel, msg.header, "execute_reply");
+                                   publ.content := rec( status := "ok"
+                                                      , execution_count := kernel!.ExecutionCount );
+                                   return publ;
+                               end,
+
+                               inspect_request := function(msg)
+                                   local res;
+
+                                   res := JupyterMsgReply(kernel, msg.header, "inspect_reply");
+                                   res.content := JUPYTER_Inspect( msg.content.code
+                                                                 , msg.content.cursor_pos );
+                                   return res;
+                               end,
+
+                               complete_request := function(msg)
+                                   local res;
+
+                                   res := JupyterMsgReply(kernel, msg.header, "complete_reply");
+                                   res.content := JUPYTER_Complete( msg.content.code
+                                                                  , msg.content.cursor_pos );
+                                   return res;
+                               end,
+
+                               history_request := function(msg)
+                                   msg.header.msg_type := "history_reply";
+                                   msg.content := rec();
+                               end,
+
+                               is_complete_request := function(msg)
+                                   msg.header.msg_type := "is_complete_reply";
+                                   msg.content := rec( status := "complete" );
+                               end,
+
+                               comm_open := function(msg)
+                                   msg.header.msg_type := "comm_open";
+                                   msg.content := rec();
+                               end,
+
+                               shutdown_request := function(msg)
+                                   msg.header.msg_type := "shutdown_reply";
+                                   msg.content := rec( restart := false );
+                               end
+                             );
+
+    # TODO:
+    # kernel.StandardOutput := stream
+    # kernel.StandardError := stream
+
+    # TODO: Hack, remove
+    kernel.SignalError := function(text)
+        local msg;
+
+        msg := JupyterMsg(kernel, "stream");
+        if IsBound(kernel!.CurrentMsg) then
+            msg.parent_header := kernel!.CurrentMsg;
+        fi;
+        msg.content := rec( name := "stderr"
+                          , text := text);
+        ZmqSendMsg(kernel!.IOPub, msg);
+    end;
+
+    kernel.HandleShellMsg := function(msg)
+        local hdl_dict, f, t, reply;
+
+        # We store the currently processed
+        # message header, because we need it
+        # for replies
+        kernel!.CurrentMsg := msg.header;
+
+        t := msg.header.msg_type;
+
+        if IsBound(kernel!.MsgHandlers.(t)) then
+            return kernel!.MsgHandlers.(t)(msg);
+        else
+            Print("unhandled message type: ", msg.header.msg_type, "\n");
+            return fail;
+        fi;
+    end;
+
+
+    kernel.Loop := function()
+        local topoll, poll, i, msg, res;
+
+        topoll := [ kernel!.Control, kernel!.Shell, kernel!.StdIn, kernel!.HB ];
+        while true do
+            poll := ZmqPoll(topoll, [], 5000);
+            if 1 in poll then
+                msg := ZmqReceiveList(topoll[1]);
+            fi;
+            if 2 in poll then
+                msg := ZmqRecvMsg(topoll[2]);
+                res := kernel!.HandleShellMsg(msg);
+                if res = fail then
+                    Print("failed to handle message\n");
                 else
-                    data := rec();
+                    ZmqSendMsg(topoll[2], res);
                 fi;
-                publ.content := rec( transient := "stdout"
-                                   , data := data
-                                   , metadata := rec() );
-                publ.key := kernel.key;
-                ZmqSendMsg(kernel.iopub, publ);
-
-                publ := JupyterMsgReply(msg);
-                publ.header.msg_type := "status";
-                publ.content := rec( execution_state := "idle" );
-                publ.key := kernel.key;
-                ZmqSendMsg(kernel.iopub, publ);
-                kernel.execution_count := kernel.execution_count + 1;
-            else
-                publ := JupyterMsgReply(msg);
-                publ.header.msg_type := "stream";
-                publ.content := rec( name := "stderr"
-                                   , text := "An error happened" );
-                publ.key := kernel.key;
-                ZmqSendMsg(kernel.iopub, publ);
+            fi;
+            if 3 in poll then
+                msg := ZmqReceiveList(topoll[3]);
+            fi;
+            if 4 in poll then
+                msg := ZmqRecvMsg(topoll[4]);
+                msg.key := kernel!.SessionKey;
+                ZmqSendMsg(kernel!.HB, msg);
             fi;
         od;
+    end;
 
-        msg.header.msg_type := "execute_reply";
-        msg.content := rec( status := "ok"
-                            , execution_count := kernel.execution_count
-                            , user_expressions := rec( res := "bla" )
-                            );
-    end,
+    # TODO: Also a hack...
 
-    inspect_request := function(kernel, msg)
-        msg.header.msg_type := "inspect_reply";
-        msg.content := JUPYTER_Inspect( msg.content.code
-                                      , msg.content.cursor_pos );
-    end,
+    # Try redirecting stdout/Print output
+    #    MakeReadWriteGlobal("Print");
+    #    UnbindGlobal("Print");
+    #    BindGlobal("Print",
+    #              function(args...)
+    #                  local str, ostream, prt;
+    #                  str := "";
+    #                  ostream := OutputTextString(str, false);
+    #                  Add(args, ostream, 1);
+    #                  CallFuncList(PrintTo, args);
+    #                  JUPYTER_print(rec( status := "ok",
+    #                                     result := rec( name := "stdout"
+    #                                                  , text := str )));
+    #              end);
+    #    MakeReadOnlyGlobal("Print");
 
-    complete_request := function(kernel, msg)
-        msg.header.msg_type := "complete_reply";
-        msg.content := JUPYTER_Complete( msg.content.code
-                                       , msg.content.cursor_pos );
-    end,
+    # This is of course very hacky
+    # kernel.origerror := Error;
+    # MakeReadWriteGlobal("Error");
+    # UnbindGlobal("Error");
+    # BindGlobal("Error",
+    #          function(args...)
+    #              kernel.SignalError(CallFuncList(STRINGIFY, args));
+    #          end);
 
-    history_request := function(kernel, msg)
-        msg.header.msg_type := "history_reply";
-        msg.content := rec();
-    end,
+    Objectify(GAPJupyterKernelType, kernel);
+    return kernel;
+end);
 
-    is_complete_request := function(kernel, msg)
-        msg.header.msg_type := "is_complete_reply";
-        msg.content := rec( status := "complete" );
-    end,
+InstallMethod( ViewString
+             , "for Jupyter kernels"
+             , [ IsGAPJupyterKernel ]
+             , x -> "<GAP Jupyter Kernel>" );
 
-    comm_open := function(kernel, msg)
-        msg.header.msg_type := "comm_open";
-        msg.content := rec();
-    end,
+InstallMethod( Run
+             , "for Jupyter kernel"
+             , [ IsGAPJupyterKernel ]
+             , x -> x!.Loop() );
 
-    shutdown_request := function(kernel, msg)
-        msg.header.msg_type := "shutdown_reply";
-        msg.content := rec( restart := false );
-    end
-));
-
-handle_shell_msg := function(kernel, msg)
-    local hdl_dict, f, t, reply;
-
-    reply := rec();
-    reply.uuid := msg.uuid;
-    reply.sep := msg.sep;
-    reply.hmac := "";
-    reply.parent_header := msg.header;
-    reply.header := StructuralCopy(msg.header);
-    reply.metadata := msg.metadata;
-    reply.header.uuid := String(RandomUUID());
-    reply.content := msg.content;
-
-    t := msg.header.msg_type;
-
-    if IsBound(hdlr.(t)) then
-        hdlr.(t)(kernel, reply);
-        return reply;
-    else
-        Print("unhandled message type: ", msg.header.msg_type, "\n");
-        return fail;
-    fi;
-end;
-
-shell_thread := function(kernel, sock)
-    local msg, raw, zmq, res, i;
-
-    zmq := ZmqRouterSocket(sock, kernel.uuid);
-    while true do
-        msg := ZmqRecvMsg(zmq);
-        Print("received msg: ", msg.header.msg_type,
-              " id: ", msg.header.msg_id,
-              " length: ", Length(msg.remainder),
-              "\n");
-
-        res := handle_shell_msg(kernel, msg);
-        Print("reply msg:    ", msg);
-        if res = fail then
-            Print("failed to handle message\n");
-        else
-            ZmqSendMsg(zmq, res);
-        fi;
-
-    od;
-end;
-
-control_thread := function(kernel, sock)
-    local msg, zmq;
-
-    zmq := ZmqRouterSocket(sock);
-    while true do
-        msg := ZmqReceive(zmq);
-        Print("jupyter control:\n", msg, "\n");
-    od;
-end;
 
 InstallGlobalFunction( JUPYTER_KernelStart_HPC,
 function(conf)
     Error("HPC-GAP is not supported with this code.");
-end);
-
-InstallGlobalFunction( JUPYTER_KernelLoop,
-function(kernel)
-    local topoll, poll, i, msg, res;
-
-    topoll := [kernel.control, kernel.shell, kernel.stdin, kernel.hb];
-    while true do
-        poll := ZmqPoll(topoll, [], 5000);
-        if 1 in poll then
-            msg := ZmqReceiveList(topoll[1]);
-        fi;
-        if 2 in poll then
-            msg := ZmqRecvMsg(topoll[2]);
-            res := handle_shell_msg(kernel, msg);
-            if res = fail then
-                Print("failed to handle message\n");
-            else
-                res.key := kernel.key;
-                ZmqSendMsg(topoll[2], res);
-            fi;
-        fi;
-        if 3 in poll then
-            msg := ZmqReceiveList(topoll[3]);
-        fi;
-        if 4 in poll then
-            msg := ZmqRecvMsg(topoll[4]);
-            msg.key := kernel.key;
-            ZmqSendMsg(kernel.hb, msg);
-        fi;
-    od;
+    QUIT_GAP(0);
 end);
 
 InstallGlobalFunction( JUPYTER_KernelStart_GAP,
@@ -216,36 +266,47 @@ function(configfile)
     instream := InputTextFile(configfile);
     conf := JsonStreamToGap(instream);
 
-    address := Concatenation(conf.transport, "://", conf.ip, ":");
-
-    kernel := AtomicRecord( rec( config := Immutable(conf)
-                               , uuid   := Immutable(String(RandomUUID()))));
-
-    kernel.iopub   := ZmqPublisherSocket(Concatenation(address, String(conf.iopub_port)));
-    kernel.control := ZmqRouterSocket(Concatenation(address, String(conf.control_port)));
-    kernel.shell   := ZmqRouterSocket(Concatenation(address, String(conf.shell_port)));
-    kernel.stdin   := ZmqRouterSocket(Concatenation(address, String(conf.stdin_port)));
-    kernel.hb      := ZmqRouterSocket(Concatenation(address, String(conf.hb_port)));
-    kernel.key     := conf.key;
-
-    kernel.execution_count := 0;
-
-    # Try redirecting stdout/Print output
-#    MakeReadWriteGlobal("Print");
-#    UnbindGlobal("Print");
-#    BindGlobal("Print",
-#              function(args...)
-#                  local str, ostream, prt;
-#                  str := "";
-#                  ostream := OutputTextString(str, false);
-#                  Add(args, ostream, 1);
-#                  CallFuncList(PrintTo, args);
-#                  JUPYTER_print(rec( status := "ok",
-#                                     result := rec( name := "stdout"
-#                                                  , text := str )));
-#              end);
-#    MakeReadOnlyGlobal("Print");
-
-    JUPYTER_KernelLoop(kernel);
+    kernel := NewJupyterKernel(conf);
+    Run(kernel);
 end);
+
+
+# TODO: These are leftovers from the original HPC-GAP code
+#       and they should be folded into a new HPC-GAP implementation
+#       that handles heartbeat and shell separately
+#
+#       Ideally code duplication between GAP and HPC-GAP should be
+#       very minimal
+#
+#shell_thread := function(kernel, sock)
+#    local msg, raw, zmq, res, i;
+#
+#    zmq := ZmqRouterSocket(sock, kernel.uuid);
+#    while true do
+#        msg := ZmqRecvMsg(zmq);
+#        Print("received msg: ", msg.header.msg_type,
+#              " id: ", msg.header.msg_id,
+#              " length: ", Length(msg.remainder),
+#              "\n");
+#
+#        res := handle_shell_msg(kernel, msg);
+#        Print("reply msg:    ", msg);
+#        if res = fail then
+#            Print("failed to handle message\n");
+#        else
+#            ZmqSendMsg(zmq, res);
+#        fi;
+#
+#    od;
+#end;
+#
+#control_thread := function(kernel, sock)
+#    local msg, zmq;
+#
+#    zmq := ZmqRouterSocket(sock);
+#    while true do
+#        msg := ZmqReceive(zmq);
+#        Print("jupyter control:\n", msg, "\n");
+#    od;
+#end;
 

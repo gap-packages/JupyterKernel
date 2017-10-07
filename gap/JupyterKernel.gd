@@ -23,3 +23,18 @@ DeclareGlobalFunction( "JUPYTER_KernelStart_HPC" );
 # Maybe these two should be one function
 DeclareGlobalFunction( "JUPYTER_KernelStart_GAP" );
 DeclareGlobalFunction( "JUPYTER_KernelLoop");
+
+
+DeclareGlobalFunction( "NewJupyterKernel" );
+DeclareCategory( "IsJupyterKernel", IsComponentObjectRep );
+
+DeclareRepresentation( "IsGAPJupyterKernel", IsJupyterKernel, [] );
+DeclareRepresentation( "IsHPCGAPJupyterKernel", IsJupyterKernel, [] );
+
+BindGlobal( "GAPJupyterKernelType", NewType( NewFamily("JupyterKernelFamily")
+                                        , IsGAPJupyterKernel ) );
+
+BindGlobal( "HPCGAPJupyterKernelType", NewType( NewFamily("JupyterKernelFamily")
+                                           , IsHPCGAPJupyterKernel ) );
+
+DeclareOperation( "Run", [ IsJupyterKernel ]);

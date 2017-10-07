@@ -172,17 +172,38 @@ function(conf)
     # kernel.StandardOutput := stream
     # kernel.StandardError := stream
 
-    # TODO: Hack, remove
-    kernel.SignalError := function(text)
-        local msg;
-
-        msg := JupyterMsg(kernel, "stream");
+    # TODO: Hack. Sends a message to the stderr stream
+    #       And is currently used to send captured error
+    #       messages
+    kernel.ErrorOutput := function(text)
+        local curmsg;
         if IsBound(kernel!.CurrentMsg) then
-            msg.parent_header := kernel!.CurrentMsg;
+            curmsg := kernel!.CurrentMsg;
+        else
+            curmsg := rec();
         fi;
-        msg.content := rec( name := "stderr"
-                          , text := text);
-        ZmqSendMsg(kernel!.IOPub, msg);
+        ZmqSendMsg(kernel!.IOPub
+                  , JupyterMsg( kernel
+                              , "stream"
+                              , curmsg
+                              , rec( name := "stderr"
+                                   , text := text )
+                              , rec() ) );
+    end;
+    kernel.StandardOutput := function(text)
+        local curmsg;
+        if IsBound(kernel!.CurrentMsg) then
+            curmsg := kernel!.CurrentMsg;
+        else
+            curmsg := rec();
+        fi;
+        ZmqSendMsg(kernel!.IOPub
+                  , JupyterMsg( kernel
+                              , "stream"
+                              , curmsg
+                              , rec( name := "stdout"
+                                   , text := text )
+                              , rec() ) );
     end;
 
     kernel.HandleShellMsg := function(msg)
@@ -232,32 +253,25 @@ function(conf)
         od;
     end;
 
-    # TODO: Also a hack...
-
+    # TODO: This is of course very hacky
+    #       The solution I would like to implement involves defining
+    #       *stdout* and *errout* as proper gap stream that can be
+    #       captured. This also almost works and is work in progress
+ 
     # Try redirecting stdout/Print output
-    #    MakeReadWriteGlobal("Print");
-    #    UnbindGlobal("Print");
-    #    BindGlobal("Print",
-    #              function(args...)
-    #                  local str, ostream, prt;
-    #                  str := "";
-    #                  ostream := OutputTextString(str, false);
-    #                  Add(args, ostream, 1);
-    #                  CallFuncList(PrintTo, args);
-    #                  JUPYTER_print(rec( status := "ok",
-    #                                     result := rec( name := "stdout"
-    #                                                  , text := str )));
-    #              end);
-    #    MakeReadOnlyGlobal("Print");
+    # This will of course completely muck up any hope of debugging...
+    MakeReadWriteGlobal("Print");
+    UnbindGlobal("Print");
+    BindGlobal("Print", function(args...)
+                  kernel!.StandardOutput(CallFuncList(STRINGIFY, args));
+              end);
+    MakeReadOnlyGlobal("Print");
 
-    # This is of course very hacky
-    # kernel.origerror := Error;
-    # MakeReadWriteGlobal("Error");
-    # UnbindGlobal("Error");
-    # BindGlobal("Error",
-    #          function(args...)
-    #              kernel.SignalError(CallFuncList(STRINGIFY, args));
-    #          end);
+    MakeReadWriteGlobal("Error");
+    UnbindGlobal("Error");
+    BindGlobal("Error", function(args...)
+                  kernel!.ErrorOutput(CallFuncList(STRINGIFY, args));
+              end);
 
     Objectify(GAPJupyterKernelType, kernel);
     return kernel;

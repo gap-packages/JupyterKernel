@@ -83,34 +83,9 @@ function(sock, msg)
     ZmqSend(sock, JupyterMsgEncode(msg));
 end);
 
-# This is really not what I should be doing here...
-ISO8601Stamp := function()
-    local tz, gm, pad;
-
-    tz := IO_gettimeofday();
-    pad := function(i, l, c)
-        local s;
-        s := String(i);
-        if Length(s) < l then
-            return Concatenation(RepeatedString(c, l - Length(s)), s);
-        else
-            return s;
-        fi;
-    end;
-
-    gm := IO_gmtime(tz.tv_sec);
-    return STRINGIFY( 1900 + gm.tm_year, "-"
-                      , pad(gm.tm_mon + 1, 2, '0'), "-"
-                      , pad(gm.tm_mday, 2, '0'), "T"
-                      , pad(gm.tm_hour, 2, '0'), ":"
-                      , pad(gm.tm_min, 2, '0'), ":"
-                      , pad(gm.tm_sec, 2, '0'), "."
-                      , pad(tz.tv_usec, 6, '0') );
-end;
-
 # Create a message template with the necessasry fields filled
 InstallGlobalFunction(JupyterMsg,
-function(kernel, msg_type)
+function(kernel, msg_type, parent_header, content, metadata)
     return rec( uuid := kernel!.ZmqIdentity
               , sep := "<IDS|MSG>"                 # This could be in JupyterEncode
               , hmac := ""
@@ -121,25 +96,12 @@ function(kernel, msg_type)
                              , date := ISO8601Stamp()
                              , msg_id := HexStringUUID(RandomUUID())
                              )
-              , parent_header := rec()
-#               , msg_id := HexStringUUID(RandomUUID())
-              , metadata := rec( )
-              , content := rec( )
+              , parent_header := parent_header
+              , metadata := metadata
+              , content := content
               , key := kernel!.SessionKey
                              # This shouldn't be here as all
                              # messaging functions
                              # should just be running in kernel context
               );
-end);
-
-
-# Construct a reply for msg
-InstallGlobalFunction(JupyterMsgReply,
-function(kernel, parent_header, msg_type)
-    local reply;
-
-    reply := JupyterMsg(kernel, msg_type);
-    reply.parent_header := parent_header;
-
-    return reply;
 end);

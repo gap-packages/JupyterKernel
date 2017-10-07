@@ -17,5 +17,8 @@ DeclareGlobalFunction("JUPYTER_Complete");
 #!   Jupyter inspection
 DeclareGlobalFunction("JUPYTER_Inspect");
 
-
+#! @Description
+#!   Current date and time as ISO8601 timestamp
+#!   Don't trust this function
+DeclareGlobalFunction("ISO8601Stamp");
 

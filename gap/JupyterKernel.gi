@@ -32,30 +32,29 @@ function(conf)
                                      , kernel.ZmqIdentity);
 
     kernel.MsgHandlers := rec( kernel_info_request := function(msg)
-                                 local reply;
-
                                  kernel!.SessionID := msg.header.session;
-                                 reply := JupyterMsgReply(kernel, msg.header, "kernel_info_reply");
-                                 reply.content := rec( protocol_version := kernel!.ProtocolVersion
-                                                     , implementation := "GAP"
-                                                     , implementation_version := "1.0.0"
-                                                     , language_info := rec( name := "GAP (native)"
-                                                                           , version := GAPInfo.Version
-                                                                           , mimetype := "text/x-gap"
-                                                                           , file_extension := ".g"
-                                                                           , pygments_lexer := "gap"
-                                                                           , codemirror_mode := "gap"
-                                                                           , nbconvert_exporter := "" )
-                                                     , banner := Concatenation( "GAP JupterZMQ kernel\n",
-                                                                                "Running on GAP ", GAPInfo.BuildVersion, "\n",
-                                                                                "built on       ", GAPInfo.BuildDateTime, "\n" )
-                                                     , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
-                                                                     , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
-                                                                     , rec( text := "GAP tutorial", url := "https://www.gap-system.org/Manuals/doc/chap0.html")
-                                                                     , rec( text := "GAP reference", url := "https://www.gap-system.org/Manuals/doc/ref/chap0.html") ]
-                                                     , status := "ok"
-                                                     );
-                                 return reply;
+                                 return JupyterMsg( kernel
+                                                  , "kernel_info_reply"
+                                                  , msg.header
+                                                  , rec( protocol_version := kernel!.ProtocolVersion
+                                                       , implementation := "GAP"
+                                                       , implementation_version := "1.0.0"
+                                                       , language_info := rec( name := "GAP (native)"
+                                                                             , version := GAPInfo.Version
+                                                                             , mimetype := "text/x-gap"
+                                                                             , file_extension := ".g"
+                                                                             , pygments_lexer := "gap"
+                                                                             , codemirror_mode := "gap"
+                                                                             , nbconvert_exporter := "" )
+                                                       , banner := Concatenation( "GAP JupterZMQ kernel\n",
+                                                                                  "Running on GAP ", GAPInfo.BuildVersion, "\n",
+                                                                                  "built on       ", GAPInfo.BuildDateTime, "\n" )
+                                                       , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
+                                                                       , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
+                                                                       , rec( text := "GAP tutorial", url := "https://www.gap-system.org/Manuals/doc/chap0.html")
+                                                                       , rec( text := "GAP reference", url := "https://www.gap-system.org/Manuals/doc/ref/chap0.html") ]
+                                                       , status := "ok" )
+                                                  , rec() );
                                end,
 
                                history_request := function(msg)
@@ -66,9 +65,12 @@ function(conf)
                                execute_request := function(msg)
                                    local publ, res, str, r, data;
 
-                                   publ := JupyterMsgReply(kernel, msg.header, "execute_input");
-                                   publ.content := rec( code := msg.content.code
-                                                      , execution_count := kernel!.ExecutionCount );
+                                   publ := JupyterMsg( kernel
+                                                     , "execute_input"
+                                                     , msg.header
+                                                     , rec( code := msg.content.code
+                                                          , execution_count := kernel!.ExecutionCount )
+                                                     , rec() );
                                    ZmqSendMsg(kernel!.IOPub, publ);
 
                                    str := InputTextString(msg.content.code);
@@ -77,8 +79,6 @@ function(conf)
                                    for r in res do
                                        if r[1] = true then
                                            kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
-                                           publ := JupyterMsgReply(kernel, msg.header, "execute_result");
-                                           publ.execution_count := kernel!.ExecutionCount;
 
                                            if Length(r) = 2 then
                                                if IsRecord(r[2]) and IsBound(r[2].json) and r[2].json then
@@ -89,62 +89,84 @@ function(conf)
                                            else
                                                data := rec();
                                            fi;
-                                           publ.content := rec( transient := "stdout"
-                                                              , data := data
-                                                              , metadata := rec()
-                                                              , execution_count := kernel!.ExecutionCount );
+                                           # publ.execution_count := kernel!.ExecutionCount;
+                                           publ := JupyterMsg( kernel
+                                                             , "execute_result"
+                                                             , msg.header
+                                                             , rec( transient := "stdout"
+                                                                  , data := data
+                                                                  , metadata := rec()
+                                                                  , execution_count := kernel!.ExecutionCount )
+                                                             , rec() );
                                            ZmqSendMsg(kernel!.IOPub, publ);
                                        else
-                                           publ := JupyterMsgReply(kernel, msg.header, "stream");
-                                           publ.content := rec( name := "stderr"
-                                                              , text := "An error happind" );
+                                           publ := JupyterMsg( kernel
+                                                             , "stream"
+                                                             , msg.header
+                                                             , rec( name := "stderr"
+                                                                  , text := "An error happened" )
+                                                             , rec() );
                                            ZmqSendMsg(kernel!.IOPub, publ);
                                        fi;
                                    od;
-                                   publ := JupyterMsgReply(kernel, msg.header, "execute_reply");
-                                   publ.content := rec( status := "ok"
-                                                      , execution_count := kernel!.ExecutionCount );
+                                   publ := JupyterMsg( kernel
+                                                     , "execute_reply"
+                                                     , msg.header
+                                                     , rec( status := "ok"
+                                                          , execution_count := kernel!.ExecutionCount )
+                                                     , rec() );
                                    return publ;
                                end,
 
                                inspect_request := function(msg)
-                                   local res;
-
-                                   res := JupyterMsgReply(kernel, msg.header, "inspect_reply");
-                                   res.content := JUPYTER_Inspect( msg.content.code
-                                                                 , msg.content.cursor_pos );
-                                   return res;
+                                   return JupyterMsg( kernel
+                                                    , "inspect_reply"
+                                                    , msg.header
+                                                    , JUPYTER_Inspect( msg.content.code
+                                                                     , msg.content.cursor_pos )
+                                                    , rec() );
                                end,
 
                                complete_request := function(msg)
-                                   local res;
-
-                                   res := JupyterMsgReply(kernel, msg.header, "complete_reply");
-                                   res.content := JUPYTER_Complete( msg.content.code
-                                                                  , msg.content.cursor_pos );
-                                   return res;
+                                   return JupyterMsg( kernel
+                                                    , "complete_reply"
+                                                    , msg.header
+                                                    , JUPYTER_Complete( msg.content.code
+                                                                      , msg.content.cursor_pos )
+                                                    , rec() );
                                end,
 
                                history_request := function(msg)
-                                   msg.header.msg_type := "history_reply";
-                                   msg.content := rec();
+                                   return JupyterMsg( kernel
+                                                    , "history_reply"
+                                                    , msg.header
+                                                    , rec( status := "ok" )
+                                                    , rec() );
                                end,
 
                                is_complete_request := function(msg)
-                                   msg.header.msg_type := "is_complete_reply";
-                                   msg.content := rec( status := "complete" );
+                                   return JupyterMsg( kernel
+                                                    , "is_complete_reply"
+                                                    , msg.header
+                                                    , rec( status := "ok" )
+                                                    , rec() );
                                end,
 
                                comm_open := function(msg)
-                                   msg.header.msg_type := "comm_open";
-                                   msg.content := rec();
+                                   return JupyterMsg( kernel
+                                                    , "is_complete_reply"
+                                                    , msg.header
+                                                    , rec( status := "ok" )
+                                                    , rec() );
                                end,
 
                                shutdown_request := function(msg)
-                                   msg.header.msg_type := "shutdown_reply";
-                                   msg.content := rec( restart := false );
-                               end
-                             );
+                                   return JupyterMsg( kernel
+                                                    , "shutdown_reply"
+                                                    , msg.header
+                                                    , rec( status := "error" ) # Currently not supported
+                                                    , rec() );
+                               end );
 
     # TODO:
     # kernel.StandardOutput := stream
@@ -180,7 +202,6 @@ function(conf)
             return fail;
         fi;
     end;
-
 
     kernel.Loop := function()
         local topoll, poll, i, msg, res;

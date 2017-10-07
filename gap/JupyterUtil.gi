@@ -543,3 +543,28 @@ SetUserPreference("PagerOptions", "");
 # on your local machine.
 SetHelpViewer("jupyter_online");
 
+# This is really not what I should be doing here...
+InstallGlobalFunction(ISO8601Stamp,
+function()
+    local tz, gm, pad;
+
+    tz := IO_gettimeofday();
+    pad := function(i, l, c)
+        local s;
+        s := String(i);
+        if Length(s) < l then
+            return Concatenation(RepeatedString(c, l - Length(s)), s);
+        else
+            return s;
+        fi;
+    end;
+
+    gm := IO_gmtime(tz.tv_sec);
+    return STRINGIFY( 1900 + gm.tm_year, "-"
+                      , pad(gm.tm_mon + 1, 2, '0'), "-"
+                      , pad(gm.tm_mday, 2, '0'), "T"
+                      , pad(gm.tm_hour, 2, '0'), ":"
+                      , pad(gm.tm_min, 2, '0'), ":"
+                      , pad(gm.tm_sec, 2, '0'), "."
+                      , pad(tz.tv_usec, 6, '0') );
+end);

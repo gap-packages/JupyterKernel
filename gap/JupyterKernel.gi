@@ -8,9 +8,25 @@
 
 InstallGlobalFunction( NewJupyterKernel,
 function(conf)
-    local address, kernel;
+    local pid, address, kernel, poll, msg;
 
     address := Concatenation(conf.transport, "://", conf.ip, ":");
+
+    pid := IO_fork();
+    if pid = fail then
+        return fail;
+    elif pid > 0 then # we are the parent and do heartbeat
+        kernel := rec();
+        kernel.HB := ZmqRouterSocket( Concatenation(address, String(conf.hb_port)) );
+        while true do
+            poll := ZmqPoll([ kernel!.HB ], [], 5000);
+            if 1 in poll then
+                msg := ZmqRecvMsg(kernel!.HB);
+                msg.key := conf.key;
+                ZmqSendMsg(kernel!.HB, msg);
+            fi;
+        od;
+    else
 
     kernel := rec( config := Immutable(conf)
                  , Username := "username"
@@ -28,8 +44,12 @@ function(conf)
                                      , kernel.ZmqIdentity);
     kernel.StdIn   := ZmqRouterSocket( Concatenation(address, String(conf.stdin_port))
                                      , kernel.ZmqIdentity);
-    kernel.HB      := ZmqRouterSocket( Concatenation(address, String(conf.hb_port))
-                                     , kernel.ZmqIdentity);
+    # Jupyter Heartbeat is handled by a fork'ed GAP process (yes, really, its better than
+    # starting a separate thread, because it doesn't need special pthread code
+    # downside is that it doesn't work on cygwin, of course, but maybe we could just
+    # ExecuteProcess on windows, or wait for bash on windows to become popular enoug.
+    # kernel.HB      := ZmqRouterSocket( Concatenation(address, String(conf.hb_port))
+    #                                  , kernel.ZmqIdentity);
 
     kernel.MsgHandlers := rec( kernel_info_request := function(msg)
                                  kernel!.SessionID := msg.header.session;
@@ -227,7 +247,9 @@ function(conf)
     kernel.Loop := function()
         local topoll, poll, i, msg, res;
 
-        topoll := [ kernel!.Control, kernel!.Shell, kernel!.StdIn, kernel!.HB ];
+        topoll := [ kernel!.Control, kernel!.Shell, kernel!.StdIn ];
+        # Heartbeat now handled differently
+        # , kernel!.HB ];
         while true do
             poll := ZmqPoll(topoll, [], 5000);
             if 1 in poll then
@@ -244,11 +266,6 @@ function(conf)
             fi;
             if 3 in poll then
                 msg := ZmqReceiveList(topoll[3]);
-            fi;
-            if 4 in poll then
-                msg := ZmqRecvMsg(topoll[4]);
-                msg.key := kernel!.SessionKey;
-                ZmqSendMsg(kernel!.HB, msg);
             fi;
         od;
     end;
@@ -275,6 +292,7 @@ function(conf)
 
     Objectify(GAPJupyterKernelType, kernel);
     return kernel;
+    fi;
 end);
 
 InstallMethod( ViewString

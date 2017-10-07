@@ -85,14 +85,18 @@ function(conf)
                                execute_request := function(msg)
                                    local publ, res, str, r, data;
 
-                                   publ := JupyterMsg( kernel
-                                                     , "execute_input"
-                                                     , msg.header
-                                                     , rec( code := msg.content.code
-                                                          , execution_count := kernel!.ExecutionCount )
-                                                     , rec() );
-                                   ZmqSendMsg(kernel!.IOPub, publ);
+                                   ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                                                       , "status"
+                                                                       , msg.header
+                                                                       , rec( execution_state := "busy" )
+                                                                       , rec() ) );
 
+                                   ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                                                       , "execute_input"
+                                                                       , msg.header
+                                                                       , rec( code := msg.content.code
+                                                                            , execution_count := kernel!.ExecutionCount )
+                                                                       , rec() ) );
                                    str := InputTextString(msg.content.code);
 
                                    res := READ_ALL_COMMANDS(str, false);
@@ -104,29 +108,32 @@ function(conf)
                                                if IsRecord(r[2]) and IsBound(r[2].json) and r[2].json then
                                                    data := r[2].data;
                                                else
-                                                   data := rec( text\/plain := ViewString(r[2]));
+                                                   # Clean Output Formatting
+                                                   str := ViewString(r[2]);
+                                                   RemoveCharacters(str, "\<\>\n");
+                                                   data := rec( text\/plain := str );
                                                fi;
-                                           else
-                                               data := rec();
+
+                                               # Only send a result message when there is a result
+                                               # value
+                                               # publ.execution_count := kernel!.ExecutionCount;
+                                               ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                                                                   , "execute_result"
+                                                                                   , msg.header
+                                                                                   , rec( transient := "stdout"
+                                                                                        , data := data
+                                                                                        , metadata := rec()
+                                                                                        , execution_count := kernel!.ExecutionCount )
+                                                                                   , rec() ) );
                                            fi;
-                                           # publ.execution_count := kernel!.ExecutionCount;
-                                           publ := JupyterMsg( kernel
-                                                             , "execute_result"
-                                                             , msg.header
-                                                             , rec( transient := "stdout"
-                                                                  , data := data
-                                                                  , metadata := rec()
-                                                                  , execution_count := kernel!.ExecutionCount )
-                                                             , rec() );
-                                           ZmqSendMsg(kernel!.IOPub, publ);
                                        else
-                                           publ := JupyterMsg( kernel
-                                                             , "stream"
-                                                             , msg.header
-                                                             , rec( name := "stderr"
-                                                                  , text := "An error happened" )
-                                                             , rec() );
-                                           ZmqSendMsg(kernel!.IOPub, publ);
+                                           # TODO: Better error signalling
+                                           ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                                                               , "stream"
+                                                                               , msg.header
+                                                                               , rec( name := "stderr"
+                                                                                    , text := "An error happened" )
+                                                                               , rec() ) );
                                        fi;
                                    od;
                                    publ := JupyterMsg( kernel
@@ -135,6 +142,11 @@ function(conf)
                                                      , rec( status := "ok"
                                                           , execution_count := kernel!.ExecutionCount )
                                                      , rec() );
+                                   ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                                                       , "status"
+                                                                       , msg.header
+                                                                       , rec( execution_state := "idle" )
+                                                                       , rec() ) );
                                    return publ;
                                end,
 

@@ -10,8 +10,8 @@ SetPackageInfo( rec(
 
 PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
-Version := "0.1",
-Date := "20/08/2017", # dd/mm/yyyy format
+Version := "0.9",
+Date := "08/10/2017", # dd/mm/yyyy format
 
 Persons := [
   rec(
@@ -77,7 +77,7 @@ AvailabilityTest := function()
 
 TestFile := "tst/testall.g",
 
-#Keywords := [ "TODO" ],
+Keywords := [ "Jupyter", "User Interface" ],
 
 ));
 

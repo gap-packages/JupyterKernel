@@ -5,8 +5,8 @@
 #
 # TODO: Check signature
 InstallGlobalFunction( JupyterMsgDecode,
-function(raw)
-    local result, bindIfBound, sl, ids;
+function(kernel, raw)
+    local result, bindIfBound, sl, ids, tmp;
 
     bindIfBound := function(name, pos)
         if IsBound(raw[pos]) then
@@ -30,11 +30,25 @@ function(raw)
     bindIfBound("metadata", sl + 4);
     bindIfBound("content", sl + 5);
 
+    tmp := CRYPTING_SHA256_HMAC( kernel!.SessionKey
+                               , Concatenation( raw[sl + 2]
+                                              , raw[sl + 3]
+                                              , raw[sl + 4]
+                                              , raw[sl + 5] ) );
+    tmp := List(tmp, CRYPTING_HexStringIntPad8);
+    tmp := LowercaseString(Concatenation(tmp));
+    result.hmac_verify := tmp;
+
+    if result.hmac <> result.hmac_verify then
+        PrintTo( "*errout*", "HMAC verification for message failed: "
+                 , result.hmac, " <> ", result.hmac_verify, "\n" );
+    fi;
+
     return result;
 end);
 
 InstallGlobalFunction( JupyterMsgEncode,
-function(msg)
+function(kernel, msg)
     local raw, k, bindIfBound, tmp;
 
     bindIfBound := function(pos, name)
@@ -71,16 +85,16 @@ function(msg)
     return raw;
 end);
 
-InstallGlobalFunction(ZmqRecvMsg,
-function(sock)
+InstallGlobalFunction(JupyterMsgRecv,
+function(kernel, sock)
     local raw;
     raw := ZmqReceiveList(sock);
-    return JupyterMsgDecode(raw);
+    return JupyterMsgDecode(kernel, raw);
 end);
 
-InstallGlobalFunction(ZmqSendMsg,
-function(sock, msg)
-    ZmqSend(sock, JupyterMsgEncode(msg));
+InstallGlobalFunction(JupyterMsgSend,
+function(kernel, sock, msg)
+    ZmqSend(sock, JupyterMsgEncode(kernel, msg));
 end);
 
 # Create a message template with the necessasry fields filled

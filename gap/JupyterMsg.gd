@@ -4,14 +4,13 @@
 # Implementations
 #
 
-#X Timeouts on receive?
+# TODO: Timeouts on receive?
 
 DeclareGlobalFunction("JupyterMsg");
+DeclareGlobalFunction("JupyterMsgSend");
+DeclareGlobalFunction("JupyterMsgRecv");
+
 DeclareGlobalFunction("JupyterMsgDecode");
 DeclareGlobalFunction("JupyterMsgEncode");
-DeclareGlobalFunction("JupyterMsgReply");
-
-DeclareGlobalFunction("ZmqRecvMsg");
-DeclareGlobalFunction("ZmqSendMsg");
 
 

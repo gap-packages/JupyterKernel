@@ -12,6 +12,9 @@ function(conf)
 
     address := Concatenation(conf.transport, "://", conf.ip, ":");
 
+    # This should happen in "Run" somehow, as currently the creation
+    # of a Jupyter Kernel breaks the running GAP session, taking
+    # every hope of debugging the kernel
     pid := IO_fork();
     if pid = fail then
         return fail;
@@ -21,9 +24,8 @@ function(conf)
         while true do
             poll := ZmqPoll([ kernel!.HB ], [], 5000);
             if 1 in poll then
-                msg := ZmqRecvMsg(kernel!.HB);
-                msg.key := conf.key;
-                ZmqSendMsg(kernel!.HB, msg);
+                msg := ZmqReceiveList(kernel!.HB);
+                ZmqSend(kernel!.HB, msg);
             fi;
         od;
     else
@@ -85,13 +87,13 @@ function(conf)
                                execute_request := function(msg)
                                    local publ, res, str, r, data;
 
-                                   ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                   JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                        , "status"
                                                                        , msg.header
                                                                        , rec( execution_state := "busy" )
                                                                        , rec() ) );
 
-                                   ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                   JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                        , "execute_input"
                                                                        , msg.header
                                                                        , rec( code := msg.content.code
@@ -117,7 +119,7 @@ function(conf)
                                                # Only send a result message when there is a result
                                                # value
                                                # publ.execution_count := kernel!.ExecutionCount;
-                                               ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                               JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                                    , "execute_result"
                                                                                    , msg.header
                                                                                    , rec( transient := "stdout"
@@ -128,7 +130,7 @@ function(conf)
                                            fi;
                                        else
                                            # TODO: Better error signalling
-                                           ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                           JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                                , "stream"
                                                                                , msg.header
                                                                                , rec( name := "stderr"
@@ -142,7 +144,7 @@ function(conf)
                                                      , rec( status := "ok"
                                                           , execution_count := kernel!.ExecutionCount )
                                                      , rec() );
-                                   ZmqSendMsg(kernel!.IOPub, JupyterMsg( kernel
+                                   JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                        , "status"
                                                                        , msg.header
                                                                        , rec( execution_state := "idle" )
@@ -180,7 +182,7 @@ function(conf)
                                    return JupyterMsg( kernel
                                                     , "is_complete_reply"
                                                     , msg.header
-                                                    , rec( status := "ok" )
+                                                    , rec( status := "complete" )
                                                     , rec() );
                                end,
 
@@ -214,7 +216,7 @@ function(conf)
         else
             curmsg := rec();
         fi;
-        ZmqSendMsg(kernel!.IOPub
+        JupyterMsgSend(kernel, kernel!.IOPub
                   , JupyterMsg( kernel
                               , "stream"
                               , curmsg
@@ -229,7 +231,7 @@ function(conf)
         else
             curmsg := rec();
         fi;
-        ZmqSendMsg(kernel!.IOPub
+        JupyterMsgSend(kernel, kernel!.IOPub
                   , JupyterMsg( kernel
                               , "stream"
                               , curmsg
@@ -268,12 +270,12 @@ function(conf)
                 msg := ZmqReceiveList(topoll[1]);
             fi;
             if 2 in poll then
-                msg := ZmqRecvMsg(topoll[2]);
+                msg := JupyterMsgRecv(kernel, topoll[2]);
                 res := kernel!.HandleShellMsg(msg);
                 if res = fail then
                     Print("failed to handle message\n");
                 else
-                    ZmqSendMsg(topoll[2], res);
+                    JupyterMsgSend(kernel, topoll[2], res);
                 fi;
             fi;
             if 3 in poll then

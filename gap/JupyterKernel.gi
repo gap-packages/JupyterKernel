@@ -88,12 +88,6 @@ function(conf)
                                    local publ, res, str, r, data;
 
                                    JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
-                                                                       , "status"
-                                                                       , msg.header
-                                                                       , rec( execution_state := "busy" )
-                                                                       , rec() ) );
-
-                                   JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                        , "execute_input"
                                                                        , msg.header
                                                                        , rec( code := msg.content.code
@@ -144,11 +138,6 @@ function(conf)
                                                      , rec( status := "ok"
                                                           , execution_count := kernel!.ExecutionCount )
                                                      , rec() );
-                                   JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
-                                                                       , "status"
-                                                                       , msg.header
-                                                                       , rec( execution_state := "idle" )
-                                                                       , rec() ) );
                                    return publ;
                                end,
 
@@ -174,7 +163,7 @@ function(conf)
                                    return JupyterMsg( kernel
                                                     , "history_reply"
                                                     , msg.header
-                                                    , rec( status := "ok" )
+                                                    , rec( history := [] )
                                                     , rec() );
                                end,
 
@@ -216,13 +205,13 @@ function(conf)
         else
             curmsg := rec();
         fi;
-        JupyterMsgSend(kernel, kernel!.IOPub
-                  , JupyterMsg( kernel
-                              , "stream"
-                              , curmsg
-                              , rec( name := "stderr"
-                                   , text := text )
-                              , rec() ) );
+        JupyterMsgSend( kernel, kernel!.IOPub
+                      , JupyterMsg( kernel
+                                  , "stream"
+                                  , curmsg
+                                  , rec( name := "stderr"
+                                       , text := text )
+                                  , rec() ) );
     end;
     kernel.StandardOutput := function(text)
         local curmsg;
@@ -232,12 +221,28 @@ function(conf)
             curmsg := rec();
         fi;
         JupyterMsgSend(kernel, kernel!.IOPub
-                  , JupyterMsg( kernel
+                       , JupyterMsg( kernel
                               , "stream"
                               , curmsg
                               , rec( name := "stdout"
                                    , text := text )
                               , rec() ) );
+    end;
+    kernel.SignalBusy := function()
+        JupyterMsgSend( kernel, kernel!.IOPub
+                      , JupyterMsg( kernel
+                                  , "status"
+                                  , kernel!.CurrentMsg
+                                  , rec( execution_state := "busy" )
+                                  , rec() ) );
+    end;
+    kernel.SignalIdle := function()
+        JupyterMsgSend( kernel, kernel!.IOPub
+                      , JupyterMsg( kernel
+                                  , "status"
+                                  , kernel!.CurrentMsg
+                                  , rec( execution_state := "idle" )
+                                  , rec() ) );
     end;
 
     kernel.HandleShellMsg := function(msg)
@@ -248,14 +253,22 @@ function(conf)
         # for replies
         kernel!.CurrentMsg := msg.header;
 
+        kernel!.SignalBusy();
         t := msg.header.msg_type;
-
         if IsBound(kernel!.MsgHandlers.(t)) then
-            return kernel!.MsgHandlers.(t)(msg);
+            # Currently we send the "reply" to each "request" on the Shell socket
+            # here. We might opt to move the sending into the handler functions,
+            # since at least "execute" has to send more than one message anyway
+            JupyterMsgSend(kernel, kernel!.Shell, kernel!.MsgHandlers.(t)(msg) );
+
+            kernel!.SignalIdle();
+            return true;
         else
             Print("unhandled message type: ", msg.header.msg_type, "\n");
+            kernel!.SignalIdle();
             return fail;
         fi;
+
     end;
 
     kernel.Loop := function()
@@ -274,8 +287,6 @@ function(conf)
                 res := kernel!.HandleShellMsg(msg);
                 if res = fail then
                     Print("failed to handle message\n");
-                else
-                    JupyterMsgSend(kernel, topoll[2], res);
                 fi;
             fi;
             if 3 in poll then

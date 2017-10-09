@@ -11,7 +11,7 @@ SetPackageInfo( rec(
 PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
 Version := "0.9",
-Date := "08/10/2017", # dd/mm/yyyy format
+Date := "09/10/2017", # dd/mm/yyyy format
 
 Persons := [
   rec(
@@ -32,7 +32,7 @@ PackageWWWHome := "http://gap-packages.github.io/JupyterKernel/",
 ArchiveURL     := Concatenation("https://github.com/gap-packages/JupyterKernel/",
                                 "releases/download/v", ~.Version,
                                 "/JupyterKernel-", ~.Version),
-README_URL     := Concatenation( ~.PackageWWWHome, "README" ),
+README_URL     := Concatenation( ~.PackageWWWHome, "README.md" ),
 PackageInfoURL := Concatenation( ~.PackageWWWHome, "PackageInfo.g" ),
 
 ArchiveFormats := ".tar.gz",

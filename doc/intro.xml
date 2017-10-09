@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This is an automatically generated file. -->
+<Chapter Label="Intro">
+<Heading>Introduction</Heading>
+
+<Section>
+<Heading>GAP Jupyter Kernel</Heading>
+
+This package provides a so-called <E>kernel</E> for the
+<URL Text="Jupyter">https://jupyter.org</URL> interactive document system.
+
+This kernel is implemented in &GAP;.
+
+</Section>
+
+
+<Section>
+<Heading>Installation</Heading>
+
+This package requires the &GAP; packages &IO; &uuid; &ZeroMQInterface;
+&crypting;, and &json;, all of which are distributed with &GAP;, and some of which
+require compilation.
+
+&JupyterKernel; itself does not contain any kernel code that needs to be compiled.
+
+It is necessary to register &JupyterKernel; with your &Jupyter; installation.
+
+Registering the GAP jupyter kernel system-wide works as follows:
+<Log>
+> python setup.py install
+</Log>
+
+or registering for your user only
+
+<Log>
+> python setup.py install --user
+</Log>
+
+Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4
+(native)". The addition of the "native" qualifier is to distinguish this kernel
+from the old kernel that wraps a &GAP; session inside a python script.
+
+If &GAP; is not in your PATH, then you have to set the environment variable
+<C>JUPYTER_GAP_EXECUTABLE</C> to point to your GAP executable for &Jupyter; to
+be able to execute &GAP;, and the script <C>jupyter-kernel-gap</C> that is
+distributed with this package in the directory <C>etc/jupyter</C> needs to be in
+your path.
+
+</Section>
+
+<Section>
+<Heading>How it works</Heading>
+
+<Subsection>
+  <Heading>Kernel Startup</Heading>
+
+  This section gives a short explanation how the process of executing &GAP; as a
+  kernel by &Jupyter; works to help with debugging issues.
+  
+  &Jupyter; registers kernels using json files in various directories. You can
+  list which kernel specifications are installed by executing the following
+  command
+  
+  <Log>
+    > jupyter kernelspec list
+    Available kernels:
+    python2        /usr/local/lib/python2.7/site-packages/ipykernel/resources
+    gap-native     /usr/local/share/jupyter/kernels/gap-native
+    gap-wrapper    /usr/local/share/jupyter/kernels/gap-wrapper
+  </Log>
+
+  If there is no line containing the <C>gap-native</C> kernel, something went
+  wrong with <C>setup.py</C>. You can try to manually install the file
+  <C>kernel.json</C> which is in the <C>etc</C> directory of the &JupyterKernel;
+  package by copying it. Better yet, you should report this issue on the issue
+  tracker giving wich operating system you are using, your version of &Jupyter;
+  and &GAP;, and which commands you tried to execute.
+  
+  What happens when &Jupyter; wants to start a &GAP; kernel is that it tries
+  to execute the small script <C>jupyter-kernel-gap</C> (which is distributed with
+  the &JupyterKernel; package), which in turn executes &GAP;, loading the package
+  and then running the kernel. This script currently has to be in your <C>PATH</C>
+  environment variable, too.
+</Subsection>
+
+<Subsection>
+  <Heading>Kernel operation</Heading>
+
+  The communication between the &Jupyter; frontend and &GAP; happens through ZeroMQ streams
+  as documented
+  <URL  Text="here">http://jupyter-client.readthedocs.io/en/latest/messaging.html</URL>,
+  encoded as <C>JSON</C> dicts.
+
+  After entering code into a cell and instructing &Jupyter; to execute that code,
+  the jupyter frontend sends the code to the &GAP; session where it is executed by
+  using the &GAP; function <C>READ_ALL_COMMANDS</C>, resulting values of the
+  execution are rendered using <C>ViewString</C> and sent back to the &Jupyter;
+  frontend.
+ 
+  In principle, rich rendering of content, as exemplified in the function
+  <C>JUPYTER_DotSplash</C> is possible.
+
+  Tab-completion is handled by the &GAP; function <C>JUPYTER_completion</C>, and
+  inspection is handled by <C>JUPYTER_Inspect</C>.
+
+  Changing these functions, one can change the behaviour of Tab-completion and
+  inspection to improve user experience.
+</Subsection>
+</Section>
+
+
+<Section Label="Known Limitations and Caveats">
+  <Heading>Known Limitations and Caveats</Heading>
+
+  Currently the support of the &GAP; system for alternative frontends is
+  a work in progress. In particular, certain outputs that are
+  printed by &GAP; cannot be captured by the &Jupyter; frontend and will
+  not show up.
+
+  If you happen to notice problems of this kind, feel free to report them
+  on the <URL Text="issue tracker">https://github.com/gap-packages/JupyterKernel/issues</URL>.
+  or suggest a solution via a pull-request.
+</Section>
+
+<Section Label="feedback">
+<Heading>Feedback</Heading>
+
+For bug reports, feature requests and suggestions, please use our
+<URL Text="issue tracker">https://github.com/gap-packages/JupyterKernel/issues</URL>.
+
+</Section>
+
+
+</Chapter>

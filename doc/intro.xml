@@ -18,7 +18,7 @@ This kernel is implemented in &GAP;.
 <Section>
 <Heading>Installation</Heading>
 
-This package requires the &GAP; packages &IO; &uuid; &ZeroMQInterface;
+This package requires the &GAP; packages &IO;, &uuid;, &ZeroMQInterface;,
 &crypting;, and &json;, all of which are distributed with &GAP;, and some of which
 require compilation.
 

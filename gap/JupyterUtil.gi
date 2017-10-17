@@ -58,6 +58,27 @@ function(dot)
               , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
 end);
 
+# Splash the subgroup lattice of a group
+BindGlobal("JUPYTER_SubgroupLatticeSplash",
+function(group)
+    local fn, fd, r, L, dot;
+
+    fn := TmpName();
+
+    L := LatticeSubgroups(group);
+    DotFileLatticeSubgroups(L, fn);
+
+    fd := IO_Popen(IO_FindExecutable("dot"), ["-Tsvg", fn], "r");
+    r := IO_ReadUntilEOF(fd);
+    IO_close(fd);
+    IO_unlink(fn);
+
+    return rec( json := true
+              , source := "gap"
+              , data := rec( ("image/svg+xml") := r)
+              , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
+end);
+
 # To show TikZ in a GAP jupyter notebook
 BindGlobal("JUPYTER_TikZSplash",
 function(tikz)

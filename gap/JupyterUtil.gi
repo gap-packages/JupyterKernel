@@ -6,6 +6,11 @@ if ViewString(rec()) = "<object>" then
     InstallMethod(ViewString, "for a record", true, [IsRecord], 5, String);
 fi;
 
+InstallMethod( JUPYTER_ViewString,
+               "default fallback",
+               [ IsObject ],
+  ViewString );
+
 BindGlobal("JUPYTER_RunCommand",
 function(string)
   local stream, result;
@@ -26,7 +31,7 @@ function(string)
             JUPYTER_print( rec(
                                 status := "ok",
                                 result := rec( name := "stdout"
-                                             , text := ViewString(result[2]))
+                                             , text := JUPYTER_ViewString(result[2]))
                                ) );
         fi;
     else

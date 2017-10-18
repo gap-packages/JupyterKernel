@@ -1,7 +1,17 @@
 #!/bin/sh
 
+GAP=`which gap`
+
+if [ x$GAP == x ] ; then
+  GAP=$JUPYTER_GAP_EXECUTABLE
+fi
+if [ x$GAP == x ] ; then
+  echo "Error: No executable GAP found"
+  exit
+fi
+
 echo "GAP Jupyter Kernel Starting"
-$JUPYTER_GAP_EXECUTABLE -q <<EOF
+$GAP -q <<EOF
    LoadPackage("JupyterKernel");
    JUPYTER_KernelStart_GAP("$1");
    QUIT_GAP(0);

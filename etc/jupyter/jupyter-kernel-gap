@@ -11,7 +11,7 @@ if [ x$GAP == x ] ; then
 fi
 
 echo "GAP Jupyter Kernel Starting"
-$GAP -q <<EOF
+$GAP -q -T <<EOF
    LoadPackage("JupyterKernel");
    JUPYTER_KernelStart_GAP("$1");
    QUIT_GAP(0);

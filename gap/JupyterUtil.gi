@@ -11,37 +11,6 @@ InstallMethod( JUPYTER_ViewString,
                [ IsObject ],
   ViewString );
 
-BindGlobal("JUPYTER_RunCommand",
-function(string)
-  local stream, result;
-
-  stream := InputTextString(string);
-  result := READ_COMMAND_REAL(stream, true);
-
-  if result[1] = true then
-    if Length(result) = 1 then
-        JUPYTER_print( rec( status := "ok" ) );
-    elif Length(result) = 2 then
-        if IsRecord(result[2]) and IsBound(result[2].json) then
-            JUPYTER_print( rec(
-                                status := "ok",
-                                result := result[2]
-                               ) );
-        else
-            JUPYTER_print( rec(
-                                status := "ok",
-                                result := rec( name := "stdout"
-                                             , text := JUPYTER_ViewString(result[2]))
-                               ) );
-        fi;
-    else
-        JUPYTER_print( rec( status := "error") );
-    fi;
-  else
-      JUPYTER_print( rec( status := "error") );
-  fi;
-end);
-
 # This is still an ugly hack, but its already much better than before!
 BindGlobal("JUPYTER_DotSplash",
 function(dot)

@@ -105,7 +105,7 @@ function(conf)
                                                    data := r[2].data;
                                                else
                                                    # Clean Output Formatting
-                                                   str := ViewString(r[2]);
+                                                   str := JUPYTER_ViewString(r[2]);
                                                    RemoveCharacters(str, "\<\>\n");
                                                    data := rec( text\/plain := str );
                                                fi;

@@ -2,10 +2,10 @@
 
 GAP=`which gap`
 
-if [ x$GAP == x ] ; then
+if [ "x$GAP" == "x" ] ; then
   GAP=$JUPYTER_GAP_EXECUTABLE
 fi
-if [ x$GAP == x ] ; then
+if [ "x$GAP" == "x" ] ; then
   echo "Error: No executable GAP found"
   exit
 fi

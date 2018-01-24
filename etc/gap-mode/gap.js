@@ -1,3 +1,7 @@
+// Codemirror mode for GAP Language
+
+/* global define */
+
 define([
   'codemirror/lib/codemirror',
   'codemirror/addon/mode/simple'
@@ -438,7 +442,11 @@ define([
     'Where', 'WordAlp', 'Wreath', 'WreathProduct', 'WreathProductImprimitiveAction', 'WreathProductOrdering', 'WreathProductProductAction', 'WriteAll',
     'WriteByte', 'WriteGapIniFile', 'WriteLine', 'X', 'Z', 'ZClassRepsQClass', 'Zero', 'ZeroAttr',
     'ZeroCoefficient', 'ZeroCoefficientRatFun', 'ZeroImmutable', 'ZeroMapping', 'ZeroMutable', 'ZeroOp', 'ZeroSameMutability', 'ZeroSM',
-    'Zeta', 'ZippedProduct', 'ZippedSum', 'ZmodnZ', 'ZmodnZObj', 'ZmodpZ', 'ZmodpZNC', 'ZumbroichBase', 'Zuppos']);
+    'Zeta', 'ZippedProduct', 'ZippedSum', 'ZmodnZ', 'ZmodnZObj', 'ZmodpZ', 'ZmodpZNC', 'ZumbroichBase', 'Zuppos',
+    // all francy functions here
+    'Canvas', 'Draw', 'DrawSplash', 'Callback', 'NoopCallback', 'RequiredArg', 'Trigger', 'JUPYTER_ViewString', 'Sanitize', 'MergeObjects', 'GenerateID',
+    'FrancyMessage', 'Chart', 'Dataset', 'DefaultAxis', 'XAxis', 'YAxis', 'Graph', 'UnsetNodes', 'Shape', 'Link', 'Links', 'Menu'
+  ]);
   var keywords = createKeywordRegularExpression(['Assert', 'Info', 'IsBound', 'QUIT', 'TryNextMethod', 'Unbind', 'and',
     'atomic', 'break', 'continue', 'do', 'elif', 'else', 'end', 'false', 'fi', 'for', 'function', 'if', 'in', 'local',
     'mod', 'not', 'od', 'or', 'quit', 'readonly', 'readwrite', 'rec', 'repeat', 'return', 'then', 'true', 'until', 'while']);
@@ -448,7 +456,7 @@ define([
   var literals = /(?:")|(?:')/;
   var numbers = /(?:\d*\.?\d+(?![\w@\\]))/;
   var variables = /(?:\\[(),.]?|[\w@]+)/;
-  var properties = /(?:\+|-|\*|\/|\^|~|!\.|=|<>|<|<=|>|>=|!\[|:=|\.|\.\.|->|,|;|!\{|\[|]|\{|}|\(|\)|:)/;
+  var properties = /(?:\+|-|\*|\/|\^|~|!\.|=|<>|<|<=|>|>=|!\[|:=|\.|\.\.|->|,|;|!{|\[|]|{|}|\(|\)|:)/;
   var indentTokens = /(?:\bfunction\b|\bif\b|\brepeat\b|\bwhile\b)/; // indent next line
   var dedentTokens = /(?:\bend;?\b|\bod;?\b|\bfi;?\b)/; // dedent current line
   var partiallyDedentTokens = /(?:\belse?\b|\belif\b)/; // dedent current line, but keep indent next line
@@ -469,11 +477,11 @@ define([
       {regex: all, token: null}
     ],
     string: [
-      {regex: /(?:[^\\"']|\\.)*?"|(?:[^\\"']|\\.)*?'/, token: 'string', next: 'start'},
+      {regex: /(?:[^]|\\.)*?"|(?:[^]|\\.)*?'/, token: 'string', next: 'start'},
       {regex: /.*/, token: 'string'}
     ],
     string2: [
-      {regex: /(?:[^\\"]|\\.)*?"""/, token: 'string', next: 'start'},
+      {regex: /"""(?:[^]|\\.)*?/, token: 'string', next: 'start'},
       {regex: /.*/, token: 'string'}
     ],
     meta: {lineComment: '#', electricInput: all, dontIndentStates: ['comment']}

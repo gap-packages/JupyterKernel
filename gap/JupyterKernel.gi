@@ -32,7 +32,7 @@ function(conf)
 
     kernel := rec( config := Immutable(conf)
                  , Username := "username"
-                 , ProtocolVersion := "5.0"
+                 , ProtocolVersion := "5.1"
                  , ZmqIdentity := HexStringUUID( RandomUUID() )
                  , SessionKey := conf.key
                  , SessionID := ""

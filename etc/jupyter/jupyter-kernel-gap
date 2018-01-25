@@ -2,15 +2,15 @@
 
 GAP=`which gap`
 
-if [ "x$GAP" == "x" ] ; then
+if [ -z "$GAP" ] ; then
   GAP=$JUPYTER_GAP_EXECUTABLE
 fi
-if [ "x$GAP" == "x" ] ; then
+if [ -z "$GAP" ] ; then
   echo "Error: No executable GAP found"
   exit
 fi
 
-echo "GAP Jupyter Kernel Starting"
+echo "GAP Jupyter Kernel Starting using $GAP"
 $GAP -q -T <<EOF
    LoadPackage("JupyterKernel");
    JUPYTER_KernelStart_GAP("$1");

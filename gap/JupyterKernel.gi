@@ -8,7 +8,7 @@
 
 InstallGlobalFunction( NewJupyterKernel,
 function(conf)
-    local pid, address, kernel, poll, msg;
+    local pid, address, kernel, poll, msg, status;
 
     address := Concatenation(conf.transport, "://", conf.ip, ":");
 
@@ -22,17 +22,23 @@ function(conf)
         kernel := rec();
         kernel.HB := ZmqRouterSocket( Concatenation(address, String(conf.hb_port)) );
         while true do
-            poll := ZmqPoll([ kernel!.HB ], [], 5000);
+            poll := ZmqPoll([ kernel!.HB ], [], 1000);
             if 1 in poll then
                 msg := ZmqReceiveList(kernel!.HB);
                 ZmqSend(kernel!.HB, msg);
+            fi;
+            status := IO_WaitPid(pid, false);
+            if IsRecord(status) then
+                if status.pid = pid and status.status = 15 then
+                    QUIT_GAP(0);
+                fi;
             fi;
         od;
     else
 
     kernel := rec( config := Immutable(conf)
                  , Username := "username"
-                 , ProtocolVersion := "5.1"
+                 , ProtocolVersion := "5.3"
                  , ZmqIdentity := HexStringUUID( RandomUUID() )
                  , SessionKey := conf.key
                  , SessionID := ""
@@ -60,7 +66,7 @@ function(conf)
                                                   , msg.header
                                                   , rec( protocol_version := kernel!.ProtocolVersion
                                                        , implementation := "GAP"
-                                                       , implementation_version := "1.0.0"
+                                                       , implementation_version := "1.1.0"
                                                        , language_info := rec( name := "GAP (native)"
                                                                              , version := GAPInfo.Version
                                                                              , mimetype := "text/x-gap"
@@ -184,11 +190,12 @@ function(conf)
                                end,
 
                                shutdown_request := function(msg)
-                                   return JupyterMsg( kernel
-                                                    , "shutdown_reply"
-                                                    , msg.header
-                                                    , rec( status := "error" ) # Currently not supported
-                                                    , rec() );
+                                   JupyterMsgSend( kernel
+                                                 , "shutdown_reply"
+                                                 , msg.header
+                                                 , rec( status := "ok" )
+                                                 , rec() );
+                                   QUIT_GAP(0);
                                end );
 
     # TODO:

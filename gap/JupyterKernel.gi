@@ -106,7 +106,8 @@ function(conf)
                                        if r[1] = true then
                                            kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
 
-                                           if Length(r) = 2 then
+                                           # r[2] contains the result, r[3] is true if a dual semicolon was parsed
+                                           if IsBound(r[2]) and r[3] = false then
                                                if IsRecord(r[2]) and IsBound(r[2].json) and r[2].json then
                                                    data := r[2].data;
                                                else

@@ -6,6 +6,9 @@
 # TODO:
 #  * InfoLevel and Debug messages
 
+_KERNEL := "";
+
+
 InstallGlobalFunction( NewJupyterKernel,
 function(conf)
     local pid, address, kernel, poll, msg, status;
@@ -303,25 +306,10 @@ function(conf)
         od;
     end;
 
-    # TODO: This is of course very hacky
-    #       The solution I would like to implement involves defining
-    #       *stdout* and *errout* as proper gap stream that can be
-    #       captured. This also almost works and is work in progress
- 
-    # Try redirecting stdout/Print output
-    # This will of course completely muck up any hope of debugging...
-    MakeReadWriteGlobal("Print");
-    UnbindGlobal("Print");
-    BindGlobal("Print", function(args...)
-                  kernel!.StandardOutput(CallFuncList(STRINGIFY, args));
-              end);
-    MakeReadOnlyGlobal("Print");
-
-    MakeReadWriteGlobal("Error");
-    UnbindGlobal("Error");
-    BindGlobal("Error", function(args...)
-                  kernel!.ErrorOutput(CallFuncList(STRINGIFY, args));
-              end);
+    _KERNEL := kernel;
+    # TODO: This is of course still hacky, but better than before
+    kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
+    SET_OUTPUT(kernel!.StdOut, true);
 
     Objectify(GAPJupyterKernelType, kernel);
     return kernel;

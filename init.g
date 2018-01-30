@@ -3,6 +3,8 @@
 #
 # Reading the declaration part of the package.
 #
+ReadPackage( "JupyterKernel", "gap/JupyterStream.gd");
+
 ReadPackage( "JupyterKernel", "gap/JupyterMsg.gd");
 ReadPackage( "JupyterKernel", "gap/JupyterHB.gd");
 ReadPackage( "JupyterKernel", "gap/JupyterKernel.gd");

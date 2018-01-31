@@ -94,7 +94,7 @@ function(conf)
                                end,
 
                                execute_request := function(msg)
-                                   local publ, res, str, r, data;
+                                   local publ, res, str, r, data, metadata;
 
                                    JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                        , "execute_input"
@@ -111,12 +111,21 @@ function(conf)
 
                                            # r[2] contains the result, r[3] is true if a dual semicolon was parsed
                                            if IsBound(r[2]) and r[3] = false then
+                                               # FIXME: Better placeholders/error message?
+                                               metadata := rec( text\/plain := "~empty~" );
+                                               data := rec( text\/plain := "~empty~" );
                                                if IsRecord(r[2]) and IsBound(r[2].json) and r[2].json then
-                                                   data := r[2].data;
+                                                   if IsBound(r[2].metadata) then
+                                                       metadata := r[2].metadata;
+                                                   fi;
+                                                   if IsBound(r[2].data) then
+                                                       data := r[2].data;
+                                                   fi;
                                                else
                                                    # Clean Output Formatting
                                                    str := JUPYTER_ViewString(r[2]);
                                                    RemoveCharacters(str, "\<\>\n");
+                                                   metadata := rec( text\/plain := str );
                                                    data := rec( text\/plain := str );
                                                fi;
 
@@ -128,7 +137,7 @@ function(conf)
                                                                                    , msg.header
                                                                                    , rec( transient := "stdout"
                                                                                         , data := data
-                                                                                        , metadata := rec()
+                                                                                        , metadata := metadata
                                                                                         , execution_count := kernel!.ExecutionCount )
                                                                                    , rec() ) );
                                            fi;

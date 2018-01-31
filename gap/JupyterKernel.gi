@@ -124,9 +124,16 @@ function(conf)
                                                else
                                                    # Clean Output Formatting
                                                    str := JUPYTER_ViewString(r[2]);
-                                                   RemoveCharacters(str, "\<\>\n");
-                                                   metadata := rec( text\/plain := str );
-                                                   data := rec( text\/plain := str );
+                                                   if IsRecord(str) then
+                                                       if IsBound(str.metadata) then
+                                                           metadata := str.metadata;
+                                                       fi;
+                                                       if IsBound(str.data) then
+                                                           data := str.data;
+                                                   else
+                                                       metadata := rec( text\/plain := str );
+                                                       data := rec( text\/plain := str );
+                                                   fi;
                                                fi;
 
                                                # Only send a result message when there is a result

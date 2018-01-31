@@ -9,7 +9,12 @@ fi;
 InstallMethod( JUPYTER_ViewString,
                "default fallback",
                [ IsObject ],
-  ViewString );
+function(obj)
+    local str;
+    str := ViewString(obj);
+    RemoveCharacters(str, "\<\>\n");
+    return str;
+end);
 
 # This is still an ugly hack, but its already much better than before!
 BindGlobal("JUPYTER_DotSplash",

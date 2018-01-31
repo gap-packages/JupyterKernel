@@ -1,15 +1,4 @@
-
 #! @Chapter Jupyter Utility Functions
-#! This chapter gives reference to the functions that are 
-#! invoked by the Jupyter kernel to handle requests from the
-#! jupyter frontend.
-#! 
-#! @Section Handlers for Jupyter requests
-#! @Description
-#!   Method that provides rich viewing experience if
-#!   code used inside Jupyter
-DeclareOperation("JUPYTER_ViewString", [IsObject]);
-
 #! @Description
 #!   Jupyter printing
 DeclareGlobalFunction("JUPYTER_print");

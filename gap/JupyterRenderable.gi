@@ -10,6 +10,10 @@ function(obj)
                          , metadata := rec( text\/plain := "") ) );
 end);
 
+InstallMethod( JupyterRender, "default fallback"
+               , [ IsJupyterRenderableRep ],
+               IdFunc);
+
 InstallMethod( JupyterRenderableData, "for a JupyterRenderable"
                , [  IsJupyterRenderableRep ]
                , x -> x!.data );

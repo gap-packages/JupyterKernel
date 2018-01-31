@@ -1,5 +1,10 @@
+InstallMethod( JupyterRender, [ IsRecord ],
+               r -> Objectify( JupyterRenderableType
+                             , rec( data := rec( text\/plain := String(r) )
+                                   , metadata := rec() ) ) );
+
 # This is still an ugly hack, but its already much better than before!
-BindGlobal("JUPYTER_DotSplash",
+BindGlobal("JupyterSplashDot",
 function(dot)
     local fn, fd, r;
 
@@ -13,14 +18,13 @@ function(dot)
     IO_close(fd);
     IO_unlink(fn);
 
-    return rec( json := true
-              , source := "gap"
-              , data := rec( ("image/svg+xml") := r )
-              , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
+    return Objectify( JupyterRenderableType
+                    , rec( data := rec( ("image/svg+xml") := r )
+                         , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) ) );
 end);
 
 # Splash the subgroup lattice of a group
-BindGlobal("JUPYTER_SubgroupLatticeSplash",
+BindGlobal("JupyterSplashSubgroupLattice",
 function(group)
     local fn, fd, r, L, dot;
 
@@ -34,14 +38,13 @@ function(group)
     IO_close(fd);
     IO_unlink(fn);
 
-    return rec( json := true
-              , source := "gap"
-              , data := rec( ("image/svg+xml") := r)
-              , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
+    return Objectify( JupyterRenderableType
+                    , rec( data := rec( ("image/svg+xml") := r)
+                         , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) ) );
 end);
 
 # To show TikZ in a GAP jupyter notebook
-BindGlobal("JUPYTER_TikZSplash",
+BindGlobal("JupyterSplashTikZ",
 function(tikz)
   local tmpdir, fn, header, ltx, svgfile, stream, svgdata, tojupyter;
 
@@ -92,7 +95,7 @@ function(tikz)
     fi;
   fi;
 
-  return tojupyter;
+  return Objectify( JupyterRenderableType, tojupyter );
 end);
 
 
@@ -115,15 +118,13 @@ HELP_VIEWER_INFO.jupyter_online :=
              for r in GAPInfo.RootPaths do
                  p := ReplacedString(data[3], r, "https://www.gap-system.org/Manuals/");
              od;
-             return rec( json := true
-                       , source := "gap"
-                       , data := rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"", p, "\">", data[2], "</a>") ) );
+             return Objectify( JupyterRenderableType 
+                             , rec( data := rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"", p, "\">", data[2], "</a>") ) ) );
          end
         );
 
 HELP_VIEWER_INFO.jupyter_local :=
-    rec(
-         type := "url",
+    rec( type := "url",
          show := function( data )
              # data[1] is the text preceding the hyperlink (name of the help book),
              # data[2] is the text to be linked, and data[3] is the URL
@@ -134,11 +135,9 @@ HELP_VIEWER_INFO.jupyter_local :=
              for r in GAPInfo.RootPaths do
                  p := ReplacedString(data[3], r, "/");
              od;
-             return rec( json := true
-                       , source := "gap"
-                       , data := rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"files", p, "\">", data[2], "</a>") ) );
-         end
-        );
+             return Objectify( JupyterRenderableType
+                             , rec( data := rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"files", p, "\">", data[2], "</a>") ) ) );
+         end);
 
 DeclareGlobalFunction("GET_HELP_URL");
 
@@ -177,11 +176,10 @@ local book, entrynr, viewer, hv, pos, type, data;
         [ book.bookname, StripEscapeSequences(book.entries[entrynr][1]), data]);
           # name of the help book, the text to be linked, and the URL
     else
-      return rec( json := true
-                  , source := "gap"
-                  , data := rec( ("text/html") := Concatenation(
+        return Objectify( JupyterRenderableType
+                        , rec( data := rec( ("text/html") := Concatenation(
                       book.bookname, ": ", StripEscapeSequences(book.entries[entrynr][1]),
-                     " - no html help available. Please check other formats!" ) ) );
+                     " - no html help available. Please check other formats!" ) ) ) );
     fi;
     HELP_LAST.VIEWER := viewer;
   od;
@@ -231,9 +229,8 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n, res;
       Append(res, GET_HELP_URL(i).data.("text/html"));
       Append(res, "<br/>");
     od;
-    return rec( json := true
-                , source := "gap"
-                , data := rec( ("text/html") := res ) );
+    return Objectify( JupyterRenderableType
+                    , rec( data := rec( ("text/html") := res ) ) );
   fi;
 end);
 

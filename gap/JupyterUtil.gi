@@ -1,11 +1,3 @@
-
-# Compatibility hacks for versions < 4.9.0
-# These will definitely not be necessary since this kernel
-# will only work on 4.9.0
-if ViewString(rec()) = "<object>" then
-    InstallMethod(ViewString, "for a record", true, [IsRecord], 5, String);
-fi;
-
 # This is still an ugly hack, but its already much better than before!
 BindGlobal("JUPYTER_DotSplash",
 function(dot)

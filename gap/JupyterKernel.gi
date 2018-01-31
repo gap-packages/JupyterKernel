@@ -94,7 +94,7 @@ function(conf)
                                end,
 
                                execute_request := function(msg)
-                                   local publ, res, str, r, data, metadata;
+                                   local publ, res, rep, r, str, data, metadata;
 
                                    JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                        , "execute_input"
@@ -111,31 +111,10 @@ function(conf)
 
                                            # r[2] contains the result, r[3] is true if a dual semicolon was parsed
                                            if IsBound(r[2]) and r[3] = false then
-                                               # FIXME: Better placeholders/error message?
-                                               metadata := rec( text\/plain := "~empty~" );
-                                               data := rec( text\/plain := "~empty~" );
-                                               if IsRecord(r[2]) and IsBound(r[2].json) and r[2].json then
-                                                   if IsBound(r[2].metadata) then
-                                                       metadata := r[2].metadata;
-                                                   fi;
-                                                   if IsBound(r[2].data) then
-                                                       data := r[2].data;
-                                                   fi;
-                                               else
-                                                   # Clean Output Formatting
-                                                   str := JUPYTER_ViewString(r[2]);
-                                                   if IsRecord(str) then
-                                                       if IsBound(str.metadata) then
-                                                           metadata := str.metadata;
-                                                       fi;
-                                                       if IsBound(str.data) then
-                                                           data := str.data;
-                                                   else
-                                                       metadata := rec( text\/plain := str );
-                                                       data := rec( text\/plain := str );
-                                                   fi;
-                                               fi;
-
+                                               # FIXME: This is probably doable slightly more nicely
+                                               rep := JupyterRender(r[2]);
+                                               metadata := JupyterRenderableMetadata(rep);
+                                               data := JupyterRenderableData(rep);
                                                # Only send a result message when there is a result
                                                # value
                                                # publ.execution_count := kernel!.ExecutionCount;

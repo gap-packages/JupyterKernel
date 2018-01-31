@@ -12,4 +12,5 @@ ReadPackage( "JupyterKernel", "gap/JupyterUtil.gi");
 ReadPackage( "JupyterKernel", "gap/JupyterHelp.gi");
 ReadPackage( "JupyterKernel", "gap/JupyterCompletion.gi");
 ReadPackage( "JupyterKernel", "gap/JupyterInspection.gi");
+ReadPackage( "JupyterKernel", "gap/JupyterRenderable.gi");
 

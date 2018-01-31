@@ -6,16 +6,6 @@ if ViewString(rec()) = "<object>" then
     InstallMethod(ViewString, "for a record", true, [IsRecord], 5, String);
 fi;
 
-InstallMethod( JUPYTER_ViewString,
-               "default fallback",
-               [ IsObject ],
-function(obj)
-    local str;
-    str := ViewString(obj);
-    RemoveCharacters(str, "\<\>\n");
-    return str;
-end);
-
 # This is still an ugly hack, but its already much better than before!
 BindGlobal("JUPYTER_DotSplash",
 function(dot)

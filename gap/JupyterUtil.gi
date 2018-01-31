@@ -226,11 +226,12 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n, res;
       cnt := cnt+1;
       topic := Concatenation(i[1].bookname,": ",i[1].entries[i[2]][1]);
       Add(HELP_LAST.TOPICS, i);
-      Append(res, GET_HELP_URL(i).data.("text/html"));
+      Append(res, GET_HELP_URL(i)!.data.("text/html"));
       Append(res, "<br/>");
     od;
     return Objectify( JupyterRenderableType
-                    , rec( data := rec( ("text/html") := res ) ) );
+                    , rec( data := rec( ("text/html") := res )
+                         , metadata := rec( ) ) );
   fi;
 end);
 
@@ -361,7 +362,7 @@ InstallGlobalFunction(HELP, function( str )
       return HELP_SHOW_MATCHES( books, str, false);
 
   # search for this topic
-  elif IsRecord( HELP_SHOW_MATCHES( books, str, true ) ) then
+  elif IsJupyterRenderable( HELP_SHOW_MATCHES( books, str, true ) ) then
       return HELP_SHOW_MATCHES( books, str, true );
   elif origstr in NAMES_SYSTEM_GVARS then
       Print( "Help: '", origstr, "' is currently undocumented.\n",

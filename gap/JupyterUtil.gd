@@ -1,4 +1,5 @@
 #! @Chapter Jupyter Utility Functions
+#! @Section Functions
 #! @Description
 #!   Jupyter printing
 DeclareGlobalFunction("JUPYTER_print");

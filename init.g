@@ -3,6 +3,10 @@
 #
 # Reading the declaration part of the package.
 #
+
+# HACK
+ReadPackage( "JupyterKernel", "gap/JupyterError.gi");
+
 ReadPackage( "JupyterKernel", "gap/JupyterStream.gd");
 
 ReadPackage( "JupyterKernel", "gap/JupyterMsg.gd");

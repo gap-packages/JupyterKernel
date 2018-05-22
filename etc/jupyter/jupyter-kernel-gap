@@ -1,9 +1,9 @@
 #!/bin/sh
 
-GAP=`which gap`
+GAP=$JUPYTER_GAP_EXECUTABLE
 
 if [ -z "$GAP" ] ; then
-  GAP=$JUPYTER_GAP_EXECUTABLE
+  GAP=`which gap`
 fi
 if [ -z "$GAP" ] ; then
   echo "Error: No executable GAP found"

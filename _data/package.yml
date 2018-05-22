@@ -1,48 +1,49 @@
-name: GitHubPagesForGAP
-version: 0.2
-date: 2017-02-04
+name: JupyterKernel
+version: 0.11
+date: 2018-05-22
 description: |
-    A GitHub Pages generator for GAP packages
+    Jupyter kernel written in GAP
 
 authors:
-    - name: Max Horn
-      url: http://www.quendi.de/math
-    - name: A. U. Thor
+    - name: Markus Pfeiffer
+      url: https://markusp.morphism.de/
 
 maintainers:
-    - name: Max Horn
-      url: http://www.quendi.de/math
-    - name: Jan Itor
+    - name: Markus Pfeiffer
+      url: https://markusp.morphism.de/
 
-GAP: ">=4.8.1"
+GAP: ">= 4.9"
 
 needed-pkgs:
     - name: "GAPDoc"
-      version: ">= 1.2"
+      version: ">= 1.5"
       url: "http://www.math.rwth-aachen.de/~Frank.Luebeck/GAPDoc"
-    - name: "IO"
-      version: ">= 4.1"
+    - name: "io"
+      version: ">= 4.4.6"
       url: "https://gap-packages.github.io/io"
+    - name: "json"
+      version: ">= 1.1.0"
+      url: "https://gap-packages.github.io/json/"
+    - name: "uuid"
+      version: ">= 0.4"
+      url: "https://gap-packages.github.io/uuid/"
+    - name: "ZeroMQInterface"
+      version: ">= 0.8"
+      url: "https://gap-packages.github.io/ZeroMQInterface/"
+    - name: "crypting"
+      version: ">= 0.7"
+      url: "https://gap-packages.github.io/crypting/"
 
-suggested-pkgs:
-    - name: "orb"
-      version: ">= 4.2"
-      url: "https://gap-packages.github.io/orb"
-
-www: https://gap-system.github.io/GitHubPagesForGAP/
+www: http://gap-packages.github.io/JupyterKernel/
 readme: README.md
-packageinfo: https://gap-system.github.io/GitHubPagesForGAP/PackageInfo.g
-github: https://github.com/gap-system/GitHubPagesForGAP
+packageinfo: http://gap-packages.github.io/JupyterKernel/PackageInfo.g
 
 downloads:
     - name: .tar.gz
-      url: https://github.com/gap-system/GitHubPagesForGAP/releases/download/v0.2/GitHubPagesForGAP-0.2.tar.gz
-    - name: .tar.bz2
-      url: https://github.com/gap-system/GitHubPagesForGAP/releases/download/v0.2/GitHubPagesForGAP-0.2.tar.bz2
+      url: https://github.com/gap-packages/JupyterKernel/releases/download/v0.11/JupyterKernel-0.11.tar.gz
 
 abstract: |
-    This is a pseudo package that contains no actual  <span class="pkgname">GAP</span> code. Instead, it is a template for other  GAP packages that allows to quickly setup GitHub Pages.
 
-status: other
+status: dev
 doc-html: doc/chap0.html
 doc-pdf: doc/manual.pdf

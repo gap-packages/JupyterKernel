@@ -1,0 +1,105 @@
+  
+  [1X1 [33X[0;0YIntroduction[133X[101X
+  
+  
+  [1X1.1 [33X[0;0YGAP Jupyter Kernel[133X[101X
+  
+  [33X[0;0YThis    package    provides    a    so-called   [13Xkernel[113X   for   the   Jupyter
+  ([7Xhttps://jupyter.org[107X)   interactive   document   system.   This   kernel  is
+  implemented in [5XGAP[105X.[133X
+  
+  
+  [1X1.2 [33X[0;0YInstallation[133X[101X
+  
+  [33X[0;0YThis  package requires the [5XGAP[105X packages [5XIO[105X, [5Xuuid[105X, [5XZeroMQInterface[105X, [5Xcrypting[105X,
+  and  [5Xjson[105X,  all of which are distributed with [5XGAP[105X, and some of which require
+  compilation.  [5XJupyterKernel[105X  itself  does  not  contain any kernel code that
+  needs  to  be  compiled. It is necessary to register [5XJupyterKernel[105X with your
+  Jupyter  ([7Xhttps://jupyter.org[107X)  installation.  Registering  the  GAP jupyter
+  kernel system-wide works as follows:[133X
+  
+  [4X[32X  Example  [32X[104X
+    [4X[25X>[125X [27Xpython setup.py install[127X[104X
+  [4X[32X[104X
+  
+  [33X[0;0Yor registering for your user only[133X
+  
+  [4X[32X  Example  [32X[104X
+    [4X[25X>[125X [27Xpython setup.py install --user[127X[104X
+  [4X[32X[104X
+  
+  [33X[0;0YThen  [5XJupyterKernel[105X  should  show  up  in your Jupyter ([7Xhttps://jupyter.org[107X)
+  installation  as "GAP 4 (native)". The addition of the "native" qualifier is
+  to  distinguish  this  kernel  from  the old kernel that wraps a [5XGAP[105X session
+  inside a python script. If [5XGAP[105X is not in your PATH, then you have to set the
+  environment  variable [10XJUPYTER_GAP_EXECUTABLE[110X to point to your GAP executable
+  for  Jupyter ([7Xhttps://jupyter.org[107X) to be able to execute [5XGAP[105X, and the script
+  [10Xjupyter-kernel-gap[110X  that  is  distributed with this package in the directory
+  [10Xetc/jupyter[110X needs to be in your path.[133X
+  
+  
+  [1X1.3 [33X[0;0YHow it works[133X[101X
+  
+  
+  [1X1.3-1 [33X[0;0YKernel Startup[133X[101X
+  
+  [33X[0;0YThis section gives a short explanation how the process of executing [5XGAP[105X as a
+  kernel by Jupyter ([7Xhttps://jupyter.org[107X) works to help with debugging issues.
+  Jupyter  ([7Xhttps://jupyter.org[107X) registers kernels using json files in various
+  directories.  You  can  list  which  kernel  specifications are installed by
+  executing the following command[133X
+  
+  [4X[32X  Example  [32X[104X
+    [4X[28X    > jupyter kernelspec list[128X[104X
+    [4X[28X    Available kernels:[128X[104X
+    [4X[28X    python2        /usr/local/lib/python2.7/site-packages/ipykernel/resources[128X[104X
+    [4X[28X    gap-native     /usr/local/share/jupyter/kernels/gap-native[128X[104X
+    [4X[28X    gap-wrapper    /usr/local/share/jupyter/kernels/gap-wrapper[128X[104X
+    [4X[28X  [128X[104X
+  [4X[32X[104X
+  
+  [33X[0;0YIf  there  is no line containing the [10Xgap-native[110X kernel, something went wrong
+  with [10Xsetup.py[110X. You can try to manually install the file [10Xkernel.json[110X which is
+  in the [10Xetc[110X directory of the [5XJupyterKernel[105X package by copying it. Better yet,
+  you  should  report  this  issue  on the issue tracker giving wich operating
+  system you are using, your version of Jupyter ([7Xhttps://jupyter.org[107X) and [5XGAP[105X,
+  and  which  commands  you  tried  to  execute.  What  happens  when  Jupyter
+  ([7Xhttps://jupyter.org[107X)  wants  to  start  a  [5XGAP[105X  kernel  is that it tries to
+  execute  the  small script [10Xjupyter-kernel-gap[110X (which is distributed with the
+  [5XJupyterKernel[105X  package), which in turn executes [5XGAP[105X, loading the package and
+  then  running  the  kernel.  This  script  currently  has to be in your [10XPATH[110X
+  environment variable, too.[133X
+  
+  
+  [1X1.3-2 [33X[0;0YKernel operation[133X[101X
+  
+  [33X[0;0YThe communication between the Jupyter ([7Xhttps://jupyter.org[107X) frontend and [5XGAP[105X
+  happens      through      ZeroMQ      streams     as     documented     here
+  ([7Xhttp://jupyter-client.readthedocs.io/en/latest/messaging.html[107X),  encoded as
+  [10XJSON[110X  dicts.  After  entering  code  into  a  cell  and  instructing Jupyter
+  ([7Xhttps://jupyter.org[107X)  to  execute that code, the jupyter frontend sends the
+  code  to  the  [5XGAP[105X  session  where  it is executed by using the [5XGAP[105X function
+  [10XREAD_ALL_COMMANDS[110X,  resulting  values  of  the  execution are rendered using
+  [10XViewString[110X  and  sent back to the Jupyter ([7Xhttps://jupyter.org[107X) frontend. In
+  principle,  rich  rendering  of  content,  as  exemplified  in  the function
+  [10XJUPYTER_DotSplash[110X is possible. Tab-completion is handled by the [5XGAP[105X function
+  [10XJUPYTER_completion[110X,  and  inspection is handled by [10XJUPYTER_Inspect[110X. Changing
+  these  functions,  one  can  change  the  behaviour  of  Tab-completion  and
+  inspection to improve user experience.[133X
+  
+  
+  [1X1.4 [33X[0;0YKnown Limitations and Caveats[133X[101X
+  
+  [33X[0;0YCurrently  the support of the [5XGAP[105X system for alternative frontends is a work
+  in  progress.  In particular, certain outputs that are printed by [5XGAP[105X cannot
+  be  captured by the Jupyter ([7Xhttps://jupyter.org[107X) frontend and will not show
+  up.  If you happen to notice problems of this kind, feel free to report them
+  on the issue tracker ([7Xhttps://github.com/gap-packages/JupyterKernel/issues[107X).
+  or suggest a solution via a pull-request.[133X
+  
+  
+  [1X1.5 [33X[0;0YFeedback[133X[101X
+  
+  [33X[0;0YFor  bug  reports,  feature  requests  and suggestions, please use our issue
+  tracker ([7Xhttps://github.com/gap-packages/JupyterKernel/issues[107X).[133X
+  

@@ -1,101 +1,83 @@
-#############################################################################
-##  
-##  Demo PackageInfo.g for the GitHubPagesForGAP
-##
-
+#
+# JupyterKernel: Jupyter kernel written in GAP
+#
+# This file contains package meta data. For additional information on
+# the meaning and correct usage of these fields, please consult the
+# manual of the "Example" package as well as the comments in its
+# PackageInfo.g file.
+#
 SetPackageInfo( rec(
 
-PackageName := "GitHubPagesForGAP",
-
-Subtitle := "A GitHub Pages generator for GAP packages",
-Version := "0.2",
-Date := "04/02/2017", # dd/mm/yyyy format
+PackageName := "JupyterKernel",
+Subtitle := "Jupyter kernel written in GAP",
+Version := "0.11",
+Date := "22/05/2018", # dd/mm/yyyy format
 
 Persons := [
   rec(
-    LastName      := "Horn",
-    FirstNames    := "Max",
-    IsAuthor      := true,
-    IsMaintainer  := true,
-    Email         := "max.horn@math.uni-giessen.de",
-    WWWHome       := "http://www.quendi.de/math",
-    PostalAddress := Concatenation(
-                       "AG Algebra\n",
-                       "Mathematisches Institut\n",
-                       "Justus-Liebig-Universität Gießen\n",
-                       "Arndtstraße 2\n",
-                       "35392 Gießen\n",
-                       "Germany" ),
-    Place         := "Gießen",
-    Institution   := "Justus-Liebig-Universität Gießen"
-  ),
-
-  rec(
-    LastName      := "Thor",
-    FirstNames    := "A. U.",
-    IsAuthor      := true,
-    IsMaintainer  := false,
-    #Email         := "author@example.com",
-  ),
-
-  rec(
-    LastName      := "Itor",
-    FirstNames    := "Jan",
-    IsAuthor      := false,
-    IsMaintainer  := true,
-    #Email         := "janitor@example.com",
+    IsAuthor := true,
+    IsMaintainer := true,
+    FirstNames := "Markus",
+    LastName := "Pfeiffer",
+    WWWHome := "https://markusp.morphism.de/",
+    Email := "markus.pfeiffer@morphism.de",
+    PostalAddress := "School of Computer Science\nNorth Haugh\nSt Andrews\nFife\nKY16 9SX\nScotland",
+    Place := "St Andrews",
+    Institution := "University of St Andrews",
   ),
 ],
 
-Status := "other",
+PackageWWWHome := "http://gap-packages.github.io/JupyterKernel/",
 
-# The following are not strictly necessary in your own PackageInfo.g
-# (in the sense that update.g only looks at the usual fields
-# like PackageWWWHome, ArchiveURL etc.). But they are convenient
-# if you use exactly the scheme for your package website that we propose.
-GithubUser := "gap-system",
-GithubRepository := ~.PackageName,
-GithubWWW := Concatenation("https://github.com/", ~.GithubUser, "/", ~.GithubRepository),
-
-PackageWWWHome := Concatenation("https://", ~.GithubUser, ".github.io/", ~.GithubRepository, "/"),
+ArchiveURL     := Concatenation("https://github.com/gap-packages/JupyterKernel/",
+                                "releases/download/v", ~.Version,
+                                "/JupyterKernel-", ~.Version),
 README_URL     := Concatenation( ~.PackageWWWHome, "README.md" ),
 PackageInfoURL := Concatenation( ~.PackageWWWHome, "PackageInfo.g" ),
-# The following assumes you are using the Github releases system. If not, adjust
-# it accordingly.
-ArchiveURL     := Concatenation(~.GithubWWW,
-                    "/releases/download/v", ~.Version, "/",
-                    ~.GithubRepository, "-", ~.Version),
 
-ArchiveFormats := ".tar.gz .tar.bz2",
+ArchiveFormats := ".tar.gz",
 
-AbstractHTML := 
-  "This is a pseudo package that contains no actual\
-  <span class=\"pkgname\">GAP</span> code. Instead, it is a template for other\
-  GAP packages that allows to quickly setup GitHub Pages.",
+##  Status information. Currently the following cases are recognized:
+##    "accepted"      for successfully refereed packages
+##    "submitted"     for packages submitted for the refereeing
+##    "deposited"     for packages for which the GAP developers agreed
+##                    to distribute them with the core GAP system
+##    "dev"           for development versions of packages
+##    "other"         for all other packages
+##
+Status := "dev",
+
+AbstractHTML   :=  "",
 
 PackageDoc := rec(
-  BookName  := "GitHubPagesForGAP",
+  BookName  := "JupyterKernel",
   ArchiveURLSubset := ["doc"],
   HTMLStart := "doc/chap0.html",
   PDFFile   := "doc/manual.pdf",
   SixFile   := "doc/manual.six",
-  LongTitle := "A GitHub Pages generator for GAP packages",
+  LongTitle := "Jupyter kernel written in GAP",
 ),
 
-# The following dependencies are fake and for testing / demo purposes
 Dependencies := rec(
-  GAP := ">=4.8.1",
-  NeededOtherPackages := [
-    ["GAPDoc", ">= 1.2"],
-    ["IO", ">= 4.1"],
-  ],
-  SuggestedOtherPackages := [["orb", ">= 4.2"]],
-  ExternalConditions := []
+  GAP := ">= 4.9",
+  NeededOtherPackages := [ [ "GAPDoc", ">= 1.5" ]
+                         , [ "io",     ">= 4.4.6" ]
+                         , [ "json",   ">= 1.1.0" ]
+                         , [ "uuid",   ">= 0.4" ]
+                         , [ "ZeroMQInterface", ">= 0.8" ]
+                         , [ "crypting", ">= 0.7"] ],
+
+  SuggestedOtherPackages := [ ],
+  ExternalConditions := [ ],
 ),
 
-AvailabilityTest := ReturnTrue,
+AvailabilityTest := function()
+        return true;
+    end,
 
-Keywords := ["GitHub Pages", "GAP"]
+TestFile := "tst/testall.g",
+
+Keywords := [ "Jupyter", "User Interface" ],
 
 ));
 

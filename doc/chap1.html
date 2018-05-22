@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<title>GAP (JupyterKernel) - Chapter 1: Introduction</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="GAPDoc2HTML" />
+<link rel="stylesheet" type="text/css" href="manual.css" />
+<script src="manual.js" type="text/javascript"></script>
+<script type="text/javascript">overwriteStyle();</script>
+</head>
+<body class="chap1"  onload="jscontent()">
+
+
+<div class="chlinktop"><span class="chlink1">Goto Chapter: </span><a href="chap0.html">Top</a>  <a href="chap1.html">1</a>  <a href="chap2.html">2</a>  <a href="chap3.html">3</a>  <a href="chapInd.html">Ind</a>  </div>
+
+<div class="chlinkprevnexttop">&nbsp;<a href="chap0.html">[Top of Book]</a>&nbsp;  <a href="chap0.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap0.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chap2.html">[Next Chapter]</a>&nbsp;  </div>
+
+<p id="mathjaxlink" class="pcenter"><a href="chap1_mj.html">[MathJax on]</a></p>
+<p><a id="X7DFB63A97E67C0A1" name="X7DFB63A97E67C0A1"></a></p>
+<div class="ChapSects"><a href="chap1.html#X7DFB63A97E67C0A1">1 <span class="Heading">Introduction</span></a>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X82348875878E4655">1.1 <span class="Heading">GAP Jupyter Kernel</span></a>
+</span>
+</div>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X8360C04082558A12">1.2 <span class="Heading">Installation</span></a>
+</span>
+</div>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X7CA9D73583D1D456">1.3 <span class="Heading">How it works</span></a>
+</span>
+<div class="ContSSBlock">
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap1.html#X7860B1A2843D0669">1.3-1 <span class="Heading">Kernel Startup</span></a>
+</span>
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap1.html#X7D1EA960845A43F9">1.3-2 <span class="Heading">Kernel operation</span></a>
+</span>
+</div></div>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X807E00EB7E11BB96">1.4 <span class="Heading">Known Limitations and Caveats</span></a>
+</span>
+</div>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X80D704CC7EBFDF7A">1.5 <span class="Heading">Feedback</span></a>
+</span>
+</div>
+</div>
+
+<h3>1 <span class="Heading">Introduction</span></h3>
+
+<p><a id="X82348875878E4655" name="X82348875878E4655"></a></p>
+
+<h4>1.1 <span class="Heading">GAP Jupyter Kernel</span></h4>
+
+<p>This package provides a so-called <em>kernel</em> for the <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> interactive document system. This kernel is implemented in <strong class="pkg">GAP</strong>.</p>
+
+<p><a id="X8360C04082558A12" name="X8360C04082558A12"></a></p>
+
+<h4>1.2 <span class="Heading">Installation</span></h4>
+
+<p>This package requires the <strong class="pkg">GAP</strong> packages <strong class="pkg">IO</strong>, <strong class="pkg">uuid</strong>, <strong class="pkg">ZeroMQInterface</strong>, <strong class="pkg">crypting</strong>, and <strong class="pkg">json</strong>, all of which are distributed with <strong class="pkg">GAP</strong>, and some of which require compilation. <strong class="pkg">JupyterKernel</strong> itself does not contain any kernel code that needs to be compiled. It is necessary to register <strong class="pkg">JupyterKernel</strong> with your <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> installation. Registering the GAP jupyter kernel system-wide works as follows:</p>
+
+
+<div class="example"><pre>
+<span class="GAPprompt">&gt;</span> <span class="GAPinput">python setup.py install</span>
+</pre></div>
+
+<p>or registering for your user only</p>
+
+
+<div class="example"><pre>
+<span class="GAPprompt">&gt;</span> <span class="GAPinput">python setup.py install --user</span>
+</pre></div>
+
+<p>Then <strong class="pkg">JupyterKernel</strong> should show up in your <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> installation as "GAP 4 (native)". The addition of the "native" qualifier is to distinguish this kernel from the old kernel that wraps a <strong class="pkg">GAP</strong> session inside a python script. If <strong class="pkg">GAP</strong> is not in your PATH, then you have to set the environment variable <code class="code">JUPYTER_GAP_EXECUTABLE</code> to point to your GAP executable for <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> to be able to execute <strong class="pkg">GAP</strong>, and the script <code class="code">jupyter-kernel-gap</code> that is distributed with this package in the directory <code class="code">etc/jupyter</code> needs to be in your path.</p>
+
+<p><a id="X7CA9D73583D1D456" name="X7CA9D73583D1D456"></a></p>
+
+<h4>1.3 <span class="Heading">How it works</span></h4>
+
+<p><a id="X7860B1A2843D0669" name="X7860B1A2843D0669"></a></p>
+
+<h5>1.3-1 <span class="Heading">Kernel Startup</span></h5>
+
+<p>This section gives a short explanation how the process of executing <strong class="pkg">GAP</strong> as a kernel by <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> works to help with debugging issues. <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> registers kernels using json files in various directories. You can list which kernel specifications are installed by executing the following command</p>
+
+
+<div class="example"><pre>
+    &gt; jupyter kernelspec list
+    Available kernels:
+    python2        /usr/local/lib/python2.7/site-packages/ipykernel/resources
+    gap-native     /usr/local/share/jupyter/kernels/gap-native
+    gap-wrapper    /usr/local/share/jupyter/kernels/gap-wrapper
+  </pre></div>
+
+<p>If there is no line containing the <code class="code">gap-native</code> kernel, something went wrong with <code class="code">setup.py</code>. You can try to manually install the file <code class="code">kernel.json</code> which is in the <code class="code">etc</code> directory of the <strong class="pkg">JupyterKernel</strong> package by copying it. Better yet, you should report this issue on the issue tracker giving wich operating system you are using, your version of <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> and <strong class="pkg">GAP</strong>, and which commands you tried to execute. What happens when <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> wants to start a <strong class="pkg">GAP</strong> kernel is that it tries to execute the small script <code class="code">jupyter-kernel-gap</code> (which is distributed with the <strong class="pkg">JupyterKernel</strong> package), which in turn executes <strong class="pkg">GAP</strong>, loading the package and then running the kernel. This script currently has to be in your <code class="code">PATH</code> environment variable, too.</p>
+
+<p><a id="X7D1EA960845A43F9" name="X7D1EA960845A43F9"></a></p>
+
+<h5>1.3-2 <span class="Heading">Kernel operation</span></h5>
+
+<p>The communication between the <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> frontend and <strong class="pkg">GAP</strong> happens through ZeroMQ streams as documented <span class="URL"><a href="http://jupyter-client.readthedocs.io/en/latest/messaging.html">here</a></span>, encoded as <code class="code">JSON</code> dicts. After entering code into a cell and instructing <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> to execute that code, the jupyter frontend sends the code to the <strong class="pkg">GAP</strong> session where it is executed by using the <strong class="pkg">GAP</strong> function <code class="code">READ_ALL_COMMANDS</code>, resulting values of the execution are rendered using <code class="code">ViewString</code> and sent back to the <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> frontend. In principle, rich rendering of content, as exemplified in the function <code class="code">JUPYTER_DotSplash</code> is possible. Tab-completion is handled by the <strong class="pkg">GAP</strong> function <code class="code">JUPYTER_completion</code>, and inspection is handled by <code class="code">JUPYTER_Inspect</code>. Changing these functions, one can change the behaviour of Tab-completion and inspection to improve user experience.</p>
+
+<p><a id="X807E00EB7E11BB96" name="X807E00EB7E11BB96"></a></p>
+
+<h4>1.4 <span class="Heading">Known Limitations and Caveats</span></h4>
+
+<p>Currently the support of the <strong class="pkg">GAP</strong> system for alternative frontends is a work in progress. In particular, certain outputs that are printed by <strong class="pkg">GAP</strong> cannot be captured by the <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> frontend and will not show up. If you happen to notice problems of this kind, feel free to report them on the <span class="URL"><a href="https://github.com/gap-packages/JupyterKernel/issues">issue tracker</a></span>. or suggest a solution via a pull-request.</p>
+
+<p><a id="X80D704CC7EBFDF7A" name="X80D704CC7EBFDF7A"></a></p>
+
+<h4>1.5 <span class="Heading">Feedback</span></h4>
+
+<p>For bug reports, feature requests and suggestions, please use our <span class="URL"><a href="https://github.com/gap-packages/JupyterKernel/issues">issue tracker</a></span>.</p>
+
+
+<div class="chlinkprevnextbot">&nbsp;<a href="chap0.html">[Top of Book]</a>&nbsp;  <a href="chap0.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap0.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chap2.html">[Next Chapter]</a>&nbsp;  </div>
+
+
+<div class="chlinkbot"><span class="chlink1">Goto Chapter: </span><a href="chap0.html">Top</a>  <a href="chap1.html">1</a>  <a href="chap2.html">2</a>  <a href="chap3.html">3</a>  <a href="chapInd.html">Ind</a>  </div>
+
+<hr />
+<p class="foot">generated by <a href="http://www.math.rwth-aachen.de/~Frank.Luebeck/GAPDoc">GAPDoc2HTML</a></p>
+</body>
+</html>

@@ -191,43 +191,9 @@ function(conf)
                                    QUIT_GAP(0);
                                end );
 
-    # TODO:
-    # kernel.StandardOutput := stream
-    # kernel.StandardError := stream
-
     # TODO: Hack. Sends a message to the stderr stream
     #       And is currently used to send captured error
     #       messages
-    kernel.ErrorOutput := function(text)
-        local curmsg;
-        if IsBound(kernel!.CurrentMsg) then
-            curmsg := kernel!.CurrentMsg;
-        else
-            curmsg := rec();
-        fi;
-        JupyterMsgSend( kernel, kernel!.IOPub
-                      , JupyterMsg( kernel
-                                  , "stream"
-                                  , curmsg
-                                  , rec( name := "stderr"
-                                       , text := text )
-                                  , rec() ) );
-    end;
-    kernel.StandardOutput := function(text)
-        local curmsg;
-        if IsBound(kernel!.CurrentMsg) then
-            curmsg := kernel!.CurrentMsg;
-        else
-            curmsg := rec();
-        fi;
-        JupyterMsgSend(kernel, kernel!.IOPub
-                       , JupyterMsg( kernel
-                              , "stream"
-                              , curmsg
-                              , rec( name := "stdout"
-                                   , text := text )
-                              , rec() ) );
-    end;
     kernel.SignalBusy := function()
         JupyterMsgSend( kernel, kernel!.IOPub
                       , JupyterMsg( kernel

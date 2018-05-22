@@ -137,6 +137,8 @@ function(conf)
                                                                                , rec() ) );
                                        fi;
                                    od;
+                                   # Flush StdOut...
+                                   Print("\c");
                                    publ := JupyterMsg( kernel
                                                      , "execute_reply"
                                                      , msg.header
@@ -304,7 +306,7 @@ function(conf)
     _KERNEL := kernel;
     # TODO: This is of course still hacky, but better than before
     kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
-    SET_OUTPUT(kernel!.StdOut, true);
+    OutputLogTo(kernel!.StdOut);
 
     Objectify(GAPJupyterKernelType, kernel);
     return kernel;

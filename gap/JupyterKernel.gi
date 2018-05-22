@@ -127,14 +127,6 @@ function(conf)
                                                                                         , execution_count := kernel!.ExecutionCount )
                                                                                    , rec() ) );
                                            fi;
-                                       else
-                                           # TODO: Better error signalling
-                                           JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
-                                                                               , "stream"
-                                                                               , msg.header
-                                                                               , rec( name := "stderr"
-                                                                                    , text := "An error happened" )
-                                                                               , rec() ) );
                                        fi;
                                    od;
                                    # Flush StdOut...
@@ -306,7 +298,10 @@ function(conf)
     _KERNEL := kernel;
     # TODO: This is of course still hacky, but better than before
     kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
+    kernel!.StdErr := OutputStreamZmq(kernel, kernel!.IOPub, "stderr");
     OutputLogTo(kernel!.StdOut);
+
+    GAP_ERROR_STREAM := kernel!.StdErr;
 
     Objectify(GAPJupyterKernelType, kernel);
     return kernel;

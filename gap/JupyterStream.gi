@@ -6,17 +6,22 @@ OutputStreamZmqType := NewType(
 
 InstallMethod( OutputStreamZmq,
     "output stream to Jupyter ZeroMQ",
-    [ IsObject, IsZmqSocket ],
-function(kernel, socket)
-    local i;
-
+    [ IsObject, IsZmqSocket, IsString ],
+function(kernel, socket, streamname)
     # TODO: more specific, check kernel, connected socket, etc
     if not IsZmqSocket(socket)  then
-        Error( "<socket> must be a socket" );
+        Error( "<socket> must be a IsZmqSocket" );
     fi;
     return Objectify( OutputStreamZmqType
-                    , rec( kernel := kernel, socket := socket, format := false ) );
-end );
+                    , rec( kernel := kernel, socket := socket
+                         , format := false, streamname := streamname ) );
+end);
+
+
+InstallMethod( OutputStreamZmq,
+    "output stream to Jupyter ZeroMQ",
+    [ IsObject, IsZmqSocket ],
+    { kernel, socket } -> OutputStreamZmq(kernel, socket, "stdout" ) );
 
 InstallMethod( ViewString,
     "output stream to Jupyter ZeroMQ",
@@ -43,7 +48,7 @@ function( stream, string )
                   , JupyterMsg( stream!.kernel
                               , "stream"
                               , curmsg
-                              , rec( name := "stdout"
+                              , rec( name := stream!.streamname
                                    , text := string )
                               , rec () ) );
     return true;
@@ -70,7 +75,7 @@ function(stream, byte)
                   , JupyterMsg( stream!.kernel
                               , "stream"
                               , curmsg
-                              , rec( name := "stdout"
+                              , rec( name := stream!.streamname
                                    , text := CharInt(byte) )
                               , rec () ) );
 

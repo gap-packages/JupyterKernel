@@ -191,9 +191,6 @@ function(conf)
                                    QUIT_GAP(0);
                                end );
 
-    # TODO: Hack. Sends a message to the stderr stream
-    #       And is currently used to send captured error
-    #       messages
     kernel.SignalBusy := function()
         JupyterMsgSend( kernel, kernel!.IOPub
                       , JupyterMsg( kernel

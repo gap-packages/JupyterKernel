@@ -1,7 +1,8 @@
 #!/bin/sh
 
-GAP=$JUPYTER_GAP_EXECUTABLE
-
+if [ -z "$GAP" ] ; then
+  GAP=$JUPYTER_GAP_EXECUTABLE
+fi;
 if [ -z "$GAP" ] ; then
   GAP=`which gap`
 fi

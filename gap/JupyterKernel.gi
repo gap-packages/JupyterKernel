@@ -176,7 +176,15 @@ function(conf)
 
                                comm_open := function(msg)
                                    return JupyterMsg( kernel
-                                                    , "is_complete_reply"
+                                                    , "comm_open_reply"
+                                                    , msg.header
+                                                    , rec( status := "ok" )
+                                                    , rec() );
+                               end,
+
+                               comm_info_request := function(msg)
+                                   return JupyterMsg( kernel
+                                                    , "comm_info_reply"
                                                     , msg.header
                                                     , rec( status := "ok" )
                                                     , rec() );

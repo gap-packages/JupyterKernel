@@ -44,7 +44,7 @@ from the old kernel that wraps a &GAP; session inside a python script.
 If &GAP; is not in your PATH, then you have to set the environment variable
 <C>JUPYTER_GAP_EXECUTABLE</C> to point to your GAP executable for &Jupyter; to
 be able to execute &GAP;, and the script <C>jupyter-kernel-gap</C> that is
-distributed with this package in the directory <C>etc/jupyter</C> needs to be in
+distributed with this package in the directory <C>bin/</C> needs to be in
 your path.
 
 </Section>

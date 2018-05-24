@@ -1,11 +1,17 @@
-dist: trusty
 language: c
+sudo: required
+python:
+ - "3.5"
+
 env:
   global:
     - GAPROOT=gaproot
     - COVDIR=coverage
 
 addons:
+  apt:
+   update: true
+
   apt_packages:
     - libgmp-dev
     - libreadline-dev
@@ -13,12 +19,14 @@ addons:
     - libreadline-dev:i386
     - gcc-multilib
     - g++-multilib
-    - libzmq-dev
-    - libzmq-dev:i386
+    - libzmq3-dev
+    - libzmq3-dev:i386
+    - python3
+    - python3-pip
 
 matrix:
   include:
-    - env: CFLAGS="-O2"
+    - env: CFLAGS="-O2" CC=clang CXX=clang++
       compiler: clang
     - env: CFLAGS="-O2"
       compiler: gcc

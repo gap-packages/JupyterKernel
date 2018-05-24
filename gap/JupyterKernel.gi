@@ -121,7 +121,7 @@ function(conf)
                                                JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                                    , "execute_result"
                                                                                    , msg.header
-                                                                                   , rec( transient := "stdout"
+                                                                                   , rec( transient := rec()
                                                                                         , data := data
                                                                                         , metadata := metadata
                                                                                         , execution_count := kernel!.ExecutionCount )

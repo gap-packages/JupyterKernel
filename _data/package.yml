@@ -1,6 +1,6 @@
 name: JupyterKernel
-version: 0.11
-date: 2018-05-22
+version: 0.5
+date: 2018-05-28
 description: |
     Jupyter kernel written in GAP
 
@@ -40,7 +40,7 @@ packageinfo: http://gap-packages.github.io/JupyterKernel/PackageInfo.g
 
 downloads:
     - name: .tar.gz
-      url: https://github.com/gap-packages/JupyterKernel/releases/download/v0.11/JupyterKernel-0.11.tar.gz
+      url: https://github.com/gap-packages/JupyterKernel/releases/download/v0.5/JupyterKernel-0.5.tar.gz
 
 abstract: |
 

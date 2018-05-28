@@ -35,7 +35,7 @@
   environment  variable [10XJUPYTER_GAP_EXECUTABLE[110X to point to your GAP executable
   for  Jupyter ([7Xhttps://jupyter.org[107X) to be able to execute [5XGAP[105X, and the script
   [10Xjupyter-kernel-gap[110X  that  is  distributed with this package in the directory
-  [10Xetc/jupyter[110X needs to be in your path.[133X
+  [10Xbin/[110X needs to be in your path.[133X
   
   
   [1X1.3 [33X[0;0YHow it works[133X[101X

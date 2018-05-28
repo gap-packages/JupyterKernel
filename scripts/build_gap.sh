@@ -30,25 +30,23 @@ make -j4 V=1
 # connection is refused, to work around intermittent failures
 make bootstrap-pkg-full WGET="wget -N --no-check-certificate --tries=5 --waitretry=5 --retry-connrefused"
 
-# build some packages; default is to build 'io' and 'profiling', in order to
-# generate coverage results. If you need to build additional packages (or for
-# some reason need to build a custom version of io or profiling), please set
-# the GAP_PKGS_TO_BUILD environment variable (e.g. in your .travis.yml), or
-# directly call BuildPackages.sh from .travis.yml. For an example of the
-# former, take a look at the cvec package.
 cd pkg
-for pkg in ${GAP_PKGS_TO_BUILD-io profiling ZeroMQInterface json}; do
-    ../bin/BuildPackages.sh --strict $pkg*
-done
+
+rm -rf uuid-* crypting-*
 
 # install latest version of uuid
 git clone https://github.com/gap-packages/uuid
 
 # install latest version of crypting
 git clone https://github.com/gap-packages/crypting
-cd crypting
-./autogen.sh
-./configure $CONFIGFLAGS
-make -j4 V=1
-cd ..
+
+# build some packages; default is to build 'io' and 'profiling', in order to
+# generate coverage results. If you need to build additional packages (or for
+# some reason need to build a custom version of io or profiling), please set
+# the GAP_PKGS_TO_BUILD environment variable (e.g. in your .travis.yml), or
+# directly call BuildPackages.sh from .travis.yml. For an example of the
+# former, take a look at the cvec package.
+for pkg in ${GAP_PKGS_TO_BUILD-io profiling ZeroMQInterface json crypting}; do
+    ../bin/BuildPackages.sh --strict $pkg*
+done
 

@@ -18,9 +18,8 @@ function(dot)
     IO_close(fd);
     IO_unlink(fn);
 
-    return Objectify( JupyterRenderableType
-                    , rec( data := rec( ("image/svg+xml") := r )
-                         , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) ) );
+    return JupyterRenderable( rec( ("image/svg+xml") := r )
+                            , rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
 end);
 
 # Splash the subgroup lattice of a group
@@ -38,9 +37,9 @@ function(group)
     IO_close(fd);
     IO_unlink(fn);
 
-    return Objectify( JupyterRenderableType
-                    , rec( data := rec( ("image/svg+xml") := r)
-                         , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) ) );
+    return JupyterRenderable( rec( ("image/svg+xml") := r )
+                            , rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) ) ;
+    
 end);
 
 # To show TikZ in a GAP jupyter notebook
@@ -90,12 +89,12 @@ function(tikz)
             CloseStream( stream );
         else
             tojupyter := rec( json := true, name := "stdout",
-                            data := Concatenation( "Unable to render ", tikz ) );
+                            data := Concatenation( "Unable to render ", tikz ), metadata := rec() );
         fi;
     fi;
   fi;
 
-  return Objectify( JupyterRenderableType, tojupyter );
+  return JupyterRenderable(tojupyter.data, tojupyter.metadata);
 end);
 
 
@@ -118,8 +117,8 @@ HELP_VIEWER_INFO.jupyter_online :=
              for r in GAPInfo.RootPaths do
                  p := ReplacedString(data[3], r, "https://www.gap-system.org/Manuals/");
              od;
-             return Objectify( JupyterRenderableType 
-                             , rec( data := rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"", p, "\">", data[2], "</a>") ) ) );
+             return JupyterRenderable( rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"", p, "\">", data[2], "</a>") )
+                                     , rec( ) );
          end
         );
 
@@ -135,8 +134,8 @@ HELP_VIEWER_INFO.jupyter_local :=
              for r in GAPInfo.RootPaths do
                  p := ReplacedString(data[3], r, "/");
              od;
-             return Objectify( JupyterRenderableType
-                             , rec( data := rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"files", p, "\">", data[2], "</a>") ) ) );
+             return JupyterRenderable( rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"files", p, "\">", data[2], "</a>") )
+                                     , rec( ) );
          end);
 
 DeclareGlobalFunction("GET_HELP_URL");
@@ -176,10 +175,10 @@ local book, entrynr, viewer, hv, pos, type, data;
         [ book.bookname, StripEscapeSequences(book.entries[entrynr][1]), data]);
           # name of the help book, the text to be linked, and the URL
     else
-        return Objectify( JupyterRenderableType
-                        , rec( data := rec( ("text/html") := Concatenation(
-                      book.bookname, ": ", StripEscapeSequences(book.entries[entrynr][1]),
-                     " - no html help available. Please check other formats!" ) ) ) );
+        return JupyterRenderable( rec( ("text/html") := Concatenation( book.bookname, ": "
+                                                                       , StripEscapeSequences(book.entries[entrynr][1])
+                                                                       , " - no html help available. Please check other formats!" ) )
+                                , rec( ) );
     fi;
     HELP_LAST.VIEWER := viewer;
   od;
@@ -229,9 +228,8 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n, res;
       Append(res, GET_HELP_URL(i)!.data.("text/html"));
       Append(res, "<br/>");
     od;
-    return Objectify( JupyterRenderableType
-                    , rec( data := rec( ("text/html") := res )
-                         , metadata := rec( ) ) );
+    return JupyterRenderable( rec( ("text/html") := res )
+                            , rec( ) );
   fi;
 end);
 

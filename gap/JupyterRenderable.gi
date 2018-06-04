@@ -23,6 +23,12 @@ InstallMethod( JupyterRenderableMetadata, "for a JupyterRenderable"
                , x -> x!.metadata );
 
 InstallMethod( ViewString, "for a JupyterRenderable"
-             , [  IsJupyterRenderableRep ]
-             , x -> "<jupyter renderable>" );
+               , [  IsJupyterRenderableRep ]
+               , x -> "<jupyter renderable>" );
 
+InstallMethod( JupyterRenderable, "for a record and a record"
+               , [ IsObject, IsObject ],
+function(data, metadata)
+    return Objectify( JupyterRenderableType
+                    , rec( data := data, metadata := metadata ) );
+end);

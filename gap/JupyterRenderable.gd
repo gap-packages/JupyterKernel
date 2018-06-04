@@ -6,11 +6,19 @@
 #! at least the components <C>data</C> and <C>metadata</C>.
 #!
 #! These components are themselves GAP records which can contain
-#! different representations of an object to be rendered.
+#! different representations of an object to be rendered. The
+#! record component name is the MIME-Type of the representation
+#! and the content is the representation itself.
 #!
 #! @BeginExample
-#! rec( text\/plain := "Integers",
-#!      text\/html := "$\mathbb{Z}$")
+#! render := JupyterRenderable(
+#!       rec( text\/plain := "Integers",
+#!            text\/html := "$\mathbb{Z}$" )
+#!     , rec( ) );
+#!
+#! render2 := JupyterRenderable(
+#!       rec( ("image/svg+xml") := "<svg></svg>" 
+#!     , rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
 #! @EndExample
 #!
 #! @Section Handlers for Jupyter requests

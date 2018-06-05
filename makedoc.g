@@ -16,6 +16,4 @@ AutoDoc( rec( autodoc := true
                                               , IO := "<Package>IO</Package>"
                                               , ZeroMQInterface := "<Package>ZeroMQInterface</Package>"
                                               ) ) ) );
-PrintTo("VERSION", GAPInfo.PackageInfoCurrent.Version);
-
 QUIT;

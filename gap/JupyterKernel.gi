@@ -105,6 +105,8 @@ function(conf)
                                    str := InputTextString(msg.content.code);
 
                                    res := READ_ALL_COMMANDS(str, false);
+                                   # Flush StdOut...
+                                   Print("\c");
                                    for r in res do
                                        if r[1] = true then
                                            kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
@@ -129,8 +131,6 @@ function(conf)
                                            fi;
                                        fi;
                                    od;
-                                   # Flush StdOut...
-                                   Print("\c");
                                    publ := JupyterMsg( kernel
                                                      , "execute_reply"
                                                      , msg.header

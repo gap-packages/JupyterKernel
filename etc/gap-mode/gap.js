@@ -457,8 +457,8 @@ define([
   var numbers = /(?:\d*\.?\d+(?![\w@\\]))/;
   var variables = /(?:\\[(),.]?|[\w@]+)/;
   var properties = /(?:\+|-|\*|\/|\^|~|!\.|=|<>|<|<=|>|>=|!\[|:=|\.|\.\.|->|,|;|!{|\[|]|{|}|\(|\)|:)/;
-  var indentTokens = /(?:\bfunction\b|\bif\b|\brepeat\b|\bwhile\b)/; // indent next line
-  var dedentTokens = /(?:\bend;?\b|\bod;?\b|\bfi;?\b)/; // dedent current line
+  var indentTokens = /(?:\bfunction\b|\bif\b|\brepeat\b|\bwhile\b|\batomic\b|\bfor\b)/; // indent next line
+  var dedentTokens = /(?:\bod\b|\bend\b|\bfi\b|\buntil\b)/; // dedent current line
   var partiallyDedentTokens = /(?:\belse?\b|\belif\b)/; // dedent current line, but keep indent next line
 
   CodeMirror.defineSimpleMode('gap', {

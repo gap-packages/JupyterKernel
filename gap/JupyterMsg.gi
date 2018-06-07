@@ -89,11 +89,21 @@ InstallGlobalFunction(JupyterMsgRecv,
 function(kernel, sock)
     local raw;
     raw := ZmqReceiveList(sock);
+    if IsBound(kernel!.ProtocolLog) then
+        AppendTo(kernel!.ProtocolLog, raw);
+        AppendTo(kernel!.ProtocolLog, "\n");
+    fi;
     return JupyterMsgDecode(kernel, raw);
 end);
 
 InstallGlobalFunction(JupyterMsgSend,
 function(kernel, sock, msg)
+    local msg2;
+    if IsBound(kernel!.ProtocolLog) then
+        msg2 := JupyterMsgEncode(kernel, msg);
+        AppendTo(kernel!.ProtocolLog, msg2);
+        AppendTo(kernel!.ProtocolLog, "\n");
+    fi;
     ZmqSend(sock, JupyterMsgEncode(kernel, msg));
 end);
 
@@ -119,3 +129,5 @@ function(kernel, msg_type, parent_header, content, metadata)
                              # should just be running in kernel context
               );
 end);
+
+

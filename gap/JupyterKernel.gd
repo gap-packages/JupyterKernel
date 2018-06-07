@@ -1,8 +1,9 @@
-#
-# JupyterKernel: Jupyter kernel using ZeroMQ
-#
-# Declarations
-#
+#! @Chapter Jupyter Kernel
+#!
+#! A <C>Jupyter Kernel</C> is an object that can handles the Jupyter Protocol.
+#!
+#! @Section Functions
+#!
 
 # Default kernel config for experimentation. We'll have to
 # find a way to read this into a gap session.
@@ -17,6 +18,15 @@ BindGlobal( "JupyterDefaultKernelConfig",
        , signature_scheme := "hmac-sha256"
        , key := "" )
     );
+
+#! @Description
+#! Opens a file that is used to log all jupyter protocol
+#! messages.
+#! @Arguments filename
+DeclareGlobalFunction( "JUPYTER_LogProtocol" );
+#! @Description
+#! Closes the protocol log.
+DeclareGlobalFunction( "JUPYTER_UnlogProtocol" );
 
 DeclareGlobalFunction( "JUPYTER_KernelStart_HPC" );
 

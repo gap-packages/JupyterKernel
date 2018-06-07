@@ -6,12 +6,28 @@
 # TODO:
 #  * InfoLevel and Debug messages
 
+# This is a bit ugly: The global variable _KERNEL is assigned to
+# the jupyter kernel object at so that we can use it from everywhere.
 _KERNEL := "";
 
+InstallGlobalFunction( JUPYTER_LogProtocol,
+function(filename)
+    _KERNEL!.ProtocolLog := OutputTextFile(filename, false);
+    SetPrintFormattingStatus(_KERNEL!.ProtocolLog, false);
+end);
+
+InstallGlobalFunction( JUPYTER_UnlogProtocol,
+function()
+    local tmp;
+    # In case `CloseStream` causes messages to be printed
+    tmp := _KERNEL!.ProtocolLog;
+    Unbind(_KERNEL!.ProtocolLog);
+    CloseStream(tmp);
+end);
 
 InstallGlobalFunction( NewJupyterKernel,
 function(conf)
-    local pid, address, kernel, poll, msg, status;
+    local pid, address, kernel, poll, msg, status, pp;
 
     address := Concatenation(conf.transport, "://", conf.ip, ":");
 
@@ -32,6 +48,8 @@ function(conf)
             fi;
             status := IO_WaitPid(pid, false);
             if IsRecord(status) then
+                pp :=  Concatenation(" got ssome signal: ", String(status.status));
+                IO_write(2, pp, Length(pp));
                 if status.pid = pid and status.status = 15 then
                     QUIT_GAP(0);
                 fi;

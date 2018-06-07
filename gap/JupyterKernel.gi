@@ -306,6 +306,7 @@ function(conf)
         # wait for bash on windows to become popular enoug.
         kernel.Loop := function()
             local topoll, poll, i, msg, res;
+            OnBreak := JupyterOnBreak;
 
             topoll := [ kernel!.Shell, kernel!.StdIn ];
             while true do

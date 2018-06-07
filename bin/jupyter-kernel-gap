@@ -7,7 +7,7 @@ elif [ -z "$GAP" ] ; then
 fi
 
 echo "GAP Jupyter Kernel Starting using $GAP"
-exec $GAP -q -T <<EOF
+exec $GAP -q <<EOF
    LoadPackage("JupyterKernel");
    JUPYTER_KernelStart_GAP("$1");
    QUIT_GAP(0);

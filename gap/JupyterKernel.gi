@@ -27,36 +27,9 @@ end);
 
 InstallGlobalFunction( NewJupyterKernel,
 function(conf)
-    local pid, address, kernel, poll, msg, status, pp;
+    local pid, address, kernel, poll, msg, status, res;
 
     address := Concatenation(conf.transport, "://", conf.ip, ":");
-
-    # This should happen in "Run" somehow, as currently the creation
-    # of a Jupyter Kernel breaks the running GAP session, taking
-    # every hope of debugging the kernel
-    pid := IO_fork();
-    if pid = fail then
-        return fail;
-    elif pid > 0 then # we are the parent and do heartbeat
-        kernel := rec();
-        kernel.HB := ZmqRouterSocket( Concatenation(address, String(conf.hb_port)) );
-        while true do
-            poll := ZmqPoll([ kernel!.HB ], [], 1000);
-            if 1 in poll then
-                msg := ZmqReceiveList(kernel!.HB);
-                ZmqSend(kernel!.HB, msg);
-            fi;
-            status := IO_WaitPid(pid, false);
-            if IsRecord(status) then
-                pp :=  Concatenation(" got ssome signal: ", String(status.status));
-                IO_write(2, pp, Length(pp));
-                if status.pid = pid and status.status = 15 then
-                    QUIT_GAP(0);
-                fi;
-            fi;
-        od;
-    else
-
     kernel := rec( config := Immutable(conf)
                  , Username := "username"
                  , ProtocolVersion := "5.3"
@@ -65,20 +38,6 @@ function(conf)
                  , SessionID := ""
                  , ExecutionCount := 0);
 
-    kernel.IOPub   := ZmqPublisherSocket( Concatenation(address, String(conf.iopub_port))
-                                        , kernel.ZmqIdentity);
-    kernel.Control := ZmqRouterSocket( Concatenation(address, String(conf.control_port))
-                                     , kernel.ZmqIdentity);
-    kernel.Shell   := ZmqDealerSocket( Concatenation(address, String(conf.shell_port))
-                                     , kernel.ZmqIdentity);
-    kernel.StdIn   := ZmqRouterSocket( Concatenation(address, String(conf.stdin_port))
-                                     , kernel.ZmqIdentity);
-    # Jupyter Heartbeat is handled by a fork'ed GAP process (yes, really, its better than
-    # starting a separate thread, because it doesn't need special pthread code
-    # downside is that it doesn't work on cygwin, of course, but maybe we could just
-    # ExecuteProcess on windows, or wait for bash on windows to become popular enoug.
-    # kernel.HB      := ZmqRouterSocket( Concatenation(address, String(conf.hb_port))
-    #                                  , kernel.ZmqIdentity);
 
     kernel.MsgHandlers := rec( kernel_info_request := function(msg)
                                  kernel!.SessionID := msg.header.session;
@@ -208,13 +167,24 @@ function(conf)
                                                     , rec() );
                                end,
 
+                               interrupt_request := function(msg)
+                                   # This is SIGINT
+                                   IO_kill(pid, 2);
+                                   return JupyterMsg( kernel
+                                                    , "interrupt_reply"
+                                                    , msg.header
+                                                    , rec( status := "ok" )
+                                                    , rec() );
+
+                               end,
                                shutdown_request := function(msg)
-                                   JupyterMsgSend( kernel
+                                   # HACK
+                                   kernel!.quitting := true;
+                                   return JupyterMsg( kernel
                                                  , "shutdown_reply"
                                                  , msg.header
                                                  , rec( status := "ok" )
                                                  , rec() );
-                                   QUIT_GAP(0);
                                end );
 
     kernel.SignalBusy := function()
@@ -260,41 +230,102 @@ function(conf)
 
     end;
 
-    kernel.Loop := function()
-        local topoll, poll, i, msg, res;
+    kernel.HandleControlMsg := function(msg)
+        local hdl_dict, f, t, reply;
 
-        topoll := [ kernel!.Control, kernel!.Shell, kernel!.StdIn ];
-        # Heartbeat now handled differently
-        # , kernel!.HB ];
-        while true do
-            poll := ZmqPoll(topoll, [], 5000);
-            if 1 in poll then
-                msg := ZmqReceiveList(topoll[1]);
-            fi;
-            if 2 in poll then
-                msg := JupyterMsgRecv(kernel, topoll[2]);
-                res := kernel!.HandleShellMsg(msg);
-                if res = fail then
-                    Print("failed to handle message\n");
-                fi;
-            fi;
-            if 3 in poll then
-                msg := ZmqReceiveList(topoll[3]);
-            fi;
-        od;
+        kernel!.CurrentMsg := msg.header;
+
+        t := msg.header.msg_type;
+        if IsBound(kernel!.MsgHandlers.(t)) then
+            JupyterMsgSend(kernel, kernel!.Control, kernel!.MsgHandlers.(t)(msg) );
+            return true;
+        fi;
+
     end;
 
     _KERNEL := kernel;
-    # TODO: This is of course still hacky, but better than before
-    kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
-    kernel!.StdErr := OutputStreamZmq(kernel, kernel!.IOPub, "stderr");
-    OutputLogTo(kernel!.StdOut);
 
-    GAP_ERROR_STREAM := kernel!.StdErr;
+    # This should happen in "Run" somehow, as currently the creation
+    # of a Jupyter Kernel breaks the running GAP session, taking
+    # every hope of debugging the kernel
+    pid := IO_fork();
+    if pid = fail then
+        return fail;
+    elif pid > 0 then # we are the parent and do heartbeat and control messages
+        kernel.HB := ZmqRouterSocket( Concatenation(address, String(conf.hb_port) ) );
+        kernel.Control := ZmqRouterSocket( Concatenation(address, String(conf.control_port) )
+                                         , kernel!.ZmqIdentity);
+        kernel.quitting := false;
+        kernel.Loop := function()
+            local topoll, poll, i, msg, res;
+            topoll := [ kernel!.HB, kernel!.Control ];
+            while true do
+                poll := ZmqPoll( topoll, [], 5000 );
+                if 1 in poll then
+                    msg := ZmqReceiveList(kernel!.HB);
+                    ZmqSend(kernel!.HB, msg);
+                fi;
+                if 2 in poll then
+                    msg := JupyterMsgRecv(kernel, kernel!.Control);
+                    res := kernel!.HandleControlMsg(msg);
+                    if res = fail then
+                        Print("failed to handle message\n");
+                    fi;
+                fi;
+                if kernel!.quitting then
+                    Print("received restart request, killing child");
+                    IO_kill(pid, 9);
+                fi;
+                # Check whether child has gone away
+                status := IO_WaitPid(pid, false);
+                if IsRecord(status) then
+                    if status.pid = pid and status.status in [ 9, 15 ] then
+                        QUIT_GAP(0);
+                    fi;
+                fi;
+            od;
+        end;
+    else
+        kernel.IOPub   := ZmqPublisherSocket( Concatenation(address, String(conf.iopub_port))
+                                        , kernel!.ZmqIdentity);
+        kernel.Shell   := ZmqDealerSocket( Concatenation(address, String(conf.shell_port))
+                                     , kernel!.ZmqIdentity);
+        kernel.StdIn   := ZmqRouterSocket( Concatenation(address, String(conf.stdin_port))
+                                     , kernel!.ZmqIdentity);
+
+        # TODO: This is of course still hacky, but better than before
+        kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
+        kernel!.StdErr := OutputStreamZmq(kernel, kernel!.IOPub, "stderr");
+        GAP_ERROR_STREAM := kernel!.StdErr;
+        OutputLogTo(kernel!.StdOut);
+
+        # Jupyter Heartbeat and Control channe l is handled by a fork'ed GAP process
+        # (yes, really, its better than starting a separate thread, because it
+        # doesn't need special pthread code downside is that it doesn't work on
+        # cygwin, of course, but maybe we could just ExecuteProcess on windows, or
+        # wait for bash on windows to become popular enoug.
+        kernel.Loop := function()
+            local topoll, poll, i, msg, res;
+
+            topoll := [ kernel!.Shell, kernel!.StdIn ];
+            while true do
+                poll := ZmqPoll(topoll, [], 5000);
+                if 1 in poll then
+                    msg := JupyterMsgRecv(kernel, topoll[1]);
+                    res := kernel!.HandleShellMsg(msg);
+                    if res = fail then
+                        Print("failed to handle message\n");
+                    fi;
+                fi;
+                if 2 in poll then
+                    msg := ZmqReceiveList(topoll[2]);
+                fi;
+            od;
+        end;
+    fi;
 
     Objectify(GAPJupyterKernelType, kernel);
     return kernel;
-    fi;
 end);
 
 InstallMethod( ViewString

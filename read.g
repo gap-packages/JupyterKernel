@@ -3,6 +3,7 @@
 #
 # Reading the implementation part of the package.
 #
+ReadPackage( "JupyterKernel", "gap/JupyterError.gi");
 ReadPackage( "JupyterKernel", "gap/JupyterStream.gi");
 ReadPackage( "JupyterKernel", "gap/JupyterMsg.gi");
 ReadPackage( "JupyterKernel", "gap/JupyterHB.gi");

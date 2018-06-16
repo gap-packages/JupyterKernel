@@ -18,13 +18,12 @@ This kernel is implemented in &GAP;.
 <Section>
 <Heading>Installation</Heading>
 
-This package requires &Jupyter; to be installed on your system.
-On most python installations using
+This package requires &Jupyter; to be installed on your system, which
+on most Python installations can be achieved by issuing the following command.
 <Log>
 > pip install --user notebook
 </Log>
-should install &Jupyter;. Further instructions can be found at 
-<URL>https://jupyter.org/install</URL>. 
+Further instructions can be found at  <URL>https://jupyter.org/install</URL>. 
 This package requires the &GAP; packages &IO;, &uuid;, &ZeroMQInterface;,
 &crypting;, and &json;, all of which are distributed with &GAP;, and some of which
 require compilation.
@@ -56,9 +55,7 @@ To start &Jupyter; run:
 <Log>
 > jupyter notebook
 </Log>
-Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4
-(native)". The addition of the "native" qualifier is to distinguish this kernel
-from the old kernel that wraps a &GAP; session inside a python script.
+Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
 
 </Section>
 
@@ -80,7 +77,6 @@ from the old kernel that wraps a &GAP; session inside a python script.
     Available kernels:
     python2        /usr/local/lib/python2.7/site-packages/ipykernel/resources
     gap-native     /usr/local/share/jupyter/kernels/gap-native
-    gap-wrapper    /usr/local/share/jupyter/kernels/gap-wrapper
   </Log>
 
   If there is no line containing the <C>gap-native</C> kernel, something went

@@ -25,7 +25,7 @@ def install(args):
        user = False
 
     print("Installing jupyter kernel spec")
-    install_kernel_spec('etc/jupyter/', kernel_name='gap-native', user=user)
+    install_kernel_spec('etc/jupyter/', kernel_name='gap-4', user=user)
 
     print("Installing nbextension for syntax hilighting")
     install_nbextension('etc/gap-mode',

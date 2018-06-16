@@ -3,12 +3,14 @@
 #
 # Implementations
 #
-# TODO:
-#  * InfoLevel and Debug messages
 
 # This is a bit ugly: The global variable _KERNEL is assigned to
 # the jupyter kernel object at so that we can use it from everywhere.
 _KERNEL := "";
+
+BindConstant( "JUPYTER_KERNEL_MODE_CONTROL", 1 );
+BindConstant( "JUPYTER_KERNEL_MODE_EXEC", 2 );
+
 
 InstallGlobalFunction( JUPYTER_LogProtocol,
 function(filename)
@@ -168,22 +170,22 @@ function(conf)
                                end,
 
                                interrupt_request := function(msg)
+                                   local status;
                                    # This is SIGINT
-                                   IO_kill(pid, 2);
+                                   status := IO_kill(pid, 2);
                                    return JupyterMsg( kernel
                                                     , "interrupt_reply"
                                                     , msg.header
-                                                    , rec( status := "ok" )
+                                                    , rec()
                                                     , rec() );
 
                                end,
                                shutdown_request := function(msg)
-                                   # HACK
                                    kernel!.quitting := true;
                                    return JupyterMsg( kernel
                                                  , "shutdown_reply"
                                                  , msg.header
-                                                 , rec( status := "ok" )
+                                                 , rec( restart := msg.content.restart )
                                                  , rec() );
                                end );
 
@@ -237,7 +239,9 @@ function(conf)
 
         t := msg.header.msg_type;
         if IsBound(kernel!.MsgHandlers.(t)) then
-            JupyterMsgSend(kernel, kernel!.Control, kernel!.MsgHandlers.(t)(msg) );
+            if t in [ "interrupt_request", "shutdown_request" ] then 
+                JupyterMsgSend(kernel, kernel!.Control, kernel!.MsgHandlers.(t)(msg) );
+            fi;
             return true;
         fi;
 
@@ -252,6 +256,7 @@ function(conf)
     if pid = fail then
         return fail;
     elif pid > 0 then # we are the parent and do heartbeat and control messages
+        kernel.mode := JUPYTER_KERNEL_MODE_CONTROL;
         kernel.HB := ZmqRouterSocket( Concatenation(address, String(conf.hb_port) ) );
         kernel.Control := ZmqRouterSocket( Concatenation(address, String(conf.control_port) )
                                          , kernel!.ZmqIdentity);
@@ -273,25 +278,28 @@ function(conf)
                     fi;
                 fi;
                 if kernel!.quitting then
-                    Print("received restart request, killing child");
-                    IO_kill(pid, 9);
+                    IO_kill(pid, 3);
+                    status := IO_WaitPid(pid, true);
+                    QUIT_GAP(0);
                 fi;
                 # Check whether child has gone away
                 status := IO_WaitPid(pid, false);
                 if IsRecord(status) then
-                    if status.pid = pid and status.status in [ 9, 15 ] then
+                    # TODO find out what these statuses mean
+                    if status.pid = pid and status.status in [ 3, 9, 15, 131 ] then
                         QUIT_GAP(0);
                     fi;
                 fi;
             od;
         end;
     else
-        kernel.IOPub   := ZmqPublisherSocket( Concatenation(address, String(conf.iopub_port))
-                                        , kernel!.ZmqIdentity);
-        kernel.Shell   := ZmqDealerSocket( Concatenation(address, String(conf.shell_port))
-                                     , kernel!.ZmqIdentity);
-        kernel.StdIn   := ZmqRouterSocket( Concatenation(address, String(conf.stdin_port))
-                                     , kernel!.ZmqIdentity);
+        kernel.mode  := JUPYTER_KERNEL_MODE_EXEC; # Handler
+        kernel.IOPub := ZmqPublisherSocket( Concatenation(address, String(conf.iopub_port))
+                                          , kernel!.ZmqIdentity);
+        kernel.Shell := ZmqDealerSocket( Concatenation(address, String(conf.shell_port))
+                                       , kernel!.ZmqIdentity);
+        kernel.StdIn := ZmqRouterSocket( Concatenation(address, String(conf.stdin_port))
+                                       , kernel!.ZmqIdentity);
 
         # TODO: This is of course still hacky, but better than before
         kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
@@ -305,21 +313,26 @@ function(conf)
         # cygwin, of course, but maybe we could just ExecuteProcess on windows, or
         # wait for bash on windows to become popular enoug.
         kernel.Loop := function()
-            local topoll, poll, i, msg, res;
-
-            topoll := [ kernel!.Shell, kernel!.StdIn ];
+            # To catch SIGINT when the kernel is idle
             while true do
-                poll := ZmqPoll(topoll, [], 5000);
-                if 1 in poll then
-                    msg := JupyterMsgRecv(kernel, topoll[1]);
-                    res := kernel!.HandleShellMsg(msg);
-                    if res = fail then
-                        Print("failed to handle message\n");
-                    fi;
-                fi;
-                if 2 in poll then
-                    msg := ZmqReceiveList(topoll[2]);
-                fi;
+                CALL_WITH_CATCH(function()
+                                   local topoll, poll, i, msg, res;
+
+                                   topoll := [ kernel!.Shell, kernel!.StdIn ];
+                                   while true do
+                                       poll := ZmqPoll(topoll, [], 5000);
+                                       if 1 in poll then
+                                           msg := JupyterMsgRecv(kernel, topoll[1]);
+                                           res := kernel!.HandleShellMsg(msg);
+                                           if res = fail then
+                                               Print("failed to handle message\n");
+                                           fi;
+                                       fi;
+                                       if 2 in poll then
+                                           msg := ZmqReceiveList(topoll[2]);
+                                       fi;
+                                   od;
+                               end, []);
             od;
         end;
     fi;
@@ -336,8 +349,7 @@ InstallMethod( ViewString
 InstallMethod( Run
              , "for Jupyter kernel"
              , [ IsGAPJupyterKernel ]
-             , x -> x!.Loop() );
-
+             , x -> x!.Loop());
 
 InstallGlobalFunction( JUPYTER_KernelStart_HPC,
 function(conf)

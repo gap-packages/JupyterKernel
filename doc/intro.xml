@@ -19,8 +19,12 @@ This kernel is implemented in &GAP;.
 <Heading>Installation</Heading>
 
 This package requires &Jupyter; to be installed on your system.
-For installation instructions see
-<URL>https://jupyter.org/install</URL>.
+On most python installations using
+<Log>
+> pip install --user notebook
+</Log>
+should install &Jupyter;. Further instructions can be found at 
+<URL>https://jupyter.org/install</URL>. 
 This package requires the &GAP; packages &IO;, &uuid;, &ZeroMQInterface;,
 &crypting;, and &json;, all of which are distributed with &GAP;, and some of which
 require compilation.

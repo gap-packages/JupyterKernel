@@ -46,17 +46,16 @@ function(conf)
                                                   , msg.header
                                                   , rec( protocol_version := kernel!.ProtocolVersion
                                                        , implementation := "GAP"
-                                                       , implementation_version := "1.1.0"
-                                                       , language_info := rec( name := "GAP (native)"
+                                                       , implementation_version := GAPInfo.PackagesInfo.jupyterkernel[1].Version
+                                                       , language_info := rec( name := "GAP 4"
                                                                              , version := GAPInfo.Version
                                                                              , mimetype := "text/x-gap"
                                                                              , file_extension := ".g"
                                                                              , pygments_lexer := "gap"
                                                                              , codemirror_mode := "gap"
                                                                              , nbconvert_exporter := "" )
-                                                       , banner := Concatenation( "GAP JupterZMQ kernel\n",
-                                                                                  "Running on GAP ", GAPInfo.BuildVersion, "\n",
-                                                                                  "built on       ", GAPInfo.BuildDateTime, "\n" )
+                                                       , banner := Concatenation( "GAP Jupter kernel ", GAPInfo.PackagesInfo.jupyterkernel[1].Version, "\n",
+                                                                                  "Running on GAP ", GAPInfo.BuildVersion, "\n")
                                                        , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
                                                                        , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
                                                                        , rec( text := "GAP tutorial", url := "https://www.gap-system.org/Manuals/doc/chap0.html")

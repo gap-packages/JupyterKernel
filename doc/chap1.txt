@@ -11,12 +11,24 @@
   
   [1X1.2 [33X[0;0YInstallation[133X[101X
   
-  [33X[0;0YThis  package requires the [5XGAP[105X packages [5XIO[105X, [5Xuuid[105X, [5XZeroMQInterface[105X, [5Xcrypting[105X,
-  and  [5Xjson[105X,  all of which are distributed with [5XGAP[105X, and some of which require
-  compilation.  [5XJupyterKernel[105X  itself  does  not  contain any kernel code that
-  needs  to  be  compiled. It is necessary to register [5XJupyterKernel[105X with your
-  Jupyter  ([7Xhttps://jupyter.org[107X)  installation.  Registering  the  GAP jupyter
-  kernel system-wide works as follows:[133X
+  [33X[0;0YThis  package requires Jupyter ([7Xhttps://jupyter.org[107X) to be installed on your
+  system,  which  on  most Python installations can be achieved by issuing the
+  following command.[133X
+  
+  [4X[32X  Example  [32X[104X
+    [4X[25X>[125X [27Xpip install --user notebook[127X[104X
+  [4X[32X[104X
+  
+  [33X[0;0YFurther  instructions  can  be  found  at  [7Xhttps://jupyter.org/install[107X. This
+  package  requires  the [5XGAP[105X packages [5XIO[105X, [5Xuuid[105X, [5XZeroMQInterface[105X, [5Xcrypting[105X, and
+  [5Xjson[105X,  all  of  which  are  distributed  with [5XGAP[105X, and some of which require
+  compilation.   To   compile  [5XZeroMQInterface[105X  you  need  to  install  ZeroMQ
+  ([7Xhttps://zeromq.org[107X), for details please refer to the ZeroMQInterface manual
+  ([7Xhttps://gap-packages.github.io/ZeroMQInterface/doc/chap0.html[107X).
+  [5XJupyterKernel[105X  itself  does  not  contain  any  kernel code that needs to be
+  compiled.  It  is  necessary  to  register  [5XJupyterKernel[105X  with your Jupyter
+  ([7Xhttps://jupyter.org[107X)  installation.  Registering  the  GAP  jupyter  kernel
+  system-wide works as follows:[133X
   
   [4X[32X  Example  [32X[104X
     [4X[25X>[125X [27Xpython setup.py install[127X[104X
@@ -28,14 +40,18 @@
     [4X[25X>[125X [27Xpython setup.py install --user[127X[104X
   [4X[32X[104X
   
-  [33X[0;0YThen  [5XJupyterKernel[105X  should  show  up  in your Jupyter ([7Xhttps://jupyter.org[107X)
-  installation  as "GAP 4 (native)". The addition of the "native" qualifier is
-  to  distinguish  this  kernel  from  the old kernel that wraps a [5XGAP[105X session
-  inside a python script. If [5XGAP[105X is not in your PATH, then you have to set the
-  environment  variable [10XJUPYTER_GAP_EXECUTABLE[110X to point to your GAP executable
-  for  Jupyter ([7Xhttps://jupyter.org[107X) to be able to execute [5XGAP[105X, and the script
+  [33X[0;0YIf  [5XGAP[105X  is  not in your PATH, then you have to set the environment variable
+  [10XJUPYTER_GAP_EXECUTABLE[110X   to   point  to  your  GAP  executable  for  Jupyter
+  ([7Xhttps://jupyter.org[107X)   to   be   able   to  execute  [5XGAP[105X,  and  the  script
   [10Xjupyter-kernel-gap[110X  that  is  distributed with this package in the directory
-  [10Xbin/[110X needs to be in your path.[133X
+  [10Xbin/[110X needs to be in your path. To start Jupyter ([7Xhttps://jupyter.org[107X) run:[133X
+  
+  [4X[32X  Example  [32X[104X
+    [4X[25X>[125X [27Xjupyter notebook[127X[104X
+  [4X[32X[104X
+  
+  [33X[0;0YThen  [5XJupyterKernel[105X  should  show  up  in your Jupyter ([7Xhttps://jupyter.org[107X)
+  installation as "GAP 4".[133X
   
   
   [1X1.3 [33X[0;0YHow it works[133X[101X
@@ -54,7 +70,6 @@
     [4X[28X    Available kernels:[128X[104X
     [4X[28X    python2        /usr/local/lib/python2.7/site-packages/ipykernel/resources[128X[104X
     [4X[28X    gap-native     /usr/local/share/jupyter/kernels/gap-native[128X[104X
-    [4X[28X    gap-wrapper    /usr/local/share/jupyter/kernels/gap-wrapper[128X[104X
     [4X[28X  [128X[104X
   [4X[32X[104X
   

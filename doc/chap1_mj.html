@@ -18,7 +18,7 @@
 <body class="chap1"  onload="jscontent()">
 
 
-<div class="chlinktop"><span class="chlink1">Goto Chapter: </span><a href="chap0_mj.html">Top</a>  <a href="chap1_mj.html">1</a>  <a href="chap2_mj.html">2</a>  <a href="chap3_mj.html">3</a>  <a href="chapInd_mj.html">Ind</a>  </div>
+<div class="chlinktop"><span class="chlink1">Goto Chapter: </span><a href="chap0_mj.html">Top</a>  <a href="chap1_mj.html">1</a>  <a href="chap2_mj.html">2</a>  <a href="chap3_mj.html">3</a>  <a href="chap4_mj.html">4</a>  <a href="chapInd_mj.html">Ind</a>  </div>
 
 <div class="chlinkprevnexttop">&nbsp;<a href="chap0_mj.html">[Top of Book]</a>&nbsp;  <a href="chap0_mj.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap0_mj.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chap2_mj.html">[Next Chapter]</a>&nbsp;  </div>
 
@@ -59,7 +59,14 @@
 
 <h4>1.2 <span class="Heading">Installation</span></h4>
 
-<p>This package requires the <strong class="pkg">GAP</strong> packages <strong class="pkg">IO</strong>, <strong class="pkg">uuid</strong>, <strong class="pkg">ZeroMQInterface</strong>, <strong class="pkg">crypting</strong>, and <strong class="pkg">json</strong>, all of which are distributed with <strong class="pkg">GAP</strong>, and some of which require compilation. <strong class="pkg">JupyterKernel</strong> itself does not contain any kernel code that needs to be compiled. It is necessary to register <strong class="pkg">JupyterKernel</strong> with your <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> installation. Registering the GAP jupyter kernel system-wide works as follows:</p>
+<p>This package requires <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> to be installed on your system, which on most Python installations can be achieved by issuing the following command.</p>
+
+
+<div class="example"><pre>
+<span class="GAPprompt">&gt;</span> <span class="GAPinput">pip install --user notebook</span>
+</pre></div>
+
+<p>Further instructions can be found at <span class="URL"><a href="https://jupyter.org/install">https://jupyter.org/install</a></span>. This package requires the <strong class="pkg">GAP</strong> packages <strong class="pkg">IO</strong>, <strong class="pkg">uuid</strong>, <strong class="pkg">ZeroMQInterface</strong>, <strong class="pkg">crypting</strong>, and <strong class="pkg">json</strong>, all of which are distributed with <strong class="pkg">GAP</strong>, and some of which require compilation. To compile <strong class="pkg">ZeroMQInterface</strong> you need to install <span class="URL"><a href="https://zeromq.org">ZeroMQ</a></span>, for details please refer to the <span class="URL"><a href="https://gap-packages.github.io/ZeroMQInterface/doc/chap0.html">ZeroMQInterface manual</a></span>. <strong class="pkg">JupyterKernel</strong> itself does not contain any kernel code that needs to be compiled. It is necessary to register <strong class="pkg">JupyterKernel</strong> with your <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> installation. Registering the GAP jupyter kernel system-wide works as follows:</p>
 
 
 <div class="example"><pre>
@@ -73,7 +80,14 @@
 <span class="GAPprompt">&gt;</span> <span class="GAPinput">python setup.py install --user</span>
 </pre></div>
 
-<p>Then <strong class="pkg">JupyterKernel</strong> should show up in your <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> installation as "GAP 4 (native)". The addition of the "native" qualifier is to distinguish this kernel from the old kernel that wraps a <strong class="pkg">GAP</strong> session inside a python script. If <strong class="pkg">GAP</strong> is not in your PATH, then you have to set the environment variable <code class="code">JUPYTER_GAP_EXECUTABLE</code> to point to your GAP executable for <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> to be able to execute <strong class="pkg">GAP</strong>, and the script <code class="code">jupyter-kernel-gap</code> that is distributed with this package in the directory <code class="code">bin/</code> needs to be in your path.</p>
+<p>If <strong class="pkg">GAP</strong> is not in your PATH, then you have to set the environment variable <code class="code">JUPYTER_GAP_EXECUTABLE</code> to point to your GAP executable for <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> to be able to execute <strong class="pkg">GAP</strong>, and the script <code class="code">jupyter-kernel-gap</code> that is distributed with this package in the directory <code class="code">bin/</code> needs to be in your path. To start <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> run:</p>
+
+
+<div class="example"><pre>
+<span class="GAPprompt">&gt;</span> <span class="GAPinput">jupyter notebook</span>
+</pre></div>
+
+<p>Then <strong class="pkg">JupyterKernel</strong> should show up in your <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> installation as "GAP 4".</p>
 
 <p><a id="X7CA9D73583D1D456" name="X7CA9D73583D1D456"></a></p>
 
@@ -91,7 +105,6 @@
     Available kernels:
     python2        /usr/local/lib/python2.7/site-packages/ipykernel/resources
     gap-native     /usr/local/share/jupyter/kernels/gap-native
-    gap-wrapper    /usr/local/share/jupyter/kernels/gap-wrapper
   </pre></div>
 
 <p>If there is no line containing the <code class="code">gap-native</code> kernel, something went wrong with <code class="code">setup.py</code>. You can try to manually install the file <code class="code">kernel.json</code> which is in the <code class="code">etc</code> directory of the <strong class="pkg">JupyterKernel</strong> package by copying it. Better yet, you should report this issue on the issue tracker giving wich operating system you are using, your version of <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> and <strong class="pkg">GAP</strong>, and which commands you tried to execute. What happens when <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> wants to start a <strong class="pkg">GAP</strong> kernel is that it tries to execute the small script <code class="code">jupyter-kernel-gap</code> (which is distributed with the <strong class="pkg">JupyterKernel</strong> package), which in turn executes <strong class="pkg">GAP</strong>, loading the package and then running the kernel. This script currently has to be in your <code class="code">PATH</code> environment variable, too.</p>
@@ -118,7 +131,7 @@
 <div class="chlinkprevnextbot">&nbsp;<a href="chap0_mj.html">[Top of Book]</a>&nbsp;  <a href="chap0_mj.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap0_mj.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chap2_mj.html">[Next Chapter]</a>&nbsp;  </div>
 
 
-<div class="chlinkbot"><span class="chlink1">Goto Chapter: </span><a href="chap0_mj.html">Top</a>  <a href="chap1_mj.html">1</a>  <a href="chap2_mj.html">2</a>  <a href="chap3_mj.html">3</a>  <a href="chapInd_mj.html">Ind</a>  </div>
+<div class="chlinkbot"><span class="chlink1">Goto Chapter: </span><a href="chap0_mj.html">Top</a>  <a href="chap1_mj.html">1</a>  <a href="chap2_mj.html">2</a>  <a href="chap3_mj.html">3</a>  <a href="chap4_mj.html">4</a>  <a href="chapInd_mj.html">Ind</a>  </div>
 
 <hr />
 <p class="foot">generated by <a href="http://www.math.rwth-aachen.de/~Frank.Luebeck/GAPDoc">GAPDoc2HTML</a></p>

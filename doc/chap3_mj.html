@@ -8,7 +8,7 @@
 <script type="text/javascript"
   src="http://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
-<title>GAP (JupyterKernel) - Chapter 3: Jupyter Utility Functions</title>
+<title>GAP (JupyterKernel) - Chapter 3: Jupyter Renderables</title>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 <meta name="generator" content="GAPDoc2HTML" />
 <link rel="stylesheet" type="text/css" href="manual.css" />
@@ -18,62 +18,98 @@
 <body class="chap3"  onload="jscontent()">
 
 
-<div class="chlinktop"><span class="chlink1">Goto Chapter: </span><a href="chap0_mj.html">Top</a>  <a href="chap1_mj.html">1</a>  <a href="chap2_mj.html">2</a>  <a href="chap3_mj.html">3</a>  <a href="chapInd_mj.html">Ind</a>  </div>
+<div class="chlinktop"><span class="chlink1">Goto Chapter: </span><a href="chap0_mj.html">Top</a>  <a href="chap1_mj.html">1</a>  <a href="chap2_mj.html">2</a>  <a href="chap3_mj.html">3</a>  <a href="chap4_mj.html">4</a>  <a href="chapInd_mj.html">Ind</a>  </div>
 
-<div class="chlinkprevnexttop">&nbsp;<a href="chap0_mj.html">[Top of Book]</a>&nbsp;  <a href="chap0_mj.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap2_mj.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chapInd_mj.html">[Next Chapter]</a>&nbsp;  </div>
+<div class="chlinkprevnexttop">&nbsp;<a href="chap0_mj.html">[Top of Book]</a>&nbsp;  <a href="chap0_mj.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap2_mj.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chap4_mj.html">[Next Chapter]</a>&nbsp;  </div>
 
 <p id="mathjaxlink" class="pcenter"><a href="chap3.html">[MathJax off]</a></p>
-<p><a id="X80ED738D7DA64DEC" name="X80ED738D7DA64DEC"></a></p>
-<div class="ChapSects"><a href="chap3_mj.html#X80ED738D7DA64DEC">3 <span class="Heading">Jupyter Utility Functions</span></a>
-<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap3_mj.html#X86FA580F8055B274">3.1 <span class="Heading">Functions</span></a>
+<p><a id="X7B0F703B8088315E" name="X7B0F703B8088315E"></a></p>
+<div class="ChapSects"><a href="chap3_mj.html#X7B0F703B8088315E">3 <span class="Heading">Jupyter Renderables</span></a>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap3_mj.html#X7F6071957C3D5851">3.1 <span class="Heading">Handlers for Jupyter requests</span></a>
 </span>
 <div class="ContSSBlock">
-<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap3_mj.html#X794FD43280482D4B">3.1-1 JUPYTER_print</a></span>
-<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap3_mj.html#X837CD06B7D1436B7">3.1-2 JUPYTER_Complete</a></span>
-</div></div>
-<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap3_mj.html#X8246124683C5DDB9">3.2 <span class="Heading">Additional Utility Functions</span></a>
-</span>
-<div class="ContSSBlock">
-<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap3_mj.html#X781D6B4383DBBD20">3.2-1 ISO8601Stamp</a></span>
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap3_mj.html#X83A5A61D817B02E4">3.1-1 IsJupyterRenderable</a></span>
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap3_mj.html#X7DAD7CBB79E32681">3.1-2 </a></span>
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap3_mj.html#X7D00BEBE827BDDC4">3.1-3 JupyterRenderable</a></span>
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap3_mj.html#X83E8AE9D8599699D">3.1-4 JupyterRender</a></span>
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap3_mj.html#X85E6B14E7894CBF3">3.1-5 JupyterRenderableData</a></span>
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap3_mj.html#X7A88DE0F7C1E04ED">3.1-6 JupyterRenderableMetadata</a></span>
 </div></div>
 </div>
 
-<h3>3 <span class="Heading">Jupyter Utility Functions</span></h3>
+<h3>3 <span class="Heading">Jupyter Renderables</span></h3>
 
-<p><a id="X86FA580F8055B274" name="X86FA580F8055B274"></a></p>
+<p>A <code class="code">JupyterRenderable</code> is an object that can be rendered by Jupyter. JupyterRenderables are component object that have to contain at least the components <code class="code">data</code> and <code class="code">metadata</code>.</p>
 
-<h4>3.1 <span class="Heading">Functions</span></h4>
-
-<p><a id="X794FD43280482D4B" name="X794FD43280482D4B"></a></p>
-
-<h5>3.1-1 JUPYTER_print</h5>
-
-<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JUPYTER_print</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;function&nbsp;)</td></tr></table></div>
-<p>Jupyter printing</p>
-
-<p><a id="X837CD06B7D1436B7" name="X837CD06B7D1436B7"></a></p>
-
-<h5>3.1-2 JUPYTER_Complete</h5>
-
-<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JUPYTER_Complete</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;function&nbsp;)</td></tr></table></div>
-<p>This function is called when the user presses Tab in a code cell and produces a list of possible completions. It is passed the current code in the cell, and the curser position inside the code.</p>
-
-<p><a id="X8246124683C5DDB9" name="X8246124683C5DDB9"></a></p>
-
-<h4>3.2 <span class="Heading">Additional Utility Functions</span></h4>
-
-<p><a id="X781D6B4383DBBD20" name="X781D6B4383DBBD20"></a></p>
-
-<h5>3.2-1 ISO8601Stamp</h5>
-
-<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; ISO8601Stamp</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;function&nbsp;)</td></tr></table></div>
-<p>Current date and time as ISO8601 timestamp. Don't trust this function.</p>
+<p>These components are themselves GAP records which can contain different representations of an object to be rendered. The record component name is the MIME-Type of the representation and the content is the representation itself.</p>
 
 
-<div class="chlinkprevnextbot">&nbsp;<a href="chap0_mj.html">[Top of Book]</a>&nbsp;  <a href="chap0_mj.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap2_mj.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chapInd_mj.html">[Next Chapter]</a>&nbsp;  </div>
+<div class="example"><pre>
+render := JupyterRenderable(
+      rec( text\/plain := "Integers",
+           text\/html := "$\mathbb{Z}$" )
+    , rec( ) );
+
+render2 := JupyterRenderable(
+      rec( ("image/svg+xml") := "&lt;svg&gt;&lt;/svg&gt;" 
+    , rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
+</pre></div>
+
+<p><a id="X7F6071957C3D5851" name="X7F6071957C3D5851"></a></p>
+
+<h4>3.1 <span class="Heading">Handlers for Jupyter requests</span></h4>
+
+<p><a id="X83A5A61D817B02E4" name="X83A5A61D817B02E4"></a></p>
+
+<h5>3.1-1 IsJupyterRenderable</h5>
+
+<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; IsJupyterRenderable</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;filter&nbsp;)</td></tr></table></div>
+<p>Returns: <code class="code">true</code> or <code class="code">false</code></p>
+
+<p>JupyterRenderable</p>
+
+<p><a id="X7DAD7CBB79E32681" name="X7DAD7CBB79E32681"></a></p>
+
+<h5>3.1-2 </h5>
+
+<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; </code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;filter&nbsp;)</td></tr></table></div>
+<p>Returns: <code class="code">true</code> or <code class="code">false</code></p>
+
+<p><a id="X7D00BEBE827BDDC4" name="X7D00BEBE827BDDC4"></a></p>
+
+<h5>3.1-3 JupyterRenderable</h5>
+
+<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JupyterRenderable</code>( <var class="Arg">data</var>, <var class="Arg">metadata</var> )</td><td class="tdright">(&nbsp;operation&nbsp;)</td></tr></table></div>
+<p>Returns: A new JupyterRenderable</p>
+
+<p>Basic constructor for JupyterRenderable</p>
+
+<p><a id="X83E8AE9D8599699D" name="X83E8AE9D8599699D"></a></p>
+
+<h5>3.1-4 JupyterRender</h5>
+
+<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JupyterRender</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;operation&nbsp;)</td></tr></table></div>
+<p>Method that provides rich viewing experience if code used inside Jupyter</p>
+
+<p><a id="X85E6B14E7894CBF3" name="X85E6B14E7894CBF3"></a></p>
+
+<h5>3.1-5 JupyterRenderableData</h5>
+
+<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JupyterRenderableData</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;attribute&nbsp;)</td></tr></table></div>
+<p>Accessor for data in a JupypterRenderable</p>
+
+<p><a id="X7A88DE0F7C1E04ED" name="X7A88DE0F7C1E04ED"></a></p>
+
+<h5>3.1-6 JupyterRenderableMetadata</h5>
+
+<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JupyterRenderableMetadata</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;attribute&nbsp;)</td></tr></table></div>
+<p>Accessor for metadata in a JupypterRenderable</p>
 
 
-<div class="chlinkbot"><span class="chlink1">Goto Chapter: </span><a href="chap0_mj.html">Top</a>  <a href="chap1_mj.html">1</a>  <a href="chap2_mj.html">2</a>  <a href="chap3_mj.html">3</a>  <a href="chapInd_mj.html">Ind</a>  </div>
+<div class="chlinkprevnextbot">&nbsp;<a href="chap0_mj.html">[Top of Book]</a>&nbsp;  <a href="chap0_mj.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap2_mj.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chap4_mj.html">[Next Chapter]</a>&nbsp;  </div>
+
+
+<div class="chlinkbot"><span class="chlink1">Goto Chapter: </span><a href="chap0_mj.html">Top</a>  <a href="chap1_mj.html">1</a>  <a href="chap2_mj.html">2</a>  <a href="chap3_mj.html">3</a>  <a href="chap4_mj.html">4</a>  <a href="chapInd_mj.html">Ind</a>  </div>
 
 <hr />
 <p class="foot">generated by <a href="http://www.math.rwth-aachen.de/~Frank.Luebeck/GAPDoc">GAPDoc2HTML</a></p>

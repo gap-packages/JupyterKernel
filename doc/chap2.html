@@ -5,7 +5,7 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-<title>GAP (JupyterKernel) - Chapter 2: Jupyter Renderables</title>
+<title>GAP (JupyterKernel) - Chapter 2: Jupyter Kernel</title>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 <meta name="generator" content="GAPDoc2HTML" />
 <link rel="stylesheet" type="text/css" href="manual.css" />
@@ -15,74 +15,48 @@
 <body class="chap2"  onload="jscontent()">
 
 
-<div class="chlinktop"><span class="chlink1">Goto Chapter: </span><a href="chap0.html">Top</a>  <a href="chap1.html">1</a>  <a href="chap2.html">2</a>  <a href="chap3.html">3</a>  <a href="chapInd.html">Ind</a>  </div>
+<div class="chlinktop"><span class="chlink1">Goto Chapter: </span><a href="chap0.html">Top</a>  <a href="chap1.html">1</a>  <a href="chap2.html">2</a>  <a href="chap3.html">3</a>  <a href="chap4.html">4</a>  <a href="chapInd.html">Ind</a>  </div>
 
 <div class="chlinkprevnexttop">&nbsp;<a href="chap0.html">[Top of Book]</a>&nbsp;  <a href="chap0.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap1.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chap3.html">[Next Chapter]</a>&nbsp;  </div>
 
 <p id="mathjaxlink" class="pcenter"><a href="chap2_mj.html">[MathJax on]</a></p>
-<p><a id="X7B0F703B8088315E" name="X7B0F703B8088315E"></a></p>
-<div class="ChapSects"><a href="chap2.html#X7B0F703B8088315E">2 <span class="Heading">Jupyter Renderables</span></a>
-<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap2.html#X7F6071957C3D5851">2.1 <span class="Heading">Handlers for Jupyter requests</span></a>
+<p><a id="X7ED763777C1CE3F8" name="X7ED763777C1CE3F8"></a></p>
+<div class="ChapSects"><a href="chap2.html#X7ED763777C1CE3F8">2 <span class="Heading">Jupyter Kernel</span></a>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap2.html#X86FA580F8055B274">2.1 <span class="Heading">Functions</span></a>
 </span>
 <div class="ContSSBlock">
-<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap2.html#X83A5A61D817B02E4">2.1-1 IsJupyterRenderable</a></span>
-<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap2.html#X7DAD7CBB79E32681">2.1-2 </a></span>
-<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap2.html#X83E8AE9D8599699D">2.1-3 JupyterRender</a></span>
-<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap2.html#X85E6B14E7894CBF3">2.1-4 JupyterRenderableData</a></span>
-<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap2.html#X7A88DE0F7C1E04ED">2.1-5 JupyterRenderableMetadata</a></span>
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap2.html#X862393AD798C9A34">2.1-1 JUPYTER_LogProtocol</a></span>
+<span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap2.html#X7A6925D17896F3FD">2.1-2 JUPYTER_UnlogProtocol</a></span>
 </div></div>
 </div>
 
-<h3>2 <span class="Heading">Jupyter Renderables</span></h3>
+<h3>2 <span class="Heading">Jupyter Kernel</span></h3>
 
-<p>This chapter gives reference to JupterRenderables</p>
+<p>A <code class="code">Jupyter Kernel</code> is an object that can handles the Jupyter Protocol.</p>
 
-<p><a id="X7F6071957C3D5851" name="X7F6071957C3D5851"></a></p>
+<p><a id="X86FA580F8055B274" name="X86FA580F8055B274"></a></p>
 
-<h4>2.1 <span class="Heading">Handlers for Jupyter requests</span></h4>
+<h4>2.1 <span class="Heading">Functions</span></h4>
 
-<p><a id="X83A5A61D817B02E4" name="X83A5A61D817B02E4"></a></p>
+<p><a id="X862393AD798C9A34" name="X862393AD798C9A34"></a></p>
 
-<h5>2.1-1 IsJupyterRenderable</h5>
+<h5>2.1-1 JUPYTER_LogProtocol</h5>
 
-<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; IsJupyterRenderable</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;filter&nbsp;)</td></tr></table></div>
-<p>Returns: <code class="code">true</code> or <code class="code">false</code></p>
+<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JUPYTER_LogProtocol</code>( <var class="Arg">filename</var> )</td><td class="tdright">(&nbsp;function&nbsp;)</td></tr></table></div>
+<p>Opens a file that is used to log all jupyter protocol messages.</p>
 
-<p>JupyterRenderable</p>
+<p><a id="X7A6925D17896F3FD" name="X7A6925D17896F3FD"></a></p>
 
-<p><a id="X7DAD7CBB79E32681" name="X7DAD7CBB79E32681"></a></p>
+<h5>2.1-2 JUPYTER_UnlogProtocol</h5>
 
-<h5>2.1-2 </h5>
-
-<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; </code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;filter&nbsp;)</td></tr></table></div>
-<p>Returns: <code class="code">true</code> or <code class="code">false</code></p>
-
-<p><a id="X83E8AE9D8599699D" name="X83E8AE9D8599699D"></a></p>
-
-<h5>2.1-3 JupyterRender</h5>
-
-<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JupyterRender</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;operation&nbsp;)</td></tr></table></div>
-<p>Method that provides rich viewing experience if code used inside Jupyter</p>
-
-<p><a id="X85E6B14E7894CBF3" name="X85E6B14E7894CBF3"></a></p>
-
-<h5>2.1-4 JupyterRenderableData</h5>
-
-<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JupyterRenderableData</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;attribute&nbsp;)</td></tr></table></div>
-<p>Accessor for data in a JupypterRenderable</p>
-
-<p><a id="X7A88DE0F7C1E04ED" name="X7A88DE0F7C1E04ED"></a></p>
-
-<h5>2.1-5 JupyterRenderableMetadata</h5>
-
-<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JupyterRenderableMetadata</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;attribute&nbsp;)</td></tr></table></div>
-<p>Accessor for metadata in a JupypterRenderable</p>
+<div class="func"><table class="func" width="100%"><tr><td class="tdleft"><code class="func">&#8227; JUPYTER_UnlogProtocol</code>( <var class="Arg">arg</var> )</td><td class="tdright">(&nbsp;function&nbsp;)</td></tr></table></div>
+<p>Closes the protocol log.</p>
 
 
 <div class="chlinkprevnextbot">&nbsp;<a href="chap0.html">[Top of Book]</a>&nbsp;  <a href="chap0.html#contents">[Contents]</a>&nbsp;  &nbsp;<a href="chap1.html">[Previous Chapter]</a>&nbsp;  &nbsp;<a href="chap3.html">[Next Chapter]</a>&nbsp;  </div>
 
 
-<div class="chlinkbot"><span class="chlink1">Goto Chapter: </span><a href="chap0.html">Top</a>  <a href="chap1.html">1</a>  <a href="chap2.html">2</a>  <a href="chap3.html">3</a>  <a href="chapInd.html">Ind</a>  </div>
+<div class="chlinkbot"><span class="chlink1">Goto Chapter: </span><a href="chap0.html">Top</a>  <a href="chap1.html">1</a>  <a href="chap2.html">2</a>  <a href="chap3.html">3</a>  <a href="chap4.html">4</a>  <a href="chapInd.html">Ind</a>  </div>
 
 <hr />
 <p class="foot">generated by <a href="http://www.math.rwth-aachen.de/~Frank.Luebeck/GAPDoc">GAPDoc2HTML</a></p>

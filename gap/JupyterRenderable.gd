@@ -44,10 +44,10 @@ DeclareOperation("JupyterRenderable", [IsObject, IsObject] );
 DeclareOperation("JupyterRender", [IsObject]);
 
 #! @Description
-#!   Accessor for data in a JupypterRenderable
+#!   Accessor for data in a JupyterRenderable
 DeclareAttribute("JupyterRenderableData", IsJupyterRenderable);
 #! @Description
-#!   Accessor for metadata in a JupypterRenderable
+#!   Accessor for metadata in a JupyterRenderable
 DeclareAttribute("JupyterRenderableMetadata", IsJupyterRenderable);
 
 

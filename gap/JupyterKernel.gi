@@ -56,7 +56,7 @@ function(conf)
                                                                              , pygments_lexer := "gap"
                                                                              , codemirror_mode := "gap"
                                                                              , nbconvert_exporter := "" )
-                                                       , banner := Concatenation( "GAP Jupter kernel ", GAPInfo.PackagesInfo.jupyterkernel[1].Version, "\n",
+                                                       , banner := Concatenation( "GAP Jupyter kernel ", GAPInfo.PackagesInfo.jupyterkernel[1].Version, "\n",
                                                                                   "Running on GAP ", GAPInfo.BuildVersion, "\n")
                                                        , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
                                                                        , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")

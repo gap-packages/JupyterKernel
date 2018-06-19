@@ -348,7 +348,15 @@ InstallMethod( ViewString
 InstallMethod( Run
              , "for Jupyter kernel"
              , [ IsGAPJupyterKernel ]
-             , x -> x!.Loop());
+             , function(x)
+                 SetUserPreference("browse", "SelectHelpMatches", false);
+                 SetUserPreference("Pager", "tail");
+                 SetUserPreference("PagerOptions", "");
+                 # This is of course complete nonsense if you're running the jupyter notebook
+                 # on your local machine.
+                 SetHelpViewer("jupyter_online");
+                 x!.Loop();
+             end);
 
 InstallGlobalFunction( JUPYTER_KernelStart_HPC,
 function(conf)

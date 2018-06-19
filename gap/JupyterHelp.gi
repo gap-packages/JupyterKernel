@@ -277,13 +277,6 @@ InstallGlobalFunction(HELP, function( str )
   fi;
 end);
 
-SetUserPreference("browse", "SelectHelpMatches", false);
-SetUserPreference("Pager", "tail");
-SetUserPreference("PagerOptions", "");
-# This is of course complete nonsense if you're running the jupyter notebook
-# on your local machine.
-SetHelpViewer("jupyter_online");
-
 # Load some help stuff (Experimental)
 _JUPYTER_FindManSection := function(file, name)
     local xml, sections, p, s, res;

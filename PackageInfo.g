@@ -10,8 +10,8 @@ SetPackageInfo( rec(
 
 PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
-Version := "0.999",
-Date := "16/06/2018", # dd/mm/yyyy format
+Version := "0.9999",
+Date := "20/06/2018", # dd/mm/yyyy format
 
 Persons := [
   rec(
@@ -26,6 +26,12 @@ Persons := [
     Institution := "University of St Andrews",
   ),
 ],
+
+SourceRepository := rec(
+    Type := "git",
+    URL := Concatenation( "https://github.com/gap-packages/", ~.PackageName ),
+),
+IssueTrackerURL := Concatenation( ~.SourceRepository.URL, "/issues" ),
 
 PackageWWWHome := "http://gap-packages.github.io/JupyterKernel/",
 
@@ -45,9 +51,9 @@ ArchiveFormats := ".tar.gz",
 ##    "dev"           for development versions of packages
 ##    "other"         for all other packages
 ##
-Status := "dev",
+Status := "deposited",
 
-AbstractHTML   :=  "",
+AbstractHTML := "The <span class=\"pkgname\">JupyterKernel</span> package provides a so-called kernel for the Jupyter interactive document system.",
 
 PackageDoc := rec(
   BookName  := "JupyterKernel",
@@ -68,12 +74,10 @@ Dependencies := rec(
                          , [ "crypting", ">= 0.7"] ],
 
   SuggestedOtherPackages := [ ],
-  ExternalConditions := [ ],
+  ExternalConditions := [ [ "Jupyter", "https://jupyter.org/install" ] ],
 ),
 
-AvailabilityTest := function()
-        return true;
-    end,
+AvailabilityTest := ReturnTrue,
 
 TestFile := "tst/testall.g",
 

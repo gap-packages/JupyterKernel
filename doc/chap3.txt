@@ -53,11 +53,11 @@
   
   [33X[1;0Y[29X[2XJupyterRenderableData[102X( [3Xarg[103X ) [32X attribute[133X
   
-  [33X[0;0YAccessor for data in a JupypterRenderable[133X
+  [33X[0;0YAccessor for data in a JupyterRenderable[133X
   
   [1X3.1-6 JupyterRenderableMetadata[101X
   
   [33X[1;0Y[29X[2XJupyterRenderableMetadata[102X( [3Xarg[103X ) [32X attribute[133X
   
-  [33X[0;0YAccessor for metadata in a JupypterRenderable[133X
+  [33X[0;0YAccessor for metadata in a JupyterRenderable[133X
   

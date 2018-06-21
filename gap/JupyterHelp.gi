@@ -38,8 +38,6 @@ HELP_VIEWER_INFO.jupyter_local :=
                                      , rec( ) );
          end);
 
-DeclareGlobalFunction("GET_HELP_URL");
-
 #############################################################################
 ##
 #F  GET_HELP_URL( <match> ) . . . . . .  print the url for the help section

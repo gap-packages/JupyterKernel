@@ -349,6 +349,15 @@ InstallMethod( Run
              , "for Jupyter kernel"
              , [ IsGAPJupyterKernel ]
              , function(x)
+                 # TODO: we should really not be doing this.
+                 MakeReadWriteGlobal("HELP_SHOW_MATCHES");
+                 UnbindGlobal("HELP_SHOW_MATCHES");
+                 DeclareSynonym("HELP_SHOW_MATCHES", JUPYTER_HELP_SHOW_MATCHES);
+
+                 MakeReadWriteGlobal("HELP");
+                 UnbindGlobal("HELP");
+                 DeclareSynonym("HELP", JUPYTER_HELP);
+
                  SetUserPreference("browse", "SelectHelpMatches", false);
                  SetUserPreference("Pager", "tail");
                  SetUserPreference("PagerOptions", "");

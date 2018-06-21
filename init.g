@@ -8,7 +8,6 @@
 ReadPackage( "JupyterKernel", "gap/JupyterError.gi");
 
 ReadPackage( "JupyterKernel", "gap/JupyterStream.gd");
-
 ReadPackage( "JupyterKernel", "gap/JupyterMsg.gd");
 ReadPackage( "JupyterKernel", "gap/JupyterHB.gd");
 ReadPackage( "JupyterKernel", "gap/JupyterKernel.gd");

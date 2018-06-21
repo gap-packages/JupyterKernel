@@ -88,11 +88,7 @@ local book, entrynr, viewer, hv, pos, type, data;
   return true;
 end);
 
-
-MakeReadWriteGlobal("HELP_SHOW_MATCHES");
-UnbindGlobal("HELP_SHOW_MATCHES");
-DeclareGlobalFunction("HELP_SHOW_MATCHES");
-InstallGlobalFunction(HELP_SHOW_MATCHES, function( books, topic, frombegin )
+InstallGlobalFunction(JUPYTER_HELP_SHOW_MATCHES, function( books, topic, frombegin )
 local   exact,  match,  x,  lines,  cnt,  i,  str,  n, res;
 
   # first get lists of exact and other matches
@@ -133,11 +129,7 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n, res;
   fi;
 end);
 
-
-MakeReadWriteGlobal("HELP");
-UnbindGlobal("HELP");
-DeclareGlobalFunction("HELP");
-InstallGlobalFunction(HELP, function( str )
+InstallGlobalFunction(JUPYTER_HELP, function( str )
   local origstr, nwostr, p, book, books, move, add;
 
   origstr := ShallowCopy(str);
@@ -278,7 +270,8 @@ InstallGlobalFunction(HELP, function( str )
 end);
 
 # Load some help stuff (Experimental)
-_JUPYTER_FindManSection := function(file, name)
+InstallGlobalFunction(JUPYTER_FindManSection,
+function(file, name)
     local xml, sections, p, s, res;
     xml := ParseTreeXMLFile(file);
     CheckAndCleanGapDocTree(xml);
@@ -296,5 +289,5 @@ _JUPYTER_FindManSection := function(file, name)
         fi;
     od;
     return res;
-end;
+end);
 

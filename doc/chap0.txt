@@ -6,10 +6,10 @@
                         [1X Jupyter kernel written in [5XGAP[105X [101X
   
   
-                                     0.9999
+                                    0.99999
   
   
-                                  20 June 2018
+                                  21 June 2018
   
   
                                 Markus Pfeiffer

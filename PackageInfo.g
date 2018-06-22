@@ -33,7 +33,7 @@ SourceRepository := rec(
 ),
 IssueTrackerURL := Concatenation( ~.SourceRepository.URL, "/issues" ),
 
-PackageWWWHome := "http://gap-packages.github.io/JupyterKernel/",
+PackageWWWHome := "https://gap-packages.github.io/JupyterKernel/",
 
 ArchiveURL     := Concatenation("https://github.com/gap-packages/JupyterKernel/",
                                 "releases/download/v", ~.Version,

@@ -65,7 +65,7 @@ PackageDoc := rec(
 ),
 
 Dependencies := rec(
-  GAP := ">= 4.9",
+  GAP := ">= 4.10",
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.5" ]
                          , [ "io",     ">= 4.4.6" ]
                          , [ "json",   ">= 1.1.0" ]

@@ -164,7 +164,7 @@ function(conf)
                                    return JupyterMsg( kernel
                                                     , "comm_info_reply"
                                                     , msg.header
-                                                    , rec( status := "ok" )
+                                                    , rec( comms := rec(), status := "ok" )
                                                     , rec() );
                                end,
 

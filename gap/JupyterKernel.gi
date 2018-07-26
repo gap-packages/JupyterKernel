@@ -82,7 +82,7 @@ function(conf)
                                                                        , rec() ) );
                                    str := InputTextString(msg.content.code);
 
-                                   res := READ_ALL_COMMANDS(str, false);
+                                   res := READ_ALL_COMMANDS(str, false, IdFunc);
                                    # Flush StdOut...
                                    Print("\c");
                                    for r in res do

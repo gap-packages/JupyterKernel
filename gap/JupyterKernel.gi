@@ -82,7 +82,15 @@ function(conf)
                                                                        , rec() ) );
                                    str := InputTextString(msg.content.code);
 
-                                   res := READ_ALL_COMMANDS(str, false, IdFunc);
+                                   # READ_ALL_COMMANDS was changed from 4.10. We make
+                                   # JupyterKernel compatible for the time being (until
+                                   # 4.10 is released at least)
+                                   if CompareVersionNumbers(GAPInfo.Version, "4.10") then
+                                       res := READ_ALL_COMMANDS(str, false, IdFunc);
+                                   else
+                                       res := READ_ALL_COMMANDS(str, false);
+                                   fi;
+
                                    # Flush StdOut...
                                    Print("\c");
                                    for r in res do
@@ -306,7 +314,7 @@ function(conf)
         GAP_ERROR_STREAM := kernel!.StdErr;
         OutputLogTo(kernel!.StdOut);
 
-        # Jupyter Heartbeat and Control channe l is handled by a fork'ed GAP process
+        # Jupyter Heartbeat and Control channel is handled by a fork'ed GAP process
         # (yes, really, its better than starting a separate thread, because it
         # doesn't need special pthread code downside is that it doesn't work on
         # cygwin, of course, but maybe we could just ExecuteProcess on windows, or

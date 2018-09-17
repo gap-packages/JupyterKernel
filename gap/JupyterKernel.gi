@@ -86,7 +86,7 @@ function(conf)
                                    # JupyterKernel compatible for the time being (until
                                    # 4.10 is released at least)
                                    if CompareVersionNumbers(GAPInfo.Version, "4.10") then
-                                       res := READ_ALL_COMMANDS(str, false, IdFunc);
+                                       res := READ_ALL_COMMANDS(str, false, false, IdFunc);
                                    else
                                        res := READ_ALL_COMMANDS(str, false);
                                    fi;

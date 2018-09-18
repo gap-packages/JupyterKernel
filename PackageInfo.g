@@ -10,8 +10,8 @@ SetPackageInfo( rec(
 
 PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
-Version := "0.999999",
-Date := "31/07/2018", # dd/mm/yyyy format
+Version := "0.9999999",
+Date := "18/09/2018", # dd/mm/yyyy format
 
 Persons := [
   rec(
@@ -65,7 +65,7 @@ PackageDoc := rec(
 ),
 
 Dependencies := rec(
-  GAP := ">= 4.9",
+  GAP := ">= 4.10",
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.5" ]
                          , [ "io",     ">= 4.4.6" ]
                          , [ "json",   ">= 1.1.0" ]

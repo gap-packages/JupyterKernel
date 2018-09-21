@@ -311,7 +311,7 @@ function(conf)
         # TODO: This is of course still hacky, but better than before
         kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
         kernel!.StdErr := OutputStreamZmq(kernel, kernel!.IOPub, "stderr");
-        GAP_ERROR_STREAM := kernel!.StdErr;
+        ERROR_OUTPUT := kernel!.StdErr;
         OutputLogTo(kernel!.StdOut);
 
         # Jupyter Heartbeat and Control channel is handled by a fork'ed GAP process

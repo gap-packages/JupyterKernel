@@ -72,7 +72,7 @@ function(conf)
                                end,
 
                                execute_request := function(msg)
-                                   local publ, res, rep, r, str, data, metadata;
+                                   local publ, res, rep, r, str, data, metadata, t;
 
                                    JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                                        , "execute_input"
@@ -85,11 +85,15 @@ function(conf)
                                    # READ_ALL_COMMANDS was changed from 4.10. We make
                                    # JupyterKernel compatible for the time being (until
                                    # 4.10 is released at least)
+                                   t := NanosecondsSinceEpoch();
                                    if CompareVersionNumbers(GAPInfo.Version, "4.10") then
                                        res := READ_ALL_COMMANDS(str, false, false, IdFunc);
                                    else
                                        res := READ_ALL_COMMANDS(str, false);
                                    fi;
+                                   # This is probably supremely naughty; we overwrite GAP's
+                                   # global time variable
+                                   time := QuoInt((NanosecondsSinceEpoch() - t), 1000000);
 
                                    # Flush StdOut...
                                    Print("\c");

@@ -4,7 +4,7 @@
 
 define([
   'base/js/namespace',
-  './gap'
+  'nbextensions/gap-mode/gap'
 ], function () {
   'use strict';
 

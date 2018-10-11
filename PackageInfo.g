@@ -25,6 +25,16 @@ Persons := [
     Place := "St Andrews",
     Institution := "University of St Andrews",
   ),
+  rec(
+    LastName     := "Martins",
+    FirstNames   := "Manuel",
+    IsAuthor     := true,
+    IsMaintainer := false,
+    Email        := "manuelmachadomartins@gmail.com",
+    WWWHome      := "http://github.com/mcmartins",
+    Institution  := "Universidade Aberta",
+    Place        := "Lisbon, PT"
+  ),
 ],
 
 SourceRepository := rec(

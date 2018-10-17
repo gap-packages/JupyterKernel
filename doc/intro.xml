@@ -118,6 +118,14 @@ Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
 </Subsection>
 </Section>
 
+<Section Label="Code Highlighting and Indentation">
+  <Heading>Code Highlighting and Indentation</Heading>
+  
+  &JupyterKernel; provides a &GAP; mode with code highlighting and indentation. 
+  This mode is installed as a notebook extension and registers 'text/x-gap' as 
+  a MIME type.
+
+</Section>
 
 <Section Label="Known Limitations and Caveats">
   <Heading>Known Limitations and Caveats</Heading>

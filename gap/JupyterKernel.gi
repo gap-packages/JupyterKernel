@@ -315,7 +315,10 @@ function(conf)
         # TODO: This is of course still hacky, but better than before
         kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
         kernel!.StdErr := OutputStreamZmq(kernel, kernel!.IOPub, "stderr");
+        # TODO: Hack to be able to change ERROR_OUTPUT.
+        MakeReadWriteGlobal("ERROR_OUTPUT");
         ERROR_OUTPUT := kernel!.StdErr;
+        MakeReadOnlyGlobal("ERROR_OUTPUT");
         OutputLogTo(kernel!.StdOut);
 
         # Jupyter Heartbeat and Control channel is handled by a fork'ed GAP process

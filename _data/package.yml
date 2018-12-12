@@ -1,16 +1,18 @@
 name: JupyterKernel
-version: 1.0
-date: 2018-10-05
+version: 1.1
+date: 2018-12-12
 description: |
     Jupyter kernel written in GAP
 
 authors:
     - name: Markus Pfeiffer
       url: https://markusp.morphism.de/
+    - name: Manuel Martins
+      url: http://github.com/mcmartins
 
 maintainers:
-    - name: Markus Pfeiffer
-      url: https://markusp.morphism.de/
+    - name: The GAP Team
+      url: mailto:support@gap-system.org
 
 GAP: ">= 4.10"
 
@@ -40,7 +42,7 @@ packageinfo: https://gap-packages.github.io/JupyterKernel/PackageInfo.g
 
 downloads:
     - name: .tar.gz
-      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.0/JupyterKernel-1.0.tar.gz
+      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.1/JupyterKernel-1.1.tar.gz
 
 abstract: |
     The <span class="pkgname">JupyterKernel</span> package provides a so-called kernel for the Jupyter interactive document system.
@@ -52,9 +54,9 @@ keywords: |
     Jupyter, User Interface.
 citeas: |
     <p class='BibEntry'>
-    [<span class='BibKey'>Pfe18</span>]   <b class='BibAuthor'>Pfeiffer, M.</b>,
+    [<span class='BibKey'>PMT18</span>]   <b class='BibAuthor'>Pfeiffer, M., Martins, M. and GAP Team, T.</b>,
      <i class='BibTitle'>JupyterKernel, Jupyter kernel written in GAP,
-             Version 1.0</i>
+             Version 1.1</i>
      (<span class='BibYear'>2018</span>)<br />
     (<span class='BibNote'>GAP package</span>),
     <span class='BibHowpublished'><a href="https://gap-packages.github.io/JupyterKernel/">https://gap-packages.github.io/JupyterKernel/</a></span>.
@@ -62,15 +64,17 @@ citeas: |
     
 
 bibtex: |
-    @misc{ JupyterKernel1.0,
-      author =           {Pfeiffer, M.},
-      title =            {{JupyterKernel}, Jupyter kernel written in GAP, {V}ersion 1.0},
-      month =            {Oct},
+    @misc{ JupyterKernel1.1,
+      author =           {Pfeiffer, M. and Martins, M. and GAP Team, T.},
+      title =            {{JupyterKernel},   Jupyter   kernel  written  in  GAP,
+                          {V}ersion 1.1},
+      month =            {Dec},
       year =             {2018},
       note =             {GAP package},
-      howpublished =     {\href             {https://gap-packages.github.io/JupyterKernel/}             {\texttt{https://gap-packages.github.io/}\discretionary
+      howpublished =     {\href  {https://gap-packages.github.io/JupyterKernel/}
+                          {\texttt{https://gap-packages.github.io/}\discretionary
                           {}{}{}\texttt{JupyterKernel/}}},
       keywords =         {Jupyter; User Interface},
-      printedkey =       {Pfe18}
+      printedkey =       {PMT18}
     }
 

@@ -103,7 +103,14 @@
   inspection to improve user experience.[133X
   
   
-  [1X1.4 [33X[0;0YKnown Limitations and Caveats[133X[101X
+  [1X1.4 [33X[0;0YCode Highlighting and Indentation[133X[101X
+  
+  [33X[0;0Y[5XJupyterKernel[105X  provides  a  [5XGAP[105X mode with code highlighting and indentation.
+  This mode is installed as a notebook extension and registers 'text/x-gap' as
+  a MIME type.[133X
+  
+  
+  [1X1.5 [33X[0;0YKnown Limitations and Caveats[133X[101X
   
   [33X[0;0YCurrently  the support of the [5XGAP[105X system for alternative frontends is a work
   in  progress.  In particular, certain outputs that are printed by [5XGAP[105X cannot
@@ -113,7 +120,7 @@
   or suggest a solution via a pull-request.[133X
   
   
-  [1X1.5 [33X[0;0YFeedback[133X[101X
+  [1X1.6 [33X[0;0YFeedback[133X[101X
   
   [33X[0;0YFor  bug  reports,  feature  requests  and suggestions, please use our issue
   tracker ([7Xhttps://github.com/gap-packages/JupyterKernel/issues[107X).[133X

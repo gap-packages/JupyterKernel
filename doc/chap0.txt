@@ -6,13 +6,17 @@
                         [1X Jupyter kernel written in [5XGAP[105X [101X
   
   
-                                      1.0
+                                      1.1
   
   
-                                 5 October 2018
+                                12 December 2018
   
   
                                 Markus Pfeiffer
+  
+                                 Manuel Martins
+  
+                                  The GAP Team
   
   
   
@@ -27,6 +31,11 @@
                 [33X[0;14YScotland[133X
   
   
+  Manuel Martins
+      Email:    [7Xmailto:manuelmachadomartins@gmail.com[107X
+      Homepage: [7Xhttp://github.com/mcmartins[107X
+  The GAP Team
+      Email:    [7Xmailto:support@gap-system.org[107X
   
   -------------------------------------------------------
   
@@ -39,8 +48,9 @@
     1.3 [33X[0;0YHow it works[133X
       1.3-1 [33X[0;0YKernel Startup[133X
       1.3-2 [33X[0;0YKernel operation[133X
-    1.4 [33X[0;0YKnown Limitations and Caveats[133X
-    1.5 [33X[0;0YFeedback[133X
+    1.4 [33X[0;0YCode Highlighting and Indentation[133X
+    1.5 [33X[0;0YKnown Limitations and Caveats[133X
+    1.6 [33X[0;0YFeedback[133X
   2 [33X[0;0YJupyter Kernel[133X
     2.1 [33X[0;0YFunctions[133X
       2.1-1 JUPYTER_LogProtocol

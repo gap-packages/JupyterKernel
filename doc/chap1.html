@@ -36,10 +36,13 @@
 <span class="ContSS"><br /><span class="nocss">&nbsp;&nbsp;</span><a href="chap1.html#X7D1EA960845A43F9">1.3-2 <span class="Heading">Kernel operation</span></a>
 </span>
 </div></div>
-<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X807E00EB7E11BB96">1.4 <span class="Heading">Known Limitations and Caveats</span></a>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X7834C0B58042E66F">1.4 <span class="Heading">Code Highlighting and Indentation</span></a>
 </span>
 </div>
-<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X80D704CC7EBFDF7A">1.5 <span class="Heading">Feedback</span></a>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X807E00EB7E11BB96">1.5 <span class="Heading">Known Limitations and Caveats</span></a>
+</span>
+</div>
+<div class="ContSect"><span class="tocline"><span class="nocss">&nbsp;</span><a href="chap1.html#X80D704CC7EBFDF7A">1.6 <span class="Heading">Feedback</span></a>
 </span>
 </div>
 </div>
@@ -112,15 +115,21 @@
 
 <p>The communication between the <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> frontend and <strong class="pkg">GAP</strong> happens through ZeroMQ streams as documented <span class="URL"><a href="http://jupyter-client.readthedocs.io/en/latest/messaging.html">here</a></span>, encoded as <code class="code">JSON</code> dicts. After entering code into a cell and instructing <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> to execute that code, the jupyter frontend sends the code to the <strong class="pkg">GAP</strong> session where it is executed by using the <strong class="pkg">GAP</strong> function <code class="code">READ_ALL_COMMANDS</code>, resulting values of the execution are rendered using <code class="code">ViewString</code> and sent back to the <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> frontend. In principle, rich rendering of content, as exemplified in the function <code class="code">JUPYTER_DotSplash</code> is possible. Tab-completion is handled by the <strong class="pkg">GAP</strong> function <code class="code">JUPYTER_completion</code>, and inspection is handled by <code class="code">JUPYTER_Inspect</code>. Changing these functions, one can change the behaviour of Tab-completion and inspection to improve user experience.</p>
 
+<p><a id="X7834C0B58042E66F" name="X7834C0B58042E66F"></a></p>
+
+<h4>1.4 <span class="Heading">Code Highlighting and Indentation</span></h4>
+
+<p><strong class="pkg">JupyterKernel</strong> provides a <strong class="pkg">GAP</strong> mode with code highlighting and indentation. This mode is installed as a notebook extension and registers 'text/x-gap' as a MIME type.</p>
+
 <p><a id="X807E00EB7E11BB96" name="X807E00EB7E11BB96"></a></p>
 
-<h4>1.4 <span class="Heading">Known Limitations and Caveats</span></h4>
+<h4>1.5 <span class="Heading">Known Limitations and Caveats</span></h4>
 
 <p>Currently the support of the <strong class="pkg">GAP</strong> system for alternative frontends is a work in progress. In particular, certain outputs that are printed by <strong class="pkg">GAP</strong> cannot be captured by the <span class="URL"><a href="https://jupyter.org">Jupyter</a></span> frontend and will not show up. If you happen to notice problems of this kind, feel free to report them on the <span class="URL"><a href="https://github.com/gap-packages/JupyterKernel/issues">issue tracker</a></span>. or suggest a solution via a pull-request.</p>
 
 <p><a id="X80D704CC7EBFDF7A" name="X80D704CC7EBFDF7A"></a></p>
 
-<h4>1.5 <span class="Heading">Feedback</span></h4>
+<h4>1.6 <span class="Heading">Feedback</span></h4>
 
 <p>For bug reports, feature requests and suggestions, please use our <span class="URL"><a href="https://github.com/gap-packages/JupyterKernel/issues">issue tracker</a></span>.</p>
 

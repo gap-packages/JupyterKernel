@@ -10,13 +10,13 @@ SetPackageInfo( rec(
 
 PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
-Version := "1.0",
-Date := "05/10/2018", # dd/mm/yyyy format
+Version := "1.1",
+Date := "12/12/2018", # dd/mm/yyyy format
 
 Persons := [
   rec(
     IsAuthor := true,
-    IsMaintainer := true,
+    IsMaintainer := false,
     FirstNames := "Markus",
     LastName := "Pfeiffer",
     WWWHome := "https://markusp.morphism.de/",
@@ -34,6 +34,13 @@ Persons := [
     WWWHome      := "http://github.com/mcmartins",
     Institution  := "Universidade Aberta",
     Place        := "Lisbon, PT"
+  ),
+  rec(
+    LastName      := "GAP Team",
+    FirstNames    := "The",
+    IsAuthor      := false,
+    IsMaintainer  := true,
+    Email         := "support@gap-system.org",
   ),
 ],
 

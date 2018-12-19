@@ -76,10 +76,10 @@ Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
     > jupyter kernelspec list
     Available kernels:
     python2        /usr/local/lib/python2.7/site-packages/ipykernel/resources
-    gap-native     /usr/local/share/jupyter/kernels/gap-native
+    gap-4          /usr/local/share/jupyter/kernels/gap-4
   </Log>
 
-  If there is no line containing the <C>gap-native</C> kernel, something went
+  If there is no line containing the <C>gap-4</C> kernel, something went
   wrong with <C>setup.py</C>. You can try to manually install the file
   <C>kernel.json</C> which is in the <C>etc</C> directory of the &JupyterKernel;
   package by copying it. Better yet, you should report this issue on the issue

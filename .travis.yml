@@ -26,11 +26,9 @@ addons:
 
 matrix:
   include:
-    - env: CFLAGS="-O2" CC=clang CXX=clang++
-      compiler: clang
-    - env: CFLAGS="-O2"
-      compiler: gcc
-    - env: CFLAGS=""  # test build w/o optimization
+    - env: GAPBRANCH=master ABI=64
+    - env: GAPBRANCH=master ABI=32
+    - env: GAPBRANCH=stable-4.10
 
 branches:
   only:

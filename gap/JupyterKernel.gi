@@ -8,6 +8,16 @@
 # the jupyter kernel object at so that we can use it from everywhere.
 _KERNEL := "";
 
+## This is plainly wrong, it just reessembles the behaviour of
+## `UPDATE_STAT` in newer GAP version we need here.
+if not IsBound( "UPDATE_STAT" ) then
+    BindGlobal( "UPDATE_STAT",
+      function( string, value )
+        time := value;
+    end );
+fi;
+
+
 BindConstant( "JUPYTER_KERNEL_MODE_CONTROL", 1 );
 BindConstant( "JUPYTER_KERNEL_MODE_EXEC", 2 );
 
@@ -93,7 +103,7 @@ function(conf)
                                    fi;
                                    # This is probably supremely naughty; we overwrite GAP's
                                    # global time variable
-                                   time := QuoInt((NanosecondsSinceEpoch() - t), 1000000);
+                                   UPDATE_STAT( "time", QuoInt((NanosecondsSinceEpoch() - t), 1000000) );
 
                                    # Flush StdOut...
                                    Print("\c");

@@ -10,7 +10,7 @@ _KERNEL := "";
 
 ## This is plainly wrong, it just reessembles the behaviour of
 ## `UPDATE_STAT` in newer GAP version we need here.
-if not IsBound( "UPDATE_STAT" ) then
+if not IsBound( UPDATE_STAT ) then
     BindGlobal( "UPDATE_STAT",
       function( string, value )
         time := value;

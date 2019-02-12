@@ -1,5 +1,5 @@
+dist: xenial
 language: c
-sudo: required
 python:
  - "3.5"
 
@@ -7,27 +7,21 @@ env:
   global:
     - GAPROOT=gaproot
     - COVDIR=coverage
+    - GAP_PKGS_TO_CLONE="crypting uuid"
+    - GAP_PKGS_TO_BUILD="io profiling ZeroMQInterface json crypting"
 
 addons:
-  apt:
-   update: true
-
   apt_packages:
     - libgmp-dev
     - libreadline-dev
-    - libgmp-dev:i386
-    - libreadline-dev:i386
-    - gcc-multilib
-    - g++-multilib
+    - zlib1g-dev
     - libzmq3-dev
-    - libzmq3-dev:i386
     - python3
     - python3-pip
 
 matrix:
   include:
-    - env: GAPBRANCH=master ABI=64
-    - env: GAPBRANCH=master ABI=32
+    - env: GAPBRANCH=master
     - env: GAPBRANCH=stable-4.10
 
 branches:
@@ -35,10 +29,21 @@ branches:
     - master
 
 before_script:
+  - export GAPROOT="$HOME/gap"
+  - git clone https://github.com/gap-system/pkg-ci-scripts.git scripts
   - scripts/build_gap.sh
+  - pip3 install --user --upgrade pip
+  - pip3 install --user jupyter
+  - pip3 install --user nbconvert
 script:
   - scripts/build_pkg.sh
+  - python3 setup.py install --user
+    # bit of an ugly hack
+  - export PATH=$PWD/bin:$PATH
+  - cp bin/jupyter-kernel-gap /home/travis/.local/bin
   - scripts/run_tests.sh
+  - export JUPYTER_GAP_EXECUTABLE="$GAPROOT/bin/gap.sh --quitonbreak --cover $PWD/$COVDIR/testnb.coverage"
+  - jupyter nbconvert tst/test.ipynb --to notebook --execute
 after_script:
   - bash scripts/gather-coverage.sh
   - bash <(curl -s https://codecov.io/bash)

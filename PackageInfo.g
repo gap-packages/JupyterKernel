@@ -12,6 +12,7 @@ PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
 Version := "1.1",
 Date := "12/12/2018", # dd/mm/yyyy format
+License := "BSD-3-Clause",
 
 Persons := [
   rec(

@@ -6,8 +6,18 @@
 #
 LoadPackage( "JupyterKernel" );
 
-TestDirectory( DirectoriesPackageLibrary("JupyterKernel", "tst"),
-            rec(exitGAP := true, testOptions := rec(compareFunction := "uptowhitespace") ) );
+testresult := TestDirectory(
+                DirectoriesPackageLibrary("JupyterKernel", "tst"),
+                rec(exitGAP := false, suppressStatusMessage := true,
+                    testOptions := rec(compareFunction := "uptowhitespace") ) );
+
+if testresult then
+  Print("#I  No errors detected while testing\n");
+  QUIT_GAP(0);
+else
+  Print("#I  Errors detected while testing\n");
+  QUIT_GAP(1);
+fi;
 
 # Should never get here
 FORCE_QUIT_GAP(1);

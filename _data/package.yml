@@ -1,6 +1,6 @@
 name: JupyterKernel
-version: 1.1
-date: 2018-12-12
+version: 1.2
+date: 2019-02-20
 description: |
     Jupyter kernel written in GAP
 
@@ -42,7 +42,7 @@ packageinfo: https://gap-packages.github.io/JupyterKernel/PackageInfo.g
 
 downloads:
     - name: .tar.gz
-      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.1/JupyterKernel-1.1.tar.gz
+      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.2/JupyterKernel-1.2.tar.gz
 
 abstract: |
     The <span class="pkgname">JupyterKernel</span> package provides a so-called kernel for the Jupyter interactive document system.
@@ -54,27 +54,27 @@ keywords: |
     Jupyter, User Interface.
 citeas: |
     <p class='BibEntry'>
-    [<span class='BibKey'>PMT18</span>]   <b class='BibAuthor'>Pfeiffer, M., Martins, M. and GAP Team, T.</b>,
+    [<span class='BibKey'>PMT19</span>]   <b class='BibAuthor'>Pfeiffer, M., Martins, M. and GAP Team, T.</b>,
      <i class='BibTitle'>JupyterKernel, Jupyter kernel written in GAP,
-             Version 1.1</i>
-     (<span class='BibYear'>2018</span>)<br />
+             Version 1.2</i>
+     (<span class='BibYear'>2019</span>)<br />
     (<span class='BibNote'>GAP package</span>),
     <span class='BibHowpublished'><a href="https://gap-packages.github.io/JupyterKernel/">https://gap-packages.github.io/JupyterKernel/</a></span>.
     </p>
     
 
 bibtex: |
-    @misc{ JupyterKernel1.1,
+    @misc{ JupyterKernel1.2,
       author =           {Pfeiffer, M. and Martins, M. and GAP Team, T.},
       title =            {{JupyterKernel},   Jupyter   kernel  written  in  GAP,
-                          {V}ersion 1.1},
-      month =            {Dec},
-      year =             {2018},
+                          {V}ersion 1.2},
+      month =            {Feb},
+      year =             {2019},
       note =             {GAP package},
       howpublished =     {\href  {https://gap-packages.github.io/JupyterKernel/}
                           {\texttt{https://gap-packages.github.io/}\discretionary
                           {}{}{}\texttt{JupyterKernel/}}},
       keywords =         {Jupyter; User Interface},
-      printedkey =       {PMT18}
+      printedkey =       {PMT19}
     }
 

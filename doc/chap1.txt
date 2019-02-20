@@ -69,13 +69,13 @@
     [4X[28X    > jupyter kernelspec list[128X[104X
     [4X[28X    Available kernels:[128X[104X
     [4X[28X    python2        /usr/local/lib/python2.7/site-packages/ipykernel/resources[128X[104X
-    [4X[28X    gap-native     /usr/local/share/jupyter/kernels/gap-native[128X[104X
+    [4X[28X    gap-4          /usr/local/share/jupyter/kernels/gap-4[128X[104X
     [4X[28X  [128X[104X
   [4X[32X[104X
   
-  [33X[0;0YIf  there  is no line containing the [10Xgap-native[110X kernel, something went wrong
-  with [10Xsetup.py[110X. You can try to manually install the file [10Xkernel.json[110X which is
-  in the [10Xetc[110X directory of the [5XJupyterKernel[105X package by copying it. Better yet,
+  [33X[0;0YIf  there  is no line containing the [10Xgap-4[110X kernel, something went wrong with
+  [10Xsetup.py[110X.  You  can try to manually install the file [10Xkernel.json[110X which is in
+  the  [10Xetc[110X  directory  of the [5XJupyterKernel[105X package by copying it. Better yet,
   you  should  report  this  issue  on the issue tracker giving wich operating
   system you are using, your version of Jupyter ([7Xhttps://jupyter.org[107X) and [5XGAP[105X,
   and  which  commands  you  tried  to  execute.  What  happens  when  Jupyter

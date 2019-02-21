@@ -33,6 +33,8 @@ before_script:
   - export GAPROOT="$HOME/gap"
   - git clone https://github.com/gap-system/pkg-ci-scripts.git scripts
   - scripts/build_gap.sh
+  # Make sure no released JupyterKernel versions are in the way
+  - rm -rf $GAPROOT/pkg/JupyterKernel-*
   - pip3 install --user --upgrade pip
   - pip3 install --user jupyter
   - pip3 install --user nbconvert

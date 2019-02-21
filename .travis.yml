@@ -33,8 +33,6 @@ before_script:
   - export GAPROOT="$HOME/gap"
   - git clone https://github.com/gap-system/pkg-ci-scripts.git scripts
   - scripts/build_gap.sh
-  # Make sure no released JupyterKernel versions are in the way
-  - rm -rf $GAPROOT/pkg/JupyterKernel-*
   - pip3 install --user --upgrade pip
   - pip3 install --user jupyter
   - pip3 install --user nbconvert
@@ -46,7 +44,6 @@ script:
   - cp bin/jupyter-kernel-gap /home/travis/.local/bin
   - scripts/run_tests.sh
   - export JUPYTER_GAP_EXECUTABLE="$GAPROOT/gap -l $PWD/gaproot; --quitonbreak --cover $PWD/$COVDIR/testnb.coverage"
-  - ./blabla.sh
   - jupyter nbconvert tst/test.ipynb --to notebook --execute
 after_script:
   - bash scripts/gather-coverage.sh

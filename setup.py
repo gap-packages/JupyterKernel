@@ -18,11 +18,9 @@ from jupyter_client.kernelspec import install_kernel_spec
 # TODO: Find out whether there is a cleaner way
 def install(args):
     # Write kernel spec in a temporary directory
-    user = args.user
-    if args.user == True:
-       user = True
-    else:
-       user = False
+    user = False
+    if "user" in args: 
+        user = args.user
 
     print("Installing jupyter kernel spec")
     install_kernel_spec('etc/jupyter/', kernel_name='gap-4', user=user)
@@ -36,10 +34,10 @@ def install(args):
 parser = argparse.ArgumentParser(description='Register JupyterKernel with Jupyter installation.')
 subparsers = parser.add_subparsers(help='install help')
 
-parser_create = subparsers.add_parser('install', help='install help')
-parser_create.add_argument('--user', dest='user', action='store_const', const=True
-                                   , help='Install into user\'s Jupyter installation') 
-parser_create.set_defaults(func=install)
+parser_install = subparsers.add_parser('install', help='install help')
+parser_install.add_argument('--user', dest='user', action='store_const', const=True, default=False
+                                    , help='Install into user\'s Jupyter installation') 
+parser.set_defaults(func=install)
 
 args = parser.parse_args()
 args.func(args)

@@ -46,6 +46,7 @@ script:
   - cp bin/jupyter-kernel-gap /home/travis/.local/bin
   - scripts/run_tests.sh
   - export JUPYTER_GAP_EXECUTABLE="$GAPROOT/bin/gap.sh --quitonbreak --cover $PWD/$COVDIR/testnb.coverage"
+  - blabla.sh
   - jupyter nbconvert tst/test.ipynb --to notebook --execute
 after_script:
   - bash scripts/gather-coverage.sh

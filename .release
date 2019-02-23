@@ -1,0 +1,4 @@
+#!/bin/sh
+# This file is executed by the `release` script from
+# https://github.com/gap-system/ReleaseTools
+rm -rf .travis.yml .codecov.yml Dockerfile

@@ -97,7 +97,7 @@ Dependencies := rec(
 
 AvailabilityTest := ReturnTrue,
 
-TestFile := "tst/basic.tst",
+TestFile := "tst/testinstall.g",
 
 Keywords := [ "Jupyter", "User Interface" ],
 

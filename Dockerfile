@@ -13,4 +13,4 @@ ENV PATH $HOME/gap/inst/gap-4.10.0/pkg/JupyterKernel/bin:${PATH}
 
 USER gap
 
-WORKDIR $HOME/inst/gap-4.10.0/pkg/JupyterKernel/demos
+WORKDIR $HOME/gap/inst/gap-4.10.0/pkg/JupyterKernel/demos

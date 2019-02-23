@@ -1,6 +1,6 @@
 name: JupyterKernel
-version: 1.2
-date: 2019-02-20
+version: 1.3
+date: 2019-02-23
 description: |
     Jupyter kernel written in GAP
 
@@ -42,7 +42,7 @@ packageinfo: https://gap-packages.github.io/JupyterKernel/PackageInfo.g
 
 downloads:
     - name: .tar.gz
-      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.2/JupyterKernel-1.2.tar.gz
+      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.3/JupyterKernel-1.3.tar.gz
 
 abstract: |
     The <span class="pkgname">JupyterKernel</span> package provides a so-called kernel for the Jupyter interactive document system.
@@ -56,7 +56,7 @@ citeas: |
     <p class='BibEntry'>
     [<span class='BibKey'>PMT19</span>]   <b class='BibAuthor'>Pfeiffer, M., Martins, M. and GAP Team, T.</b>,
      <i class='BibTitle'>JupyterKernel, Jupyter kernel written in GAP,
-             Version 1.2</i>
+             Version 1.3</i>
      (<span class='BibYear'>2019</span>)<br />
     (<span class='BibNote'>GAP package</span>),
     <span class='BibHowpublished'><a href="https://gap-packages.github.io/JupyterKernel/">https://gap-packages.github.io/JupyterKernel/</a></span>.
@@ -64,10 +64,10 @@ citeas: |
     
 
 bibtex: |
-    @misc{ JupyterKernel1.2,
+    @misc{ JupyterKernel1.3,
       author =           {Pfeiffer, M. and Martins, M. and GAP Team, T.},
       title =            {{JupyterKernel},   Jupyter   kernel  written  in  GAP,
-                          {V}ersion 1.2},
+                          {V}ersion 1.3},
       month =            {Feb},
       year =             {2019},
       note =             {GAP package},

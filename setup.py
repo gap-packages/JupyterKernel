@@ -2,11 +2,23 @@
 
 # Based on https://jupyter-notebook.readthedocs.io/en/stable/examples/Notebook/Distributing%20Jupyter%20Extensions%20as%20Python%20Packages.html#Automatically-enabling-a-server-extension-and-nbextension
 
-import setuptools
+import setuptools, sys
+from setuptools.command.bdist_egg import bdist_egg
+
+class bdist_egg_disabled(bdist_egg):
+    """Disabled version of bdist_egg
+    Prevents setup.py install performing setuptools' default easy_install,
+    which it should never ever do.
+    """
+    def run(self):
+        sys.exit("Aborting implicit building of eggs. Use `pip install .` to install from source.")
 
 setuptools.setup(
     name="gap-jupyter",
     include_package_data=True,
+    cmdclass={
+        "bdist_egg": bdist_egg_disabled,
+    },
     data_files=[
         # like `jupyter nbextension install --sys-prefix`
         ("share/jupyter/nbextensions/gap-mode", [

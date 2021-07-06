@@ -28,7 +28,7 @@ jobs:
           sudo apt-get install libzmq3-dev
       - uses: gap-actions/setup-gap@v2
         with:
-          GAP_PKGS_TO_BUILD: "io crypting json uuid ZeroMQInterface GAPDoc"
+          GAP_PKGS_TO_BUILD: "io profiling crypting json uuid ZeroMQInterface GAPDoc"
           GAPBRANCH: ${{ matrix.gap-branch }}
       - uses: gap-actions/build-pkg@v1
       - uses: gap-actions/run-pkg-tests@v2

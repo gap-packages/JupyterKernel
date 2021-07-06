@@ -23,6 +23,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: 'Install additional dependencies'
+        run: |
+          sudo apt-get install libzmq3-dev
       - uses: gap-actions/setup-gap@v2
         with:
           GAP_PKGS_TO_BUILD: "io crypting json uuid ZeroMQInterface GAPDoc"

@@ -8,7 +8,7 @@ on:
 jobs:
   # The CI test job
   test:
-    name: ${{ matrix.gap-branch }}
+    name: ${{ matrix.gap-branch }} ${{ matrix.ABI }}
     runs-on: ubuntu-latest
     # Don't run this twice on PRs for branches pushed to the same repository
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
@@ -20,17 +20,32 @@ jobs:
           - stable-4.11
           - stable-4.10
           - stable-4.9
+        ABI: ['']
+        include:
+          - gap-branch: master # add one test in 32bit mode -- nostly for packages with kernel extension
+            ABI: 32
 
     steps:
       - uses: actions/checkout@v2
-      - name: 'Install additional dependencies'
+      - name: 'Install initial dependencies'
         run: |
           sudo apt-get install libzmq3-dev
       - uses: gap-actions/setup-gap@v2
         with:
-          GAP_PKGS_TO_BUILD: "io profiling crypting json uuid ZeroMQInterface GAPDoc"
+          GAP_PKGS_TO_CLONE: "orb"
+          GAP_PKGS_TO_BUILD: "io profiling orb crypting json uuid ZeroMQInterface GAPDoc"
           GAPBRANCH: ${{ matrix.gap-branch }}
+          ABI: ${{ matrix.ABI }}
+      - name: 'Install additional dependencies'
+        run: |
+          if [ "${{matrix.ABI}}" = "32" ]; then
+            sudo apt-get install libmpfr-dev:i386  # you can remove this if you don't need 32 bit builds
+          else
+            sudo apt-get install libmpfr-dev
+          fi
       - uses: gap-actions/build-pkg@v1
+        with:
+          ABI: ${{ matrix.ABI }}
       - uses: gap-actions/run-pkg-tests@v2
       - uses: gap-actions/process-coverage@v2
       - uses: codecov/codecov-action@v1

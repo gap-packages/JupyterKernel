@@ -23,11 +23,16 @@ on most Python installations can be achieved by issuing the following command.
 <Log>
 > pip install --user notebook
 </Log>
-Further instructions can be found at  <URL>https://jupyter.org/install</URL>. 
+Further instructions can be found at  <URL>https://jupyter.org/install</URL>.
+
 This package requires the &GAP; packages &IO;, &uuid;, &ZeroMQInterface;,
 &crypting;, and &json;, all of which are distributed with &GAP;, and some of which
 require compilation.
-To compile &ZeroMQInterface; you need to install &ZeroMQ;, for details please refer to the
+To compile &ZeroMQInterface; you need to install &ZeroMQ;,
+<Log>
+> sudo apt-get install m4 libzmq3-dev
+</Log>
+For further details please refer to the
 <URL Text="ZeroMQInterface manual">https://gap-packages.github.io/ZeroMQInterface/doc/chap0.html</URL>.
 
 &JupyterKernel; itself does not contain any kernel code that needs to be compiled.
@@ -44,6 +49,12 @@ or registering for your user only
 <Log>
 > python setup.py install --user
 </Log>
+
+If there are any issues registering the kernel, try installing the Jupyter contributed extensions:
+<Log>
+> pip install jupyter_contrib_nbextensions
+</Log>
+or running the python script as root should there be any permissions errors.
 
 If &GAP; is not in your PATH, then you have to set the environment variable
 <C>JUPYTER_GAP_EXECUTABLE</C> to point to your GAP executable for &Jupyter; to

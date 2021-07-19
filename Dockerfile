@@ -2,17 +2,20 @@ FROM gapsystem/gap-docker
 
 MAINTAINER Alexander Konovalov <alexander.konovalov@st-andrews.ac.uk>
 
-RUN cd /home/gap/inst/gap-4.10.0/pkg/ \
-    && rm -rf JupyterKernel-* \
+# Update version number each time after gap-docker container is updated
+ENV GAP_VERSION 4.11.1
+
+# Remove previous JupyterKernel installation, copy this repository and make new install
+
+RUN cd /home/gap/inst/gap-${GAP_VERSION}/pkg/ \
+    && rm -rf JupyterKernel \
     && wget https://github.com/gap-packages/JupyterKernel/archive/master.zip \
     && unzip -q master.zip \
     && rm master.zip \
     && mv JupyterKernel-master JupyterKernel \
     && cd JupyterKernel \
-    && python3 setup.py install --user
-
-ENV PATH /home/gap/inst/gap-4.10.0/pkg/JupyterKernel/bin:${PATH}
+    && pip3 install . --user
 
 USER gap
 
-WORKDIR /home/gap
+WORKDIR /home/gap/inst/gap-${GAP_VERSION}/pkg/JupyterKernel/demos

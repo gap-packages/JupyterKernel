@@ -135,6 +135,14 @@ Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
   printed by &GAP; cannot be captured by the &Jupyter; frontend and will
   not show up.
 
+  At current, the output of the function <Ref BookName="ref" Func="Exec"/> will print output in the terminal,
+  rather than the &Jupyter; notebook it is currently executing in. Some objects are also not 
+  <Ref Oper="JupyterRenderable"/>, and as such are not working in the current version of &JupyterKernel;.
+
+  The function <Ref BookName="ref" Func="LogTo"/> does also currently not work in the current version of &JupyterKernel;.
+
+  The variables <C>last</C>, <C>last2</C> and <C>last3</C> (see <Ref BookName="ref" Label="Main Loop"/>) are also unsupported in the current version.
+
   If you happen to notice problems of this kind, feel free to report them
   on the <URL Text="issue tracker">https://github.com/gap-packages/JupyterKernel/issues</URL>.
   or suggest a solution via a pull-request.

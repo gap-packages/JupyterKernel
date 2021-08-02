@@ -53,3 +53,4 @@ src/*.lo
 
 /tmp/
 /gh-pages/
+**/.ipynb_checkpoints/

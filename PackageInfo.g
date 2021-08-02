@@ -43,6 +43,13 @@ Persons := [
     IsMaintainer  := true,
     Email         := "support@gap-system.org",
   ),
+  # contributors
+  rec(
+    LastName      := "Konovalov",
+    FirstNames    := "Alexander",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
 ],
 
 SourceRepository := rec(

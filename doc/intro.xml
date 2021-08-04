@@ -137,7 +137,7 @@ Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
 
   At current, the output of the function <Ref BookName="ref" Func="Exec"/> will print output in the terminal,
   rather than the &Jupyter; notebook it is currently executing in. Some objects are also not 
-  <Ref Oper="JupyterRenderable"/>, and as such are not working in the current version of &JupyterKernel;.
+  <Ref Oper="JupyterRenderable" Label="for IsObject, IsObject"/>, and as such are not working in the current version of &JupyterKernel;.
 
   The function <Ref BookName="ref" Func="LogTo"/> does also currently not work in the current version of &JupyterKernel;.
 

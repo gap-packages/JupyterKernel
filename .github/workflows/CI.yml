@@ -8,7 +8,7 @@ on:
 jobs:
   # The CI test job
   test:
-    name: ${{ matrix.gap-branch }} ${{ matrix.ABI }}
+    name: ${{ matrix.gap-branch }}
     runs-on: ubuntu-latest
     # Don't run this twice on PRs for branches pushed to the same repository
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
@@ -20,7 +20,6 @@ jobs:
           - stable-4.11
           - stable-4.10
           - stable-4.9
-        ABI: ['']
 
     steps:
       - uses: actions/checkout@v2
@@ -31,10 +30,7 @@ jobs:
         with:
           GAP_PKGS_TO_BUILD: "io profiling crypting json ZeroMQInterface"
           GAPBRANCH: ${{ matrix.gap-branch }}
-          ABI: ${{ matrix.ABI }}          
       - uses: gap-actions/build-pkg@v1
-        with:
-          ABI: ${{ matrix.ABI }}
       - uses: gap-actions/run-pkg-tests@v2
       - uses: gap-actions/process-coverage@v2
       - uses: codecov/codecov-action@v1

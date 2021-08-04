@@ -26,11 +26,10 @@ jobs:
       - uses: actions/checkout@v2
       - name: 'Install initial dependencies'
         run: |
-          sudo apt-get install libzmq3-dev libmpfr-dev
+          sudo apt-get install libzmq3-dev
       - uses: gap-actions/setup-gap@v2
         with:
-          GAP_PKGS_TO_CLONE: "orb"
-          GAP_PKGS_TO_BUILD: "io profiling orb crypting json uuid ZeroMQInterface GAPDoc"
+          GAP_PKGS_TO_BUILD: "io profiling crypting json ZeroMQInterface"
           GAPBRANCH: ${{ matrix.gap-branch }}
           ABI: ${{ matrix.ABI }}          
       - uses: gap-actions/build-pkg@v1

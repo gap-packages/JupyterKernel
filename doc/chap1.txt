@@ -31,13 +31,13 @@
   system-wide works as follows:[133X
   
   [4X[32X  Example  [32X[104X
-    [4X[25X>[125X [27Xpython setup.py install[127X[104X
+    [4X[25X>[125X [27Xpip install .[127X[104X
   [4X[32X[104X
   
   [33X[0;0Yor registering for your user only[133X
   
   [4X[32X  Example  [32X[104X
-    [4X[25X>[125X [27Xpython setup.py install --user[127X[104X
+    [4X[25X>[125X [27Xpip install . --user[127X[104X
   [4X[32X[104X
   
   [33X[0;0YIf  [5XGAP[105X  is  not in your PATH, then you have to set the environment variable
@@ -115,9 +115,17 @@
   [33X[0;0YCurrently  the support of the [5XGAP[105X system for alternative frontends is a work
   in  progress.  In particular, certain outputs that are printed by [5XGAP[105X cannot
   be  captured by the Jupyter ([7Xhttps://jupyter.org[107X) frontend and will not show
-  up.  If you happen to notice problems of this kind, feel free to report them
-  on the issue tracker ([7Xhttps://github.com/gap-packages/JupyterKernel/issues[107X).
-  or suggest a solution via a pull-request.[133X
+  up. At current, the output of the function [2XExec[102X ([14XReference: Exec[114X) will print
+  output  in  the  terminal,  rather  than  the  Jupyter ([7Xhttps://jupyter.org[107X)
+  notebook   it   is  currently  executing  in.  Some  objects  are  also  not
+  [2XJupyterRenderable[102X  ([14X3.1-3[114X),  and  as  such  are  not  working in the current
+  version  of  [5XJupyterKernel[105X.  The function [2XLogTo[102X ([14XReference: LogTo[114X) does also
+  currently  not  work  in the current version of [5XJupyterKernel[105X. The variables
+  [10Xlast[110X, [10Xlast2[110X and [10Xlast3[110X (see [14XReference: Main Loop[114X) are also unsupported in the
+  current version. If you happen to notice problems of this kind, feel free to
+  report          them          on          the          issue         tracker
+  ([7Xhttps://github.com/gap-packages/JupyterKernel/issues[107X).    or    suggest   a
+  solution via a pull-request.[133X
   
   
   [1X1.6 [33X[0;0YFeedback[133X[101X

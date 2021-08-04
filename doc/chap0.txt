@@ -6,17 +6,15 @@
                         [1X Jupyter kernel written in [5XGAP[105X [101X
   
   
-                                      1.3
+                                     1.4.0
   
   
-                                23 February 2019
+                                 4 August 2021
   
   
                                 Markus Pfeiffer
   
                                  Manuel Martins
-  
-                                  The GAP Team
   
   
   
@@ -34,8 +32,6 @@
   Manuel Martins
       Email:    [7Xmailto:manuelmachadomartins@gmail.com[107X
       Homepage: [7Xhttp://github.com/mcmartins[107X
-  The GAP Team
-      Email:    [7Xmailto:support@gap-system.org[107X
   
   -------------------------------------------------------
   

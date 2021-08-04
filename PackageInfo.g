@@ -10,8 +10,8 @@ SetPackageInfo( rec(
 
 PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
-Version := "1.3",
-Date := "23/02/2019", # dd/mm/yyyy format
+Version := "1.4.0",
+Date := "04/08/2021", # dd/mm/yyyy format
 License := "BSD-3-Clause",
 
 Persons := [
@@ -42,6 +42,55 @@ Persons := [
     IsAuthor      := false,
     IsMaintainer  := true,
     Email         := "support@gap-system.org",
+  ),
+  # contributors
+  rec(
+    LastName      := "Breuer",
+    FirstNames    := "Thomas",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "García-Sánchez",
+    FirstNames    := "Pedro",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Gutsche",
+    FirstNames    := "Sebastian",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Horn",
+    FirstNames    := "Max",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Isuru",
+    FirstNames    := "Fernando",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Konovalov",
+    FirstNames    := "Alexander",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Newbery",
+    FirstNames    := "Zachariah",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Siccha",
+    FirstNames    := "Sergio",
+    IsAuthor      := false,
+    IsMaintainer  := false,
   ),
 ],
 

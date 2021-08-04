@@ -45,6 +45,36 @@ Persons := [
   ),
   # contributors
   rec(
+    LastName      := "Breuer",
+    FirstNames    := "Thomas",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "García-Sánchez",
+    FirstNames    := "Pedro",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Gutsche",
+    FirstNames    := "Sebastian",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Horn",
+    FirstNames    := "Max",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Isuru",
+    FirstNames    := "Fernando",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
     LastName      := "Konovalov",
     FirstNames    := "Alexander",
     IsAuthor      := false,
@@ -53,6 +83,12 @@ Persons := [
   rec(
     LastName      := "Newbery",
     FirstNames    := "Zachariah",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
+  rec(
+    LastName      := "Siccha",
+    FirstNames    := "Sergio",
     IsAuthor      := false,
     IsMaintainer  := false,
   ),

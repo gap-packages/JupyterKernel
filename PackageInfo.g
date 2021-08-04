@@ -50,6 +50,12 @@ Persons := [
     IsAuthor      := false,
     IsMaintainer  := false,
   ),
+  rec(
+    LastName      := "Newbery",
+    FirstNames    := "Zachariah",
+    IsAuthor      := false,
+    IsMaintainer  := false,
+  ),
 ],
 
 SourceRepository := rec(

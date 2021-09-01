@@ -6,10 +6,10 @@
                         [1X Jupyter kernel written in [5XGAP[105X [101X
   
   
-                                     1.4.0
+                                     1.4.1
   
   
-                                 4 August 2021
+                                1 September 2021
   
   
                                 Markus Pfeiffer

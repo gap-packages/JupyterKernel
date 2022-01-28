@@ -33,7 +33,7 @@ jobs:
       - uses: gap-actions/build-pkg@v1
       - uses: gap-actions/run-pkg-tests@v2
       - uses: gap-actions/process-coverage@v2
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2
 
   # The documentation job
   manual:

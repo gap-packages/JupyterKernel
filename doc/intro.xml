@@ -98,7 +98,7 @@ Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
 
   The communication between the &Jupyter; frontend and &GAP; happens through ZeroMQ streams
   as documented
-  <URL  Text="here">http://jupyter-client.readthedocs.io/en/latest/messaging.html</URL>,
+  <URL  Text="here">https://jupyter-client.readthedocs.io/en/latest/messaging.html</URL>,
   encoded as <C>JSON</C> dicts.
 
   After entering code into a cell and instructing &Jupyter; to execute that code,

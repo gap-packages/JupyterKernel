@@ -32,7 +32,7 @@ Persons := [
     IsAuthor     := true,
     IsMaintainer := false,
     Email        := "manuelmachadomartins@gmail.com",
-    WWWHome      := "http://github.com/mcmartins",
+    WWWHome      := "https://github.com/mcmartins",
     Institution  := "Universidade Aberta",
     Place        := "Lisbon, PT"
   ),

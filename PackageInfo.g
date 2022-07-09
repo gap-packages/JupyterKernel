@@ -125,7 +125,7 @@ AbstractHTML := "The <span class=\"pkgname\">JupyterKernel</span> package provid
 PackageDoc := rec(
   BookName  := "JupyterKernel",
   ArchiveURLSubset := ["doc"],
-  HTMLStart := "doc/chap0.html",
+  HTMLStart := "doc/chap0_mj.html",
   PDFFile   := "doc/manual.pdf",
   SixFile   := "doc/manual.six",
   LongTitle := "Jupyter kernel written in GAP",

@@ -41,4 +41,5 @@ setuptools.setup(
     zip_safe=False,
     # Require notebook>=5.3 for automatically enabling the nbextension
     install_requires=['notebook>=5.3'],
+    packages=[],
 )

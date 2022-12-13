@@ -76,7 +76,7 @@ Persons := [
   ),
   rec(
     LastName      := "Konovalov",
-    FirstNames    := "Alexander",
+    FirstNames    := "Olexandr",
     IsAuthor      := false,
     IsMaintainer  := false,
   ),

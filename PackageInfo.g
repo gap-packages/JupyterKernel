@@ -10,8 +10,8 @@ SetPackageInfo( rec(
 
 PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
-Version := "1.4.1",
-Date := "01/09/2021", # dd/mm/yyyy format
+Version := "1.5.0",
+Date := "25/02/2023", # dd/mm/yyyy format
 License := "BSD-3-Clause",
 
 Persons := [
@@ -35,6 +35,21 @@ Persons := [
     WWWHome      := "https://github.com/mcmartins",
     Institution  := "Universidade Aberta",
     Place        := "Lisbon, PT"
+  ),
+  rec(
+    LastName      := "Konovalov",
+    FirstNames    := "Olexandr",
+    IsAuthor      := false,
+    IsMaintainer  := true,
+    Email         := "obk1@st-andrews.ac.uk",
+    WWWHome       := "https://olexandr-konovalov.github.io/",
+    PostalAddress := Concatenation( [
+                     "School of Computer Science\n",
+                     "University of St Andrews\n",
+                     "Jack Cole Building, North Haugh,\n",
+                     "St Andrews, Fife, KY16 9SX, Scotland" ] ),
+    Place         := "St Andrews",
+    Institution   := "University of St Andrews"
   ),
   rec(
     LastName      := "GAP Team",
@@ -71,12 +86,6 @@ Persons := [
   rec(
     LastName      := "Isuru",
     FirstNames    := "Fernando",
-    IsAuthor      := false,
-    IsMaintainer  := false,
-  ),
-  rec(
-    LastName      := "Konovalov",
-    FirstNames    := "Olexandr",
     IsAuthor      := false,
     IsMaintainer  := false,
   ),

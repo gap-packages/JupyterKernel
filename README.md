@@ -91,7 +91,7 @@ Information and documentation can be found in the manual, available
 as PDF `doc/manual.pdf` or as HTML `doc/chap0_mj.html`, or on the package
 homepage at
 
-  <http://gap-packages.github.io/JupyterKernel/>
+  <https://gap-packages.github.io/JupyterKernel/>
 
 ## Bug reports and feature requests
 
@@ -112,7 +112,7 @@ For details see the files COPYRIGHT.md and LICENSE.
 <table class="none">
 <tr>
 <td>
-  <img src="http://opendreamkit.org/public/logos/Flag_of_Europe.svg" width="128">
+  <img src="https://opendreamkit.org/public/logos/Flag_of_Europe.svg" width="128">
 </td>
 <td>
   This infrastructure is part of a project that has received funding from the

@@ -1,6 +1,6 @@
 name: JupyterKernel
-version: 1.4.1
-date: 2021-09-01
+version: 1.5.0
+date: 2023-02-25
 description: |
     Jupyter kernel written in GAP
 
@@ -8,9 +8,11 @@ authors:
     - name: Markus Pfeiffer
       url: https://markusp.morphism.de/
     - name: Manuel Martins
-      url: http://github.com/mcmartins
+      url: https://github.com/mcmartins
 
 maintainers:
+    - name: Olexandr Konovalov
+      url: https://olexandr-konovalov.github.io/
     - name: The GAP Team
       url: mailto:support@gap-system.org
 
@@ -20,7 +22,6 @@ contributors:
     - name: Sebastian Gutsche
     - name: Max Horn
     - name: Fernando Isuru
-    - name: Alexander Konovalov
     - name: Zachariah Newbery
     - name: Sergio Siccha
 
@@ -52,39 +53,40 @@ packageinfo: https://gap-packages.github.io/JupyterKernel/PackageInfo.g
 
 downloads:
     - name: .tar.gz
-      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.4.1/JupyterKernel-1.4.1.tar.gz
+      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.5.0/JupyterKernel-1.5.0.tar.gz
 
 abstract: |
     The <span class="pkgname">JupyterKernel</span> package provides a so-called kernel for the Jupyter interactive document system.
 
 status: deposited
-doc-html: doc/chap0.html
+doc-html: doc/chap0_mj.html
 doc-pdf: doc/manual.pdf
 keywords: |
     Jupyter, User Interface.
 citeas: |
     <p class='BibEntry'>
-    [<span class='BibKey'>PMT21</span>]   <b class='BibAuthor'>Pfeiffer, M., Martins, M. and GAP Team, T.</b>,
+    [<span class='BibKey'>PMKT23</span>]   <b class='BibAuthor'>Pfeiffer, M., Martins, M., Konovalov, O. and GAP Team, T.</b>,
      <i class='BibTitle'>JupyterKernel, Jupyter kernel written in GAP,
-             Version 1.4.1</i>
-     (<span class='BibYear'>2021</span>)<br />
+             Version 1.5.0</i>
+     (<span class='BibYear'>2023</span>)<br />
     (<span class='BibNote'>GAP package</span>),
     <span class='BibHowpublished'><a href="https://gap-packages.github.io/JupyterKernel/">https://gap-packages.github.io/JupyterKernel/</a></span>.
     </p>
     
 
 bibtex: |
-    @misc{ JupyterKernel1.4.1,
-      author =           {Pfeiffer, M. and Martins, M. and GAP Team, T.},
+    @misc{ JupyterKernel1.5.0,
+      author =           {Pfeiffer, M. and Martins, M. and Konovalov, O. and GAP
+                          Team, T.},
       title =            {{JupyterKernel},   Jupyter   kernel  written  in  GAP,
-                          {V}ersion 1.4.1},
-      month =            {Sep},
-      year =             {2021},
+                          {V}ersion 1.5.0},
+      month =            {Feb},
+      year =             {2023},
       note =             {GAP package},
       howpublished =     {\href  {https://gap-packages.github.io/JupyterKernel/}
                           {\texttt{https://gap-packages.github.io/}\discretionary
                           {}{}{}\texttt{JupyterKernel/}}},
       keywords =         {Jupyter; User Interface},
-      printedkey =       {PMT21}
+      printedkey =       {PMKT23}
     }
 

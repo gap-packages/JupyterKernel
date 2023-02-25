@@ -90,7 +90,7 @@
   
   [33X[0;0YThe communication between the Jupyter ([7Xhttps://jupyter.org[107X) frontend and [5XGAP[105X
   happens      through      ZeroMQ      streams     as     documented     here
-  ([7Xhttp://jupyter-client.readthedocs.io/en/latest/messaging.html[107X),  encoded as
+  ([7Xhttps://jupyter-client.readthedocs.io/en/latest/messaging.html[107X), encoded as
   [10XJSON[110X  dicts.  After  entering  code  into  a  cell  and  instructing Jupyter
   ([7Xhttps://jupyter.org[107X)  to  execute that code, the jupyter frontend sends the
   code  to  the  [5XGAP[105X  session  where  it is executed by using the [5XGAP[105X function

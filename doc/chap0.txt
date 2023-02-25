@@ -6,10 +6,10 @@
                         [1X Jupyter kernel written in [5XGAP[105X [101X
   
   
-                                     1.4.1
+                                     1.5.0
   
   
-                                1 September 2021
+                                25 February 2023
   
   
                                 Markus Pfeiffer
@@ -31,7 +31,7 @@
   
   Manuel Martins
       Email:    [7Xmailto:manuelmachadomartins@gmail.com[107X
-      Homepage: [7Xhttp://github.com/mcmartins[107X
+      Homepage: [7Xhttps://github.com/mcmartins[107X
   
   -------------------------------------------------------
   

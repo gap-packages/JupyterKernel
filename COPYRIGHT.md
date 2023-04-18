@@ -9,7 +9,7 @@ Markus Pfeiffer
 This package contains additional code and other contributions by:
 
 Pedro A. García-Sánchez
-Alexander Konovalov
+Olexandr Konovalov
 
 # License
 

@@ -56,7 +56,7 @@ your path.
 
 This can be done through symlinking:
 
-    sudo ln -s <GAP-installation-directory>/bin/gap.sh gap
+    sudo ln -s <GAP-installation-directory>/gap gap
   
     sudo ln -s <GAP-installation-directory>/pkg/JupyterKernel-X.Y.Z/bin/jupyter-kernel-gap
 

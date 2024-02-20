@@ -68,7 +68,10 @@ GeneratePackageYML:=function(pkg)
     SetPrintFormattingStatus(stream, false);
     
     AppendTo(stream, "name: ", pkg.PackageName, "\n");
-    AppendTo(stream, "version: ", pkg.Version, "\n");
+    AppendTo(stream, "version: \"", pkg.Version, "\"\n");
+    if IsBound(pkg.License) then
+        AppendTo(stream, "license: \"", pkg.License, "\"\n");
+    fi;
 
     # convert date from DD/MM/YYYY to ISO 8601, i.e. YYYY-MM-DD
     #

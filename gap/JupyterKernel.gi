@@ -70,8 +70,8 @@ function(conf)
                                                                                   "Running on GAP ", GAPInfo.BuildVersion, "\n")
                                                        , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
                                                                        , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
-                                                                       , rec( text := "GAP tutorial", url := "https://www.gap-system.org/Manuals/doc/chap0.html")
-                                                                       , rec( text := "GAP reference", url := "https://www.gap-system.org/Manuals/doc/ref/chap0.html") ]
+                                                                       , rec( text := "GAP tutorial", url := "https://docs.gap-system.org/doc/chap0_mj.html")
+                                                                       , rec( text := "GAP reference", url := "https://docs.gap-system.org/doc/ref/chap0_mj.html") ]
                                                        , status := "ok" )
                                                   , rec() );
                                end,

@@ -15,7 +15,7 @@ HELP_VIEWER_INFO.jupyter_online :=
              p := data[3];
 
              for r in GAPInfo.RootPaths do
-                 p := ReplacedString(data[3], r, "https://www.gap-system.org/Manuals/");
+                 p := ReplacedString(data[3], r, "https://docs.gap-system.org/");
              od;
              return JupyterRenderable( rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"", p, "\">", data[2], "</a>") )
                                      , rec( ) );

@@ -10,8 +10,8 @@ SetPackageInfo( rec(
 
 PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
-Version := "1.5.0",
-Date := "25/02/2023", # dd/mm/yyyy format
+Version := "1.5.1",
+Date := "07/07/2024", # dd/mm/yyyy format
 License := "BSD-3-Clause",
 
 Persons := [

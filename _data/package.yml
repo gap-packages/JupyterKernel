@@ -1,7 +1,7 @@
 name: JupyterKernel
-version: "1.5.0"
+version: "1.5.1"
 license: "BSD-3-Clause"
-date: 2023-02-25
+date: 2024-07-07
 description: |
     Jupyter kernel written in GAP
 
@@ -31,7 +31,7 @@ GAP: ">= 4.10"
 needed-pkgs:
     - name: "GAPDoc"
       version: ">= 1.6.1"
-      url: "http://www.math.rwth-aachen.de/~Frank.Luebeck/GAPDoc"
+      url: "https://www.math.rwth-aachen.de/~Frank.Luebeck/GAPDoc"
     - name: "io"
       version: ">= 4.5.4"
       url: "https://gap-packages.github.io/io"
@@ -54,7 +54,7 @@ packageinfo: https://gap-packages.github.io/JupyterKernel/PackageInfo.g
 
 downloads:
     - name: .tar.gz
-      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.5.0/JupyterKernel-1.5.0.tar.gz
+      url: https://github.com/gap-packages/JupyterKernel/releases/download/v1.5.1/JupyterKernel-1.5.1.tar.gz
 
 abstract: |
     The <span class="pkgname">JupyterKernel</span> package provides a so-called kernel for the Jupyter interactive document system.
@@ -66,28 +66,28 @@ keywords: |
     Jupyter, User Interface.
 citeas: |
     <p class='BibEntry'>
-    [<span class='BibKey'>PMKT23</span>]   <b class='BibAuthor'>Pfeiffer, M., Martins, M., Konovalov, O. and GAP Team, T.</b>,
+    [<span class='BibKey'>PMKT24</span>]   <b class='BibAuthor'>Pfeiffer, M., Martins, M., Konovalov, O. and GAP Team, T.</b>,
      <i class='BibTitle'>JupyterKernel, Jupyter kernel written in GAP,
-             Version 1.5.0</i>
-     (<span class='BibYear'>2023</span>)<br />
+             Version 1.5.1</i>
+     (<span class='BibYear'>2024</span>)<br />
     (<span class='BibNote'>GAP package</span>),
     <span class='BibHowpublished'><a href="https://gap-packages.github.io/JupyterKernel/">https://gap-packages.github.io/JupyterKernel/</a></span>.
     </p>
     
 
 bibtex: |
-    @misc{ JupyterKernel1.5.0,
+    @misc{ JupyterKernel,
       author =           {Pfeiffer, M. and Martins, M. and Konovalov, O. and GAP
                           Team, T.},
       title =            {{JupyterKernel},   Jupyter   kernel  written  in  GAP,
-                          {V}ersion 1.5.0},
-      month =            {Feb},
-      year =             {2023},
+                          {V}ersion 1.5.1},
+      month =            {Jul},
+      year =             {2024},
       note =             {GAP package},
       howpublished =     {\href  {https://gap-packages.github.io/JupyterKernel/}
-                          {\texttt{https://gap-packages.github.io/}\discretionary
+                          {\texttt{https://gap\texttt{\symbol{45}}packages.github.io/}\discretionary
                           {}{}{}\texttt{JupyterKernel/}}},
       keywords =         {Jupyter; User Interface},
-      printedkey =       {PMKT23}
+      printedkey =       {PMKT24}
     }
 

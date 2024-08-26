@@ -45,18 +45,25 @@ end);
 # To show TikZ in a GAP jupyter notebook
 BindGlobal("JupyterSplashTikZ",
 function(tikz)
-    local tmpdir, fn, header, ltx, svgfile, stream, svgdata, tojupyter;
+    local tmpdir, fn, header, ltx, svgfile, stream, svgdata, tojupyter,hasbp;
+
+    hasbp:=PositionSublist(tikz,"begin{tikzpicture}")<>fail;
 
     header:=Concatenation( "\\documentclass[crop,tikz]{standalone}\n",
                     "\\usepackage{pgfplots}",
                     "\\makeatletter\n",
                     "\\batchmode\n",
                     "\\nonstopmode\n",
-                    "\\begin{document}",
-                    "\\begin{tikzpicture}");
+                    "\\begin{document}\n");
+    if not(hasbp) then 
+        Concatenation(header, "\\begin{tikzpicture}\n");
+    fi;
     header:=Concatenation(header, tikz);
-    header:=Concatenation(header,"\\end{tikzpicture}\n\\end{document}");
-
+    if hasbp then 
+        header:=Concatenation(header,"\\end{document}");    
+    else
+        header:=Concatenation(header,"\\end{tikzpicture}\n\\end{document}");
+    fi;
     tmpdir := DirectoryTemporary();
     fn := Filename( tmpdir, "svg_get" );
 
@@ -85,7 +92,7 @@ function(tikz)
                 svgdata := ReadAll( stream );
                 tojupyter := rec( json := true, source := "gap",
                                   data := rec( ( "image/svg+xml" ) := svgdata ),
-                                  metadata := rec( ( "image/svg+xml" ) := rec( width := 500, height := 500 ) ) );
+                                  metadata := rec( ( "image/svg+xml" ) := rec( width := "100%", height := "100%" ) ) );
                 CloseStream( stream );
             else
                 tojupyter := rec( json := true, name := "stdout",

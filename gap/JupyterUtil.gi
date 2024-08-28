@@ -73,11 +73,15 @@ function(tikz)
         svgfile := Concatenation( fn, ".svg" );
         b64file := Concatenation( fn, ".b64" );
         ltx := Concatenation( "pdf2svg ", Concatenation( fn, ".pdf" ), " ",
-                       svgfile, "; base64 -i ", svgfile," -o ", b64file );
+                       svgfile, "; base64 -i ", svgfile," >> ", b64file );
         Exec( ltx );
-        if not( IsExistingFile( b64file ) ) then
+        if not( IsExistingFile( svgfile ) ) then
             tojupyter := rec( json := true, name := "stdout",
-                              data := "No svg was created; pdf2svg is installed in your system? base64 missing?" );
+                              data := "No svg was created; pdf2svg is installed in your system?", metadata := rec());
+            return JupyterRenderable(tojupyter.data, tojupyter.metadata);
+        elif not( IsExistingFile( b64file ) ) then
+            tojupyter := rec( json := true, name := "stdout",
+                              data := "No svg was created; base64 is installed in your system?", metadata := rec());
             return JupyterRenderable(tojupyter.data, tojupyter.metadata);
         else
             stream := InputTextFile( b64file );

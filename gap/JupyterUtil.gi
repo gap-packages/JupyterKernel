@@ -45,7 +45,7 @@ end);
 # To show TikZ in a GAP jupyter notebook
 BindGlobal("JupyterSplashTikZ",
 function(tikz)
-    local tmpdir, fn, header, ltx, svgfile, stream, svgdata, tojupyter, b64file, hasbp, img;
+    local tmpdir, fn, header, ltx, svgfile, stream, svgdata, tojupyter, hasbp, img, b64file;
 
     hasbp:=PositionSublist(tikz,"begin{tikzpicture}")<>fail;
 
@@ -77,33 +77,49 @@ function(tikz)
 
     if not( IsExistingFile( Concatenation(fn, ".pdf") ) ) then
         tojupyter := rec( json := true, name := "stdout",
-                          data := "No pdf was created; pdflatex is installed in your system?" );
-    else
-        svgfile := Concatenation( fn, ".svg" );
-        b64file := Concatenation( fn, ".b64" );
+                          data := "No pdf was created; pdflatex is installed in your system?",metadata:=rec() );
+        return JupyterRenderable(tojupyter.data, tojupyter.metadata);
+    fi;
+
+    svgfile := Concatenation( fn, ".svg" );
+    b64file := Concatenation( fn, ".b64" );
+    if ARCH_IS_MAC_OS_X() then 
         ltx := Concatenation( "pdf2svg ", Concatenation( fn, ".pdf" ), " ",
-                       svgfile, "; base64 -i ", svgfile," >> ", b64file );
-        Exec( ltx );
-        if not( IsExistingFile( svgfile ) ) then
-            tojupyter := rec( json := true, name := "stdout",
-                              data := "No svg was created; pdf2svg is installed in your system?", metadata := rec());
-            return JupyterRenderable(tojupyter.data, tojupyter.metadata);
-        elif not( IsExistingFile( b64file ) ) then
-            tojupyter := rec( json := true, name := "stdout",
-                              data := "No svg was created; base64 is installed in your system?", metadata := rec());
-            return JupyterRenderable(tojupyter.data, tojupyter.metadata);
+                    svgfile, "; base64 -i ", svgfile," >> ", b64file );
+
+    else 
+        ltx := Concatenation( "pdf2svg ", Concatenation( fn, ".pdf" ), " ",
+                    svgfile);
+    fi;
+    Exec( ltx );
+    if not( IsExistingFile( svgfile ) ) then
+        tojupyter := rec( json := true, name := "stdout",
+                            data := "No svg was created; pdf2svg is installed in your system?", metadata := rec());
+        return JupyterRenderable(tojupyter.data, tojupyter.metadata);
+    fi;
+    if ARCH_IS_MAC_OS_X() then 
+        stream := InputTextFile( b64file );
+        if stream <> fail then
+            svgdata := ReadLine( stream );
+            CloseStream( stream );
         else
-            stream := InputTextFile( b64file );
-            if stream <> fail then
-                svgdata := ReadLine( stream );
-                CloseStream( stream );
-            else
-                tojupyter := rec( json := true, name := "stdout",
-                                  data := Concatenation( "Unable to render ", tikz ), metadata := rec() );
-                return JupyterRenderable(tojupyter.data, tojupyter.metadata);
-            fi;
+            tojupyter := rec( json := true, name := "stdout",
+                                data := Concatenation( "Unable to render ", tikz ), metadata := rec() );
+            return JupyterRenderable(tojupyter.data, tojupyter.metadata);
+        fi;
+    else
+        stream := InputTextFile( svgfile );
+        if stream <> fail then
+            svgdata := ReadAll( stream );
+            svgdata:= SubstitutionSublist(Base64String(svgdata),"\n","");
+            CloseStream( stream );
+        else
+            tojupyter := rec( json := true, name := "stdout",
+                                data := Concatenation( "Unable to render ", tikz ), metadata := rec() );
+            return JupyterRenderable(tojupyter.data, tojupyter.metadata);
         fi;
     fi;
+
     img:=Concatenation("<img src='data:image/svg+xml;base64,", svgdata,"'>");
     return Objectify( JupyterRenderableType, rec(  data := rec( ("text/html") := img), metadata:=rec() ));
 end);

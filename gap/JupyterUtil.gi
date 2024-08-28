@@ -89,7 +89,7 @@ function(tikz)
 
     else 
         ltx := Concatenation( "pdf2svg ", Concatenation( fn, ".pdf" ), " ",
-                    svgfile);
+                    svgfile, "; base64 ", svgfile," >> ", b64file );
     fi;
     Exec( ltx );
     if not( IsExistingFile( svgfile ) ) then
@@ -97,27 +97,14 @@ function(tikz)
                             data := "No svg was created; pdf2svg is installed in your system?", metadata := rec());
         return JupyterRenderable(tojupyter.data, tojupyter.metadata);
     fi;
-    if ARCH_IS_MAC_OS_X() then 
-        stream := InputTextFile( b64file );
-        if stream <> fail then
-            svgdata := ReadLine( stream );
-            CloseStream( stream );
-        else
-            tojupyter := rec( json := true, name := "stdout",
-                                data := Concatenation( "Unable to render ", tikz ), metadata := rec() );
-            return JupyterRenderable(tojupyter.data, tojupyter.metadata);
-        fi;
+    stream := InputTextFile( b64file );
+    if stream <> fail then
+        svgdata := ReadAll( stream );
+        CloseStream( stream );
     else
-        stream := InputTextFile( svgfile );
-        if stream <> fail then
-            svgdata := ReadAll( stream );
-            svgdata:= SubstitutionSublist(Base64String(svgdata),"\n","");
-            CloseStream( stream );
-        else
-            tojupyter := rec( json := true, name := "stdout",
-                                data := Concatenation( "Unable to render ", tikz ), metadata := rec() );
-            return JupyterRenderable(tojupyter.data, tojupyter.metadata);
-        fi;
+        tojupyter := rec( json := true, name := "stdout",
+                            data := Concatenation( "Unable to render ", tikz ), metadata := rec() );
+        return JupyterRenderable(tojupyter.data, tojupyter.metadata);
     fi;
 
     img:=Concatenation("<img src='data:image/svg+xml;base64,", svgdata,"'>");

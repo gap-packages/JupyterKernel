@@ -45,25 +45,17 @@ end);
 # To show TikZ in a GAP jupyter notebook
 BindGlobal("JupyterSplashTikZ",
 function(tikz)
-    local tmpdir, fn, header, ltx, svgfile, stream, svgdata, tojupyter,hasbp;
-
-    hasbp:=PositionSublist(tikz,"begin{tikzpicture}")<>fail;
+    local tmpdir, fn, header, ltx, svgfile, stream, svgdata, tojupyter, b64file, img;
 
     header:=Concatenation( "\\documentclass[crop,tikz]{standalone}\n",
                     "\\usepackage{pgfplots}",
                     "\\makeatletter\n",
                     "\\batchmode\n",
                     "\\nonstopmode\n",
-                    "\\begin{document}\n");
-    if not(hasbp) then 
-        Concatenation(header, "\\begin{tikzpicture}\n");
-    fi;
+                    "\\begin{document}");
     header:=Concatenation(header, tikz);
-    if hasbp then 
-        header:=Concatenation(header,"\\end{document}");    
-    else
-        header:=Concatenation(header,"\\end{tikzpicture}\n\\end{document}");
-    fi;
+    header:=Concatenation(header,"\\end{document}");
+
     tmpdir := DirectoryTemporary();
     fn := Filename( tmpdir, "svg_get" );
 
@@ -79,29 +71,28 @@ function(tikz)
                           data := "No pdf was created; pdflatex is installed in your system?" );
     else
         svgfile := Concatenation( fn, ".svg" );
+        b64file := Concatenation( fn, ".b64" );
         ltx := Concatenation( "pdf2svg ", Concatenation( fn, ".pdf" ), " ",
-                       svgfile, " >> ", Concatenation( fn, ".log2" ) );
+                       svgfile, "; base64 -i ", svgfile," -o ", b64file );
         Exec( ltx );
-
-        if not( IsExistingFile( svgfile ) ) then
+        if not( IsExistingFile( b64file ) ) then
             tojupyter := rec( json := true, name := "stdout",
-                              data := "No svg was created; pdf2svg is installed in your system?" );
+                              data := "No svg was created; pdf2svg is installed in your system? base64 missing?" );
+            return JupyterRenderable(tojupyter.data, tojupyter.metadata);
         else
-            stream := InputTextFile( svgfile );
+            stream := InputTextFile( b64file );
             if stream <> fail then
-                svgdata := ReadAll( stream );
-                tojupyter := rec( json := true, source := "gap",
-                                  data := rec( ( "image/svg+xml" ) := svgdata ),
-                                  metadata := rec( ( "image/svg+xml" ) := rec( width := "100%", height := "100%" ) ) );
+                svgdata := ReadLine( stream );
                 CloseStream( stream );
             else
                 tojupyter := rec( json := true, name := "stdout",
                                   data := Concatenation( "Unable to render ", tikz ), metadata := rec() );
+                return JupyterRenderable(tojupyter.data, tojupyter.metadata);
             fi;
         fi;
     fi;
-
-    return JupyterRenderable(tojupyter.data, tojupyter.metadata);
+    img:=Concatenation("<img src='data:image/svg+xml;base64,", svgdata,"'>");
+    return Objectify( JupyterRenderableType, rec(  data := rec( ("text/html") := img), metadata:=rec() ));
 end);
 
 # This is really not what I should be doing here...

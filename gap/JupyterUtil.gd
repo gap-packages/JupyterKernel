@@ -1,5 +1,9 @@
 #! @Chapter Jupyter Utility Functions
-#! @Section Functions
+#!
+#! Several utility functions for GAP Jupyter Kernel
+#!
+#! @Section Print and complete functions
+#!
 #! @Description
 #!   Jupyter printing
 DeclareGlobalFunction("JUPYTER_print");

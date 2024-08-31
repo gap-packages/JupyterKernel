@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This is an automatically generated file. -->
+<Chapter Label="Chapter_Jupyter_Kernel">
+<Heading>Jupyter Kernel</Heading>
+
+<P/>
+ A <C>Jupyter Kernel</C> is an object that can handles the Jupyter Protocol.
+<P/>
+<Section Label="Chapter_Jupyter_Kernel_Section_Functions">
+<Heading>Functions</Heading>
+
+<P/>
+<ManSection>
+  <Func Arg="filename" Name="JUPYTER_LogProtocol" />
+ <Description>
+ Opens a file that is used to log all jupyter protocol
+ messages.
+ </Description>
+</ManSection>
+
+
+<ManSection>
+  <Func Arg="arg" Name="JUPYTER_UnlogProtocol" />
+ <Description>
+ Closes the protocol log.
+ </Description>
+</ManSection>
+
+
+</Section>
+
+
+</Chapter>
+

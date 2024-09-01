@@ -8,7 +8,7 @@ function(dot)
     IO_Write(fd, dot);
     IO_Close(fd);
 
-    fd := IO_Popen(IO_FindExecutable("dot"), ["-Nfontname=\"verdana\"","-Tsvg", fn], "r");
+    fd := IO_Popen(IO_FindExecutable("dot"), ["-Tsvg", fn], "r");
     r := IO_ReadUntilEOF(fd);
     IO_close(fd);
     IO_unlink(fn);

@@ -42,6 +42,7 @@ DeclareOperation("JupyterRenderable", [IsObject, IsObject] );
 #!   Method that provides rich viewing experience if
 #!   code used inside Jupyter
 DeclareOperation("JupyterRender", [IsObject]);
+DeclareOperation("JupyterRender", [IsRecord]);
 
 #! @Description
 #!   Accessor for data in a JupyterRenderable

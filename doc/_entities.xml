@@ -1,0 +1,8 @@
+<!ENTITY crypting '<Package>crypting</Package>'>
+<!ENTITY json '<Package>json</Package>'>
+<!ENTITY uuid '<Package>uuid</Package>'>
+<!ENTITY Jupyter '<URL Text="Jupyter">https://jupyter.org</URL>'>
+<!ENTITY ZeroMQ '<URL Text="ZeroMQ">https://zeromq.org</URL>'>
+<!ENTITY IO '<Package>IO</Package>'>
+<!ENTITY ZeroMQInterface '<Package>ZeroMQInterface</Package>'>
+<!ENTITY JupyterKernel '<Package>JupyterKernel</Package>'>

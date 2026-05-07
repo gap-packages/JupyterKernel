@@ -70,7 +70,6 @@ jobs:
   python-test:
     name: jupyter_kernel_test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}-latest
-    needs: test
     strategy:
       fail-fast: false
       matrix:

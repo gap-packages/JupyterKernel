@@ -46,6 +46,11 @@ jobs:
         run: brew install zeromq
       - uses: gap-actions/setup-cygwin@v2
         if: ${{ runner.os == 'Windows' }}
+        with:
+          # ZeroMQInterface's configure does AC_CHECK_HEADER(zmq.h) +
+          # -lzmq, so libzmq-devel is the only Cygwin package we need
+          # beyond the setup-cygwin defaults.
+          extra-pkgs-to-install: 'libzmq-devel'
       - uses: gap-actions/setup-gap@v2
         with:
           GAP_PKGS_TO_BUILD: "io profiling crypting json ZeroMQInterface"

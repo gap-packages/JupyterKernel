@@ -87,6 +87,15 @@ jobs:
           GAP_PKGS_TO_BUILD: "io profiling crypting json ZeroMQInterface"
           GAPBRANCH: master
       - uses: gap-actions/build-pkg@v1
+      - name: 'Replace bundled JupyterKernel with checkout'
+        # setup-gap unpacks the standard package distribution, which
+        # includes the released JupyterKernel-1.5.1. Without this step,
+        # LoadPackage("JupyterKernel") in the kernel launcher would find
+        # that copy instead of the working tree, so the tests would run
+        # against the upstream-released code, not our changes.
+        run: |
+          rm -rf $HOME/gap/pkg/JupyterKernel*
+          ln -s "$GITHUB_WORKSPACE" "$HOME/gap/pkg/JupyterKernel"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

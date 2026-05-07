@@ -1,29 +1,29 @@
 name: CI
 
-# Trigger the workflow on push or pull request
+# Trigger the workflow on push or pull request or manually
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
       - main
   pull_request:
 
-# the `concurrency` settings ensure that not too many CI jobs run in parallel
 concurrency:
-  # group by workflow and ref; the last slightly strange component ensures that for pull
-  # requests, we limit to 1 concurrent job, but for the default repository branch we don't
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.ref_name != github.event.repository.default_branch || github.run_number }}
-  # Cancel intermediate builds, but only if it is a pull request build.
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
-  # The CI test job
+  # GAP-side .tst tests across the supported version matrix and three OSes.
+  # On Windows, GAP runs under Cygwin via gap-actions/setup-cygwin (same as
+  # the io package; the kernel itself is Cygwin-only on Windows).
   test:
-    name: ${{ matrix.gap-branch }}
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }} - GAP ${{ matrix.gap-branch }}
+    runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu]
         gap-branch:
           - master
           - stable-4.15
@@ -32,12 +32,21 @@ jobs:
           - stable-4.12
           - stable-4.11
           - stable-4.10
-
+        include:
+          - os: macos
+            gap-branch: master
+          - os: windows
+            gap-branch: master
     steps:
       - uses: actions/checkout@v6
-      - name: 'Install initial dependencies'
-        run: |
-          sudo apt-get install libzmq3-dev
+      - name: 'Install libzmq (Linux)'
+        if: ${{ runner.os == 'Linux' }}
+        run: sudo apt-get install -y libzmq3-dev
+      - name: 'Install zeromq (macOS)'
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install zeromq
+      - uses: gap-actions/setup-cygwin@v2
+        if: ${{ runner.os == 'Windows' }}
       - uses: gap-actions/setup-gap@v2
         with:
           GAP_PKGS_TO_BUILD: "io profiling crypting json ZeroMQInterface"
@@ -48,21 +57,33 @@ jobs:
         with:
           only-needed: true
       - uses: gap-actions/process-coverage@v2
+        if: ${{ runner.os == 'Linux' && matrix.gap-branch == 'master' }}
       - uses: codecov/codecov-action@v6
+        if: ${{ runner.os == 'Linux' && matrix.gap-branch == 'master' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   # End-to-end protocol tests via jupyter_kernel_test (drives the kernel
-  # over real ZMQ). Runs once against GAP master — protocol behaviour does
-  # not depend on the GAP version.
+  # over real ZMQ). Linux + macOS only — on Windows, GAP runs under Cygwin
+  # but Jupyter typically runs in native Python, and crossing those two
+  # environments via subprocess is fragile. Notebook-7 + GAP on Windows
+  # remains a separate hardening task.
   python-test:
-    name: jupyter_kernel_test
-    runs-on: ubuntu-latest
+    name: jupyter_kernel_test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}-latest
     needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos]
     steps:
       - uses: actions/checkout@v6
-      - name: 'Install initial dependencies'
+      - name: 'Install libzmq (Linux)'
+        if: ${{ runner.os == 'Linux' }}
         run: sudo apt-get install -y libzmq3-dev
+      - name: 'Install zeromq (macOS)'
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install zeromq
       - uses: gap-actions/setup-gap@v2
         with:
           GAP_PKGS_TO_BUILD: "io profiling crypting json ZeroMQInterface"

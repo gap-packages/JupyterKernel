@@ -90,6 +90,26 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertTrue(info["banner"], "banner must be non-empty")
         self.assertEqual(info["language_info"]["name"], "GAP 4")
 
+    def test_kernel_info_on_control(self):
+        """JupyterLab 4 / jupyter_server sends kernel_info_request on the
+        Control channel as a liveness probe. If we don't reply there, Lab
+        believes the kernel is dead and restarts it in a tight loop. The
+        Shell handler isn't enough — Control must dispatch it too."""
+        self.flush_channels()
+        msg = self.kc.session.msg("kernel_info_request")
+        self.kc.control_channel.send(msg)
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            try:
+                reply = self.kc.get_control_msg(timeout=2)
+            except Empty:
+                continue
+            if reply["msg_type"] == "kernel_info_reply":
+                self.assertEqual(reply["content"]["status"], "ok")
+                self.assertEqual(reply["content"]["implementation"], "GAP")
+                return
+        self.fail("no kernel_info_reply on control channel")
+
     def test_stream_batching(self):
         """Regression test for output batching (PR 3).
 

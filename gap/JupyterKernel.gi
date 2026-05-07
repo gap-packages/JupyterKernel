@@ -333,11 +333,18 @@ function(conf)
         fi;
     end;
 
+    # Control is a parallel of Shell for messages the frontend must be able
+    # to deliver while Shell is busy: interrupt_request, shutdown_request,
+    # debug_request, and (since JupyterLab 4 / jupyter_server) liveness
+    # probes via kernel_info_request. Anything we have a handler for is
+    # answered here. Unlike Shell, we do NOT publish busy/idle status on
+    # Control replies — that would falsely interrupt the Shell execution
+    # stream the frontend tracks for cell results.
     kernel.HandleControlMsg := function(msg)
         local t, reply;
         kernel!.CurrentMsg := msg.header;
         t := msg.header.msg_type;
-        if t = "interrupt_request" or t = "shutdown_request" then
+        if IsBound(kernel!.MsgHandlers.(t)) then
             reply := kernel!.MsgHandlers.(t)(msg);
             JupyterMsgSend(kernel, kernel!.Control, reply);
             return true;

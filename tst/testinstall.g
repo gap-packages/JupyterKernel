@@ -7,8 +7,7 @@
 LoadPackage( "JupyterKernel" );
 
 TestDirectory( DirectoriesPackageLibrary("JupyterKernel", "tst"),
-            rec(exitGAP     := true, 
-                exclude     := [ "protocol.tst" ],
+            rec(exitGAP     := true,
                 testOptions := rec(compareFunction := "uptowhitespace") ) );
 
 # Should never get here

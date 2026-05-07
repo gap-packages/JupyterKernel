@@ -4,22 +4,10 @@
 # Implementations
 #
 
-# This is a bit ugly: The global variable _KERNEL is assigned to
-# the jupyter kernel object at so that we can use it from everywhere.
+# Global handle on the active kernel, used by JUPYTER_LogProtocol /
+# JUPYTER_UnlogProtocol to enable runtime protocol tracing from a Jupyter
+# cell.
 _KERNEL := "";
-
-## This is plainly wrong, it just reessembles the behaviour of
-## `UPDATE_STAT` in newer GAP version we need here.
-if not IsBound( UPDATE_STAT ) then
-    BindGlobal( "UPDATE_STAT",
-      function( string, value )
-        time := value;
-    end );
-fi;
-
-
-BindConstant( "JUPYTER_KERNEL_MODE_CONTROL", 1 );
-BindConstant( "JUPYTER_KERNEL_MODE_EXEC", 2 );
 
 
 InstallGlobalFunction( JUPYTER_LogProtocol,
@@ -31,15 +19,78 @@ end);
 InstallGlobalFunction( JUPYTER_UnlogProtocol,
 function()
     local tmp;
-    # In case `CloseStream` causes messages to be printed
     tmp := _KERNEL!.ProtocolLog;
     Unbind(_KERNEL!.ProtocolLog);
     CloseStream(tmp);
 end);
 
+
+# Heuristic for the Jupyter is_complete protocol: count brackets and GAP
+# block keywords (function/end, if/fi, for|while/od, repeat/until), treating
+# the contents of strings and comments as opaque. Returns "incomplete" if
+# any opener lacks its closer (so the cell needs more input to parse),
+# otherwise "complete". We do not try to distinguish syntactically invalid
+# input from incomplete input — the evaluator will report syntax errors
+# more precisely than the parser would.
+JUPYTER_IS_IDENT_CHAR := function(c)
+    return (c >= 'a' and c <= 'z')
+        or (c >= 'A' and c <= 'Z')
+        or (c >= '0' and c <= '9')
+        or c = '_';
+end;
+
+JUPYTER_IsCompleteCode := function(code)
+    local i, n, c, depth, j, ident;
+
+    depth := 0;
+    i := 1;
+    n := Length(code);
+    while i <= n do
+        c := code[i];
+        if c = '#' then
+            while i <= n and code[i] <> '\n' do i := i + 1; od;
+        elif c = '"' then
+            i := i + 1;
+            while i <= n and code[i] <> '"' do
+                if code[i] = '\\' and i < n then i := i + 1; fi;
+                i := i + 1;
+            od;
+            if i > n then
+                return rec(status := "incomplete", indent := "");
+            fi;
+        elif c in "([{" then
+            depth := depth + 1;
+        elif c in ")]}" then
+            depth := depth - 1;
+        elif JUPYTER_IS_IDENT_CHAR(c) and not (c >= '0' and c <= '9') then
+            j := i;
+            while j <= n and JUPYTER_IS_IDENT_CHAR(code[j]) do j := j + 1; od;
+            ident := code{[i..j-1]};
+            # Block keyword must be at a word boundary on both sides — the
+            # JUPYTER_IS_IDENT_CHAR loop above guarantees this for the right.
+            if ident in [ "function", "if", "for", "while", "repeat" ] then
+                depth := depth + 1;
+            elif ident in [ "end", "fi", "od", "until" ] then
+                depth := depth - 1;
+            fi;
+            i := j;
+            continue;
+        fi;
+        i := i + 1;
+    od;
+    if depth > 0 then
+        return rec(status := "incomplete", indent := "");
+    fi;
+    return rec(status := "complete");
+end;
+
+
 InstallGlobalFunction( NewJupyterKernel,
 function(conf)
-    local pid, address, kernel, poll, msg, status, res;
+    local address, kernel;
+
+    Assert(0, IsBound(CRYPTING_SHA256_HMAC),
+           "crypting package is missing CRYPTING_SHA256_HMAC; refusing to start");
 
     address := Concatenation(conf.transport, "://", conf.ip, ":");
     kernel := rec( config := Immutable(conf)
@@ -48,167 +99,195 @@ function(conf)
                  , ZmqIdentity := HexStringUUID( RandomUUID() )
                  , SessionKey := conf.key
                  , SessionID := ""
-                 , ExecutionCount := 0);
+                 , ExecutionCount := 0
+                 , quitting := false );
 
+    kernel.MsgHandlers := rec(
+        kernel_info_request := function(msg)
+            kernel!.SessionID := msg.header.session;
+            return JupyterMsg( kernel
+                             , "kernel_info_reply"
+                             , msg.header
+                             , rec( protocol_version := kernel!.ProtocolVersion
+                                  , implementation := "GAP"
+                                  , implementation_version := GAPInfo.PackagesInfo.jupyterkernel[1].Version
+                                  , language_info := rec( name := "GAP 4"
+                                                        , version := GAPInfo.Version
+                                                        , mimetype := "text/x-gap"
+                                                        , file_extension := ".g"
+                                                        , pygments_lexer := "gap"
+                                                        , codemirror_mode := "gap"
+                                                        , nbconvert_exporter := "" )
+                                  , banner := Concatenation( "GAP Jupyter kernel ", GAPInfo.PackagesInfo.jupyterkernel[1].Version, "\n",
+                                                             "Running on GAP ", GAPInfo.BuildVersion, "\n")
+                                  , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
+                                                  , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
+                                                  , rec( text := "GAP tutorial", url := "https://docs.gap-system.org/doc/chap0_mj.html")
+                                                  , rec( text := "GAP reference", url := "https://docs.gap-system.org/doc/ref/chap0_mj.html") ]
+                                  , status := "ok" )
+                             , rec() );
+        end,
 
-    kernel.MsgHandlers := rec( kernel_info_request := function(msg)
-                                 kernel!.SessionID := msg.header.session;
-                                 return JupyterMsg( kernel
-                                                  , "kernel_info_reply"
-                                                  , msg.header
-                                                  , rec( protocol_version := kernel!.ProtocolVersion
-                                                       , implementation := "GAP"
-                                                       , implementation_version := GAPInfo.PackagesInfo.jupyterkernel[1].Version
-                                                       , language_info := rec( name := "GAP 4"
-                                                                             , version := GAPInfo.Version
-                                                                             , mimetype := "text/x-gap"
-                                                                             , file_extension := ".g"
-                                                                             , pygments_lexer := "gap"
-                                                                             , codemirror_mode := "gap"
-                                                                             , nbconvert_exporter := "" )
-                                                       , banner := Concatenation( "GAP Jupyter kernel ", GAPInfo.PackagesInfo.jupyterkernel[1].Version, "\n",
-                                                                                  "Running on GAP ", GAPInfo.BuildVersion, "\n")
-                                                       , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
-                                                                       , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
-                                                                       , rec( text := "GAP tutorial", url := "https://docs.gap-system.org/doc/chap0_mj.html")
-                                                                       , rec( text := "GAP reference", url := "https://docs.gap-system.org/doc/ref/chap0_mj.html") ]
-                                                       , status := "ok" )
-                                                  , rec() );
-                               end,
+        execute_request := function(msg)
+            local publ, res, r, rep, str, data, metadata, t, content,
+                  errBuf, errText, savedErr, errored;
 
-                               history_request := function(msg)
-                                   msg.header.msg_type := "history_reply";
-                                   msg.content := rec( history := [] );
-                               end,
+            JupyterMsgSend( kernel, kernel!.IOPub
+                          , JupyterMsg( kernel
+                                      , "execute_input"
+                                      , msg.header
+                                      , rec( code := msg.content.code
+                                           , execution_count := kernel!.ExecutionCount + 1 )
+                                      , rec() ) );
+            str := InputTextString(msg.content.code);
 
-                               execute_request := function(msg)
-                                   local publ, res, rep, r, str, data, metadata, t;
+            # Swap ERROR_OUTPUT to a buffer for the duration of the
+            # evaluation, so we can tell apart "the user's code errored"
+            # (→ Jupyter "error" iopub message + ename/evalue/traceback
+            # in the reply) from "the user wrote to stderr deliberately"
+            # (→ Jupyter "stream" stderr message).
+            errText := "";
+            errBuf := OutputTextString(errText, true);
+            SetPrintFormattingStatus(errBuf, false);
+            MakeReadWriteGlobal("ERROR_OUTPUT");
+            savedErr := ERROR_OUTPUT;
+            ERROR_OUTPUT := errBuf;
+            MakeReadOnlyGlobal("ERROR_OUTPUT");
 
-                                   JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
-                                                                       , "execute_input"
-                                                                       , msg.header
-                                                                       , rec( code := msg.content.code
-                                                                            , execution_count := kernel!.ExecutionCount )
-                                                                       , rec() ) );
-                                   str := InputTextString(msg.content.code);
+            t := NanosecondsSinceEpoch();
+            res := READ_ALL_COMMANDS(str, false, false, IdFunc);
+            if IsBound(UPDATE_STAT) then
+                UPDATE_STAT( "time", QuoInt((NanosecondsSinceEpoch() - t), 1000000) );
+            fi;
 
-                                   # READ_ALL_COMMANDS was changed from 4.10. We make
-                                   # JupyterKernel compatible for the time being (until
-                                   # 4.10 is released at least)
-                                   t := NanosecondsSinceEpoch();
-                                   if CompareVersionNumbers(GAPInfo.Version, "4.10") then
-                                       res := READ_ALL_COMMANDS(str, false, false, IdFunc);
-                                   else
-                                       res := READ_ALL_COMMANDS(str, false);
-                                   fi;
-                                   # This is probably supremely naughty; we overwrite GAP's
-                                   # global time variable
-                                   UPDATE_STAT( "time", QuoInt((NanosecondsSinceEpoch() - t), 1000000) );
+            MakeReadWriteGlobal("ERROR_OUTPUT");
+            ERROR_OUTPUT := savedErr;
+            MakeReadOnlyGlobal("ERROR_OUTPUT");
+            CloseStream(errBuf);
 
-                                   # Flush StdOut...
-                                   Print("\c");
-                                   for r in res do
-                                       if r[1] = true then
-                                           kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
+            content := rec( status := "ok"
+                          , execution_count := kernel!.ExecutionCount + 1 );
+            errored := false;
+            for r in res do
+                if r[1] = true then
+                    kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
+                    if IsBound(r[2]) and r[3] = false then
+                        rep := JupyterRender(r[2]);
+                        metadata := JupyterRenderableMetadata(rep);
+                        data := JupyterRenderableData(rep);
+                        JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
+                                                            , "execute_result"
+                                                            , msg.header
+                                                            , rec( data := data
+                                                                 , metadata := metadata
+                                                                 , execution_count := kernel!.ExecutionCount )
+                                                            , rec() ) );
+                    fi;
+                else
+                    errored := true;
+                fi;
+            od;
 
-                                           # r[2] contains the result, r[3] is true if a dual semicolon was parsed
-                                           if IsBound(r[2]) and r[3] = false then
-                                               # FIXME: This is probably doable slightly more nicely
-                                               rep := JupyterRender(r[2]);
-                                               metadata := JupyterRenderableMetadata(rep);
-                                               data := JupyterRenderableData(rep);
-                                               # Only send a result message when there is a result
-                                               # value
-                                               # publ.execution_count := kernel!.ExecutionCount;
-                                               JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
-                                                                                   , "execute_result"
-                                                                                   , msg.header
-                                                                                   , rec( transient := rec()
-                                                                                        , data := data
-                                                                                        , metadata := metadata
-                                                                                        , execution_count := kernel!.ExecutionCount )
-                                                                                   , rec() ) );
-                                           fi;
-                                       fi;
-                                   od;
-                                   publ := JupyterMsg( kernel
-                                                     , "execute_reply"
-                                                     , msg.header
-                                                     , rec( status := "ok"
-                                                          , execution_count := kernel!.ExecutionCount )
-                                                     , rec() );
-                                   return publ;
-                               end,
+            FlushOutputStream(kernel!.StdOut);
+            FlushOutputStream(kernel!.StdErr);
 
-                               inspect_request := function(msg)
-                                   return JupyterMsg( kernel
-                                                    , "inspect_reply"
+            if errored then
+                # Errors during evaluation → iopub "error" message + status
+                # in reply. errText carries whatever Error() printed.
+                JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
+                                                    , "error"
                                                     , msg.header
-                                                    , JUPYTER_Inspect( msg.content.code
-                                                                     , msg.content.cursor_pos )
-                                                    , rec() );
-                               end,
-
-                               complete_request := function(msg)
-                                   return JupyterMsg( kernel
-                                                    , "complete_reply"
+                                                    , rec( ename := "GAPError"
+                                                         , evalue := errText
+                                                         , traceback := [ errText ] )
+                                                    , rec() ) );
+                content.status := "error";
+                content.ename := "GAPError";
+                content.evalue := errText;
+                content.traceback := [ errText ];
+            elif Length(errText) > 0 then
+                # User wrote to stderr without erroring (Print(ERROR_OUTPUT,...)).
+                JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
+                                                    , "stream"
                                                     , msg.header
-                                                    , JUPYTER_Complete( msg.content.code
-                                                                      , msg.content.cursor_pos )
-                                                    , rec() );
-                               end,
+                                                    , rec( name := "stderr"
+                                                         , text := errText )
+                                                    , rec() ) );
+            fi;
 
-                               history_request := function(msg)
-                                   return JupyterMsg( kernel
-                                                    , "history_reply"
-                                                    , msg.header
-                                                    , rec( history := [] )
-                                                    , rec() );
-                               end,
+            content.execution_count := kernel!.ExecutionCount;
+            return JupyterMsg( kernel, "execute_reply", msg.header, content, rec() );
+        end,
 
-                               is_complete_request := function(msg)
-                                   return JupyterMsg( kernel
-                                                    , "is_complete_reply"
-                                                    , msg.header
-                                                    , rec( status := "complete" )
-                                                    , rec() );
-                               end,
+        inspect_request := function(msg)
+            return JupyterMsg( kernel
+                             , "inspect_reply"
+                             , msg.header
+                             , JUPYTER_Inspect( msg.content.code
+                                              , msg.content.cursor_pos )
+                             , rec() );
+        end,
 
-                               comm_open := function(msg)
-                                   return JupyterMsg( kernel
-                                                    , "comm_open_reply"
-                                                    , msg.header
-                                                    , rec( status := "ok" )
-                                                    , rec() );
-                               end,
+        complete_request := function(msg)
+            return JupyterMsg( kernel
+                             , "complete_reply"
+                             , msg.header
+                             , JUPYTER_Complete( msg.content.code
+                                               , msg.content.cursor_pos )
+                             , rec() );
+        end,
 
-                               comm_info_request := function(msg)
-                                   return JupyterMsg( kernel
-                                                    , "comm_info_reply"
-                                                    , msg.header
-                                                    , rec( comms := rec(), status := "ok" )
-                                                    , rec() );
-                               end,
+        history_request := function(msg)
+            return JupyterMsg( kernel
+                             , "history_reply"
+                             , msg.header
+                             , rec( history := [] )
+                             , rec() );
+        end,
 
-                               interrupt_request := function(msg)
-                                   local status;
-                                   # This is SIGINT
-                                   status := IO_kill(pid, 2);
-                                   return JupyterMsg( kernel
-                                                    , "interrupt_reply"
-                                                    , msg.header
-                                                    , rec()
-                                                    , rec() );
+        is_complete_request := function(msg)
+            return JupyterMsg( kernel
+                             , "is_complete_reply"
+                             , msg.header
+                             , JUPYTER_IsCompleteCode(msg.content.code)
+                             , rec() );
+        end,
 
-                               end,
-                               shutdown_request := function(msg)
-                                   kernel!.quitting := true;
-                                   return JupyterMsg( kernel
-                                                 , "shutdown_reply"
-                                                 , msg.header
-                                                 , rec( restart := msg.content.restart )
-                                                 , rec() );
-                               end );
+        comm_open := function(msg)
+            return JupyterMsg( kernel
+                             , "comm_open_reply"
+                             , msg.header
+                             , rec( status := "ok" )
+                             , rec() );
+        end,
+
+        comm_info_request := function(msg)
+            return JupyterMsg( kernel
+                             , "comm_info_reply"
+                             , msg.header
+                             , rec( comms := rec(), status := "ok" )
+                             , rec() );
+        end,
+
+        # Without IO_fork the kernel cannot interrupt itself between polls.
+        # We accept the request and acknowledge; PR 7 will install a SIGINT
+        # handler and switch kernel.json to interrupt_mode: signal.
+        interrupt_request := function(msg)
+            return JupyterMsg( kernel
+                             , "interrupt_reply"
+                             , msg.header
+                             , rec()
+                             , rec() );
+        end,
+
+        shutdown_request := function(msg)
+            kernel!.quitting := true;
+            return JupyterMsg( kernel
+                          , "shutdown_reply"
+                          , msg.header
+                          , rec( restart := msg.content.restart )
+                          , rec() );
+        end );
 
     kernel.SignalBusy := function()
         JupyterMsgSend( kernel, kernel!.IOPub
@@ -218,6 +297,7 @@ function(conf)
                                   , rec( execution_state := "busy" )
                                   , rec() ) );
     end;
+
     kernel.SignalIdle := function()
         JupyterMsgSend( kernel, kernel!.IOPub
                       , JupyterMsg( kernel
@@ -227,140 +307,97 @@ function(conf)
                                   , rec() ) );
     end;
 
+    kernel.SignalStarting := function()
+        JupyterMsgSend( kernel, kernel!.IOPub
+                      , JupyterMsg( kernel
+                                  , "status"
+                                  , rec()
+                                  , rec( execution_state := "starting" )
+                                  , rec() ) );
+    end;
+
     kernel.HandleShellMsg := function(msg)
-        local hdl_dict, f, t, reply;
-
-        # We store the currently processed
-        # message header, because we need it
-        # for replies
+        local t, reply;
         kernel!.CurrentMsg := msg.header;
-
         kernel!.SignalBusy();
         t := msg.header.msg_type;
         if IsBound(kernel!.MsgHandlers.(t)) then
-            # Currently we send the "reply" to each "request" on the Shell socket
-            # here. We might opt to move the sending into the handler functions,
-            # since at least "execute" has to send more than one message anyway
-            JupyterMsgSend(kernel, kernel!.Shell, kernel!.MsgHandlers.(t)(msg) );
-
+            reply := kernel!.MsgHandlers.(t)(msg);
+            JupyterMsgSend(kernel, kernel!.Shell, reply);
             kernel!.SignalIdle();
             return true;
         else
-            Print("unhandled message type: ", msg.header.msg_type, "\n");
+            Print("unhandled shell message type: ", t, "\n");
             kernel!.SignalIdle();
             return fail;
         fi;
-
     end;
 
     kernel.HandleControlMsg := function(msg)
-        local hdl_dict, f, t, reply;
-
+        local t, reply;
         kernel!.CurrentMsg := msg.header;
-
         t := msg.header.msg_type;
-        if IsBound(kernel!.MsgHandlers.(t)) then
-            if t in [ "interrupt_request", "shutdown_request" ] then 
-                JupyterMsgSend(kernel, kernel!.Control, kernel!.MsgHandlers.(t)(msg) );
-            fi;
+        if t = "interrupt_request" or t = "shutdown_request" then
+            reply := kernel!.MsgHandlers.(t)(msg);
+            JupyterMsgSend(kernel, kernel!.Control, reply);
             return true;
         fi;
-
+        Print("unhandled control message type: ", t, "\n");
+        return fail;
     end;
 
-    _KERNEL := kernel;
+    # Socket binding is done in BindSockets(), called by Run(). Tests can
+    # construct a kernel record without opening ports.
+    kernel.BindSockets := function()
+        # Bind sockets in this order: IOPub first so subscribers can attach
+        # before any status message is published (ZMQ PUB has slow-joiner
+        # semantics — anything sent before the subscriber is wired is lost).
+        kernel!.IOPub   := ZmqPublisherSocket( Concatenation(address, String(conf.iopub_port))
+                                             , kernel!.ZmqIdentity);
+        kernel!.Shell   := ZmqDealerSocket(    Concatenation(address, String(conf.shell_port))
+                                             , kernel!.ZmqIdentity);
+        kernel!.StdIn   := ZmqRouterSocket(    Concatenation(address, String(conf.stdin_port))
+                                             , kernel!.ZmqIdentity);
+        kernel!.Control := ZmqRouterSocket(    Concatenation(address, String(conf.control_port))
+                                             , kernel!.ZmqIdentity);
+        kernel!.HB      := ZmqRouterSocket(    Concatenation(address, String(conf.hb_port)));
 
-    # This should happen in "Run" somehow, as currently the creation
-    # of a Jupyter Kernel breaks the running GAP session, taking
-    # every hope of debugging the kernel
-    pid := IO_fork();
-    if pid = fail then
-        return fail;
-    elif pid > 0 then # we are the parent and do heartbeat and control messages
-        kernel.mode := JUPYTER_KERNEL_MODE_CONTROL;
-        kernel.HB := ZmqRouterSocket( Concatenation(address, String(conf.hb_port) ) );
-        kernel.Control := ZmqRouterSocket( Concatenation(address, String(conf.control_port) )
-                                         , kernel!.ZmqIdentity);
-        kernel.quitting := false;
-        kernel.Loop := function()
-            local topoll, poll, i, msg, res;
-            topoll := [ kernel!.HB, kernel!.Control ];
-            while true do
-                poll := ZmqPoll( topoll, [], 5000 );
-                if 1 in poll then
-                    msg := ZmqReceiveList(kernel!.HB);
-                    ZmqSend(kernel!.HB, msg);
-                fi;
-                if 2 in poll then
-                    msg := JupyterMsgRecv(kernel, kernel!.Control);
-                    res := kernel!.HandleControlMsg(msg);
-                    if res = fail then
-                        Print("failed to handle message\n");
-                    fi;
-                fi;
-                if kernel!.quitting then
-                    IO_kill(pid, 3);
-                    status := IO_WaitPid(pid, true);
-                    QUIT_GAP(0);
-                fi;
-                # Check whether child has gone away
-                status := IO_WaitPid(pid, false);
-                if IsRecord(status) then
-                    # TODO find out what these statuses mean
-                    if status.pid = pid and status.status in [ 3, 9, 15, 131 ] then
-                        QUIT_GAP(0);
-                    fi;
-                fi;
-            od;
-        end;
-    else
-        kernel.mode  := JUPYTER_KERNEL_MODE_EXEC; # Handler
-        kernel.IOPub := ZmqPublisherSocket( Concatenation(address, String(conf.iopub_port))
-                                          , kernel!.ZmqIdentity);
-        kernel.Shell := ZmqDealerSocket( Concatenation(address, String(conf.shell_port))
-                                       , kernel!.ZmqIdentity);
-        kernel.StdIn := ZmqRouterSocket( Concatenation(address, String(conf.stdin_port))
-                                       , kernel!.ZmqIdentity);
-
-        # TODO: This is of course still hacky, but better than before
         kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
         kernel!.StdErr := OutputStreamZmq(kernel, kernel!.IOPub, "stderr");
-        # TODO: Hack to be able to change ERROR_OUTPUT.
+
         MakeReadWriteGlobal("ERROR_OUTPUT");
         ERROR_OUTPUT := kernel!.StdErr;
         MakeReadOnlyGlobal("ERROR_OUTPUT");
         OutputLogTo(kernel!.StdOut);
+    end;
 
-        # Jupyter Heartbeat and Control channel is handled by a fork'ed GAP process
-        # (yes, really, its better than starting a separate thread, because it
-        # doesn't need special pthread code downside is that it doesn't work on
-        # cygwin, of course, but maybe we could just ExecuteProcess on windows, or
-        # wait for bash on windows to become popular enoug.
-        kernel.Loop := function()
-            # To catch SIGINT when the kernel is idle
-            while true do
+    kernel.Loop := function()
+        local topoll, poll, raw;
+        kernel!.SignalStarting();
+        topoll := [ kernel!.HB, kernel!.Control, kernel!.Shell, kernel!.StdIn ];
+        while not kernel!.quitting do
+            poll := ZmqPoll(topoll, [], 100);
+            if 1 in poll then
+                raw := ZmqReceiveList(kernel!.HB);
+                ZmqSend(kernel!.HB, raw);
+            fi;
+            if 2 in poll then
                 CALL_WITH_CATCH(function()
-                                   local topoll, poll, i, msg, res;
+                    kernel!.HandleControlMsg(JupyterMsgRecv(kernel, kernel!.Control));
+                end, []);
+            fi;
+            if 3 in poll then
+                CALL_WITH_CATCH(function()
+                    kernel!.HandleShellMsg(JupyterMsgRecv(kernel, kernel!.Shell));
+                end, []);
+            fi;
+            if 4 in poll then
+                ZmqReceiveList(kernel!.StdIn);
+            fi;
+        od;
+    end;
 
-                                   topoll := [ kernel!.Shell, kernel!.StdIn ];
-                                   while true do
-                                       poll := ZmqPoll(topoll, [], 5000);
-                                       if 1 in poll then
-                                           msg := JupyterMsgRecv(kernel, topoll[1]);
-                                           res := kernel!.HandleShellMsg(msg);
-                                           if res = fail then
-                                               Print("failed to handle message\n");
-                                           fi;
-                                       fi;
-                                       if 2 in poll then
-                                           msg := ZmqReceiveList(topoll[2]);
-                                       fi;
-                                   od;
-                               end, []);
-            od;
-        end;
-    fi;
-
+    _KERNEL := kernel;
     Objectify(GAPJupyterKernelType, kernel);
     return kernel;
 end);
@@ -374,22 +411,16 @@ InstallMethod( Run
              , "for Jupyter kernel"
              , [ IsGAPJupyterKernel ]
              , function(x)
-                 # TODO: we should really not be doing this.
-                 MakeReadWriteGlobal("HELP_SHOW_MATCHES");
-                 UnbindGlobal("HELP_SHOW_MATCHES");
-                 DeclareSynonym("HELP_SHOW_MATCHES", JUPYTER_HELP_SHOW_MATCHES);
-
-                 MakeReadWriteGlobal("HELP");
-                 UnbindGlobal("HELP");
-                 DeclareSynonym("HELP", JUPYTER_HELP);
-
+                 # Help system rerouting: SetHelpViewer points at our online
+                 # viewer; we no longer rebind the global HELP function (a
+                 # PR 6 follow-up will route ?topic through execute_request).
                  SetUserPreference("browse", "SelectHelpMatches", false);
                  SetUserPreference("Pager", "tail");
                  SetUserPreference("PagerOptions", "");
-                 # This is of course complete nonsense if you're running the jupyter notebook
-                 # on your local machine.
                  SetHelpViewer("jupyter_online");
+                 x!.BindSockets();
                  x!.Loop();
+                 QUIT_GAP(0);
              end);
 
 InstallGlobalFunction( JUPYTER_KernelStart_HPC,
@@ -400,11 +431,10 @@ end);
 
 InstallGlobalFunction( JUPYTER_KernelStart_GAP,
 function(configfile)
-    local instream, conf, address, kernel, s;
-
+    local instream, conf, kernel;
     instream := InputTextFile(configfile);
     conf := JsonStreamToGap(instream);
-
+    CloseStream(instream);
     kernel := NewJupyterKernel(conf);
     Run(kernel);
 end);

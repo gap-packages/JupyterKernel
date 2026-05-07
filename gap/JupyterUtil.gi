@@ -3,6 +3,52 @@ InstallMethod( JupyterRender, [ IsRecord ],
                              , rec( data := rec( text\/plain := String(r) )
                                    , metadata := rec() ) ) );
 
+# Extract the identifier ending at (or just before) cursor_pos. Returns a
+# record { ident, startpos, endpos, fapp }: ident is the identifier as a string
+# (possibly empty), start/end are 0-based [start, end) cursor positions
+# (matching the Jupyter complete protocol), fapp is true if the cursor sat
+# directly on `(` after an identifier — a hint that the user wants help on
+# the function being applied. Shared between JUPYTER_Complete and
+# JUPYTER_Inspect.
+BindGlobal("JUPYTER_ExtractIdentifier",
+function(code, cursor_pos)
+    local n, i, j, c, fapp, ident;
+
+    n := Length(code);
+    i := Minimum(cursor_pos, n);
+    fapp := false;
+
+    # If the cursor is sitting on an opening paren, treat the preceding
+    # identifier as a function application.
+    if i > 0 and i <= n and code[i] = '(' then
+        fapp := true;
+        i := i - 1;
+    fi;
+
+    # Skip back through trailing whitespace (rare from notebook clients).
+    while i > 0 and (code[i] = ' ' or code[i] = '\t') do i := i - 1; od;
+
+    j := i;
+    while j > 0 do
+        c := code[j];
+        if not ((c >= 'a' and c <= 'z')
+                or (c >= 'A' and c <= 'Z')
+                or (c >= '0' and c <= '9')
+                or c = '_') then
+            break;
+        fi;
+        j := j - 1;
+    od;
+
+    if j = i then
+        ident := "";
+    else
+        ident := code{[j+1..i]};
+    fi;
+
+    return rec( ident := ident, startpos := j, endpos := i, fapp := fapp );
+end);
+
 # This is still an ugly hack, but its already much better than before!
 BindGlobal("JupyterSplashDot",
 function(dot)
@@ -134,5 +180,5 @@ function()
                       , pad(gm.tm_hour, 2, '0'), ":"
                       , pad(gm.tm_min, 2, '0'), ":"
                       , pad(gm.tm_sec, 2, '0'), "."
-                      , pad(tz.tv_usec, 6, '0') );
+                      , pad(tz.tv_usec, 6, '0'), "Z" );
 end);

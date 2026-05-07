@@ -3,16 +3,21 @@
 #
 # Implementations
 #
-# TODO: Check signature
+
+# Compute the lowercase hex SHA-256 HMAC over the four canonical
+# Jupyter message JSON strings, in protocol order. Used by both encode
+# (to sign outgoing messages) and decode (to verify incoming).
+InstallGlobalFunction( JUPYTER_ComputeHMAC,
+function(key, header, parent_header, metadata, content)
+    local digest;
+    digest := CRYPTING_SHA256_HMAC( key,
+                Concatenation(header, parent_header, metadata, content) );
+    return LowercaseString( Concatenation( List(digest, CRYPTING_HexStringIntPad8) ) );
+end);
+
 InstallGlobalFunction( JupyterMsgDecode,
 function(kernel, raw)
-    local result, bindIfBound, sl, ids, tmp;
-
-    bindIfBound := function(name, pos)
-        if IsBound(raw[pos]) then
-            result.(name) := JsonStringToGap(raw[pos]);
-        fi;
-    end;
+    local result, sl, ids, expected;
 
     result := rec();
 
@@ -23,25 +28,22 @@ function(kernel, raw)
         sl := sl + 1;
     od;
     result.hmac := raw[sl + 1];
-    result.remainder := raw;
 
-    bindIfBound("header", sl + 2);
-    bindIfBound("parent_header", sl + 3);
-    bindIfBound("metadata", sl + 4);
-    bindIfBound("content", sl + 5);
+    Assert(0, IsBound(raw[sl + 2]) and IsBound(raw[sl + 3])
+           and IsBound(raw[sl + 4]) and IsBound(raw[sl + 5]));
 
-    tmp := CRYPTING_SHA256_HMAC( kernel!.SessionKey
-                               , Concatenation( raw[sl + 2]
-                                              , raw[sl + 3]
-                                              , raw[sl + 4]
-                                              , raw[sl + 5] ) );
-    tmp := List(tmp, CRYPTING_HexStringIntPad8);
-    tmp := LowercaseString(Concatenation(tmp));
-    result.hmac_verify := tmp;
+    result.header        := JsonStringToGap(raw[sl + 2]);
+    result.parent_header := JsonStringToGap(raw[sl + 3]);
+    result.metadata      := JsonStringToGap(raw[sl + 4]);
+    result.content       := JsonStringToGap(raw[sl + 5]);
 
-    if result.hmac <> result.hmac_verify then
-        PrintTo( "*errout*", "HMAC verification for message failed: "
-                 , result.hmac, " <> ", result.hmac_verify, "\n" );
+    expected := JUPYTER_ComputeHMAC( kernel!.SessionKey,
+                                     raw[sl + 2], raw[sl + 3],
+                                     raw[sl + 4], raw[sl + 5] );
+    if result.hmac <> expected then
+        Error("HMAC verification failed: refusing to process message ",
+              "(received ", result.hmac, ", expected ", expected,
+              "). Connection-file key mismatch?");
     fi;
 
     return result;
@@ -49,39 +51,26 @@ end);
 
 InstallGlobalFunction( JupyterMsgEncode,
 function(kernel, msg)
-    local raw, k, bindIfBound, tmp;
+    local raw, header_j, parent_j, meta_j, content_j;
 
-    bindIfBound := function(pos, name)
-        if IsBound(msg.(name)) then
-            raw[pos] := GapToJsonString(msg.(name));
-        fi;
-    end;
+    Assert(0, IsBound(msg.header)        and IsRecord(msg.header));
+    Assert(0, IsBound(msg.parent_header) and IsRecord(msg.parent_header));
+    Assert(0, IsBound(msg.metadata)      and IsRecord(msg.metadata));
+    Assert(0, IsBound(msg.content)       and IsRecord(msg.content));
+
+    header_j  := GapToJsonString(msg.header);
+    parent_j  := GapToJsonString(msg.parent_header);
+    meta_j    := GapToJsonString(msg.metadata);
+    content_j := GapToJsonString(msg.content);
 
     raw := [];
-    # TODO: What is the correct behaviour here?
-    if IsBound(msg.uuid) then
-        raw[1] := msg.uuid;
-    else
-        raw[1] := "";
-    fi;
+    raw[1] := msg.uuid;
     raw[2] := "<IDS|MSG>";
-    raw[3] := msg.hmac;
-    bindIfBound(4, "header");
-    bindIfBound(5, "parent_header");
-    bindIfBound(6, "metadata");
-    bindIfBound(7, "content");
-
-    # TODO: Ugly
-    if Length(raw) > 3 then
-        tmp := CRYPTING_SHA256_HMAC(msg.key,
-                                    Concatenation( raw[4]
-                                                 , raw[5]
-                                                 , raw[6]
-                                                 , raw[7]));
-        tmp := List(tmp, CRYPTING_HexStringIntPad8);
-        tmp := LowercaseString(Concatenation(tmp));
-        raw[3] := LowercaseString(tmp);
-    fi;
+    raw[3] := JUPYTER_ComputeHMAC(msg.key, header_j, parent_j, meta_j, content_j);
+    raw[4] := header_j;
+    raw[5] := parent_j;
+    raw[6] := meta_j;
+    raw[7] := content_j;
     return raw;
 end);
 
@@ -98,21 +87,19 @@ end);
 
 InstallGlobalFunction(JupyterMsgSend,
 function(kernel, sock, msg)
-    local msg2;
+    local raw;
+    raw := JupyterMsgEncode(kernel, msg);
     if IsBound(kernel!.ProtocolLog) then
-        msg2 := JupyterMsgEncode(kernel, msg);
-        AppendTo(kernel!.ProtocolLog, msg2);
+        AppendTo(kernel!.ProtocolLog, raw);
         AppendTo(kernel!.ProtocolLog, "\n");
     fi;
-    ZmqSend(sock, JupyterMsgEncode(kernel, msg));
+    ZmqSend(sock, raw);
 end);
 
-# Create a message template with the necessasry fields filled
+# Create a message template with the necessary fields filled
 InstallGlobalFunction(JupyterMsg,
 function(kernel, msg_type, parent_header, content, metadata)
     return rec( uuid := kernel!.ZmqIdentity
-              , sep := "<IDS|MSG>"                 # This could be in JupyterEncode
-              , hmac := ""
               , header := rec( username := kernel!.Username
                              , session := kernel!.SessionID
                              , msg_type := msg_type
@@ -124,10 +111,5 @@ function(kernel, msg_type, parent_header, content, metadata)
               , metadata := metadata
               , content := content
               , key := kernel!.SessionKey
-                             # This shouldn't be here as all
-                             # messaging functions
-                             # should just be running in kernel context
               );
 end);
-
-

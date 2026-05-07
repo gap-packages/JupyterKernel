@@ -52,3 +52,9 @@ src/*.lo
 /tmp/
 /gh-pages/
 **/.ipynb_checkpoints/
+
+__pycache__/
+*.pyc
+*.egg-info/
+/build/
+/dist/

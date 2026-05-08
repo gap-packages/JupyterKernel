@@ -7,13 +7,18 @@ also starts on Windows. Resolves the GAP binary in this order:
 2. ``$GAP``
 3. ``shutil.which("gap")``
 
-then execs ``gap -q -T --alwaystrace -c '<bootstrap>'`` with the connection
-file path passed through from Jupyter.
+then ``execvp``s ``gap -q -T --alwaystrace -c '<bootstrap>'`` with the
+connection file path passed through from Jupyter.
+
+We use ``os.execvp`` rather than ``subprocess.call`` so this Python process
+is replaced by GAP at the same PID. Jupyter records the PID returned by
+``Popen`` and, with ``interrupt_mode: "signal"``, sends SIGINT to that
+PID when the user hits the interrupt button. If we kept Python around as
+a parent, the signal would land on Python and never reach GAP.
 """
 
 import os
 import shutil
-import subprocess
 import sys
 
 
@@ -47,7 +52,10 @@ def main() -> int:
         sys.exit("usage: python -m gap_jupyter_kernel <connection_file>")
     gap = _find_gap()
     script = _bootstrap_script(sys.argv[1])
-    return subprocess.call([gap, "-q", "-T", "--alwaystrace", "-c", script])
+    try:
+        os.execvp(gap, [gap, "-q", "-T", "--alwaystrace", "-c", script])
+    except OSError as e:
+        sys.exit(f"gap-jupyter: failed to exec {gap!r}: {e}")
 
 
 if __name__ == "__main__":

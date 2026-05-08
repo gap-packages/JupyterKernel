@@ -130,7 +130,7 @@ function(conf)
 
         execute_request := function(msg)
             local publ, res, r, rep, str, data, metadata, t, content,
-                  errBuf, errText, savedErr, errored;
+                  errBuf, errText, savedErr, errored, ename, run;
 
             JupyterMsgSend( kernel, kernel!.IOPub
                           , JupyterMsg( kernel
@@ -154,8 +154,15 @@ function(conf)
             ERROR_OUTPUT := errBuf;
             MakeReadOnlyGlobal("ERROR_OUTPUT");
 
+            # Wrap the eval in CALL_WITH_CATCH so a SIGINT mid-execution
+            # (sent by Jupyter when the user clicks the interrupt button —
+            # see kernel.json's interrupt_mode: signal) unwinds cleanly to
+            # an execute_reply with status="error" rather than killing the
+            # kernel. With -T, GAP's SIGINT handler raises a normal "user
+            # interrupt at ..." error that CALL_WITH_CATCH captures.
             t := NanosecondsSinceEpoch();
-            res := READ_ALL_COMMANDS(str, false, false, IdFunc);
+            run := CALL_WITH_CATCH(
+                READ_ALL_COMMANDS, [str, false, false, IdFunc]);
             if IsBound(UPDATE_STAT) then
                 UPDATE_STAT( "time", QuoInt((NanosecondsSinceEpoch() - t), 1000000) );
             fi;
@@ -168,6 +175,19 @@ function(conf)
             content := rec( status := "ok"
                           , execution_count := kernel!.ExecutionCount + 1 );
             errored := false;
+            ename := "GAPError";
+            if run[1] = false then
+                # READ_ALL_COMMANDS itself bailed out — typically because a
+                # SIGINT fired between statements before the per-statement
+                # catch could be set up. errText holds GAP's error message.
+                errored := true;
+                if PositionSublist(errText, "user interrupt") <> fail then
+                    ename := "KeyboardInterrupt";
+                fi;
+                res := [];
+            else
+                res := run[2];
+            fi;
             for r in res do
                 if r[1] = true then
                     kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
@@ -185,6 +205,9 @@ function(conf)
                     fi;
                 else
                     errored := true;
+                    if PositionSublist(errText, "user interrupt") <> fail then
+                        ename := "KeyboardInterrupt";
+                    fi;
                 fi;
             od;
 
@@ -197,12 +220,12 @@ function(conf)
                 JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                     , "error"
                                                     , msg.header
-                                                    , rec( ename := "GAPError"
+                                                    , rec( ename := ename
                                                          , evalue := errText
                                                          , traceback := [ errText ] )
                                                     , rec() ) );
                 content.status := "error";
-                content.ename := "GAPError";
+                content.ename := ename;
                 content.evalue := errText;
                 content.traceback := [ errText ];
             elif Length(errText) > 0 then
@@ -269,16 +292,12 @@ function(conf)
                              , rec() );
         end,
 
-        # Without IO_fork the kernel cannot interrupt itself between polls.
-        # We accept the request and acknowledge; PR 7 will install a SIGINT
-        # handler and switch kernel.json to interrupt_mode: signal.
-        interrupt_request := function(msg)
-            return JupyterMsg( kernel
-                             , "interrupt_reply"
-                             , msg.header
-                             , rec()
-                             , rec() );
-        end,
+        # No interrupt_request handler: kernel.json declares
+        # interrupt_mode "signal", so Jupyter sends SIGINT directly to
+        # the kernel PID. GAP's built-in SIGINT handler then surfaces
+        # the interrupt as a "user interrupt at ..." error during
+        # execute_request, where CALL_WITH_CATCH around READ_ALL_COMMANDS
+        # converts it to a normal status="error" reply.
 
         shutdown_request := function(msg)
             kernel!.quitting := true;

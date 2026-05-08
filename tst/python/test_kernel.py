@@ -90,6 +90,41 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertTrue(info["banner"], "banner must be non-empty")
         self.assertEqual(info["language_info"]["name"], "GAP 4")
 
+    def test_interrupt(self):
+        """Sending an interrupt mid-execute_request must unwind to an
+        execute_reply with status="error" — not kill the kernel.
+
+        Requires interrupt_mode="signal" (in kernel.json) AND that the
+        kernel process is the same PID Jupyter spawned (i.e. the Python
+        launcher must os.execvp into GAP rather than wrapping it as a
+        child)."""
+        self.flush_channels()
+        # Long-running loop that returns to the GAP interpreter often
+        # enough for SIGINT to be checked. A tight C-level loop would
+        # not be interruptible — that's a GAP-level limitation.
+        msg_id = self.kc.execute("while true do od;")
+        # Give the kernel a moment to pick the message up.
+        time.sleep(1.0)
+        self.km.interrupt_kernel()
+        deadline = time.time() + 30
+        while time.time() < deadline:
+            try:
+                msg = self.kc.get_shell_msg(timeout=2)
+            except Empty:
+                continue
+            if msg["msg_type"] != "execute_reply":
+                continue
+            if msg["parent_header"].get("msg_id") != msg_id:
+                continue
+            self.assertEqual(msg["content"]["status"], "error")
+            # Don't pin the exact ename; GAP wording may vary across
+            # versions. Just confirm the error mentions interrupt.
+            evalue = msg["content"].get("evalue", "")
+            self.assertIn("interrupt", evalue.lower(),
+                          f"expected interrupt-flavoured error, got {evalue!r}")
+            return
+        self.fail("no execute_reply received within 30s of interrupt_kernel()")
+
     def test_kernel_info_on_control(self):
         """JupyterLab 4 / jupyter_server sends kernel_info_request on the
         Control channel as a liveness probe. If we don't reply there, Lab

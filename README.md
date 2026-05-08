@@ -73,11 +73,14 @@ Source for the mode lives in `src/`; rebuild with:
 
 ### Interrupting a running computation
 
-This release accepts interrupt requests from the notebook UI but does not
-act on them while a computation is running — the kernel is single-process
-and cannot poll for interrupts mid-`READ_ALL_COMMANDS`. Long-running cells
-must be allowed to finish or the kernel restarted. A follow-up release
-will switch to signal-mode interrupts.
+The notebook's interrupt button sends SIGINT directly to the GAP process
+(`interrupt_mode: "signal"` in `kernel.json`). GAP's own interrupt handler
+turns that into a normal "user interrupt" error, which the kernel converts
+to an `execute_reply` with `status: "error"` and `ename: "KeyboardInterrupt"`.
+
+Caveat: GAP only checks for an interrupt at GAP-level statement boundaries.
+Tight C-level loops — e.g. some `Factors(BigInteger)` calls — will not be
+interruptible until they return to the interpreter.
 
 ### Troubleshooting
 

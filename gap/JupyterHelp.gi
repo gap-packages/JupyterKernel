@@ -198,64 +198,58 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
       move := true;
   fi;
 
-  # number means topic from HELP_LAST.TOPICS list
+  # Special-case dispatch for navigation tokens. Each branch performs
+  # its action and falls through the function (returning nothing).
   if book = "" and ForAll(str, a-> a in "0123456789") then
+      # number means topic from HELP_LAST.TOPICS list
       HELP_SHOW_FROM_LAST_TOPICS(Int(str));
-
-  # if the topic is '<' we are interested in the one before 'LastTopic'
+      return;
   elif book = "" and str = "<" and Length(nwostr) = 1  then
-      HELP_SHOW_PREV();
-
-  # if the topic is '>' we are interested in the one after 'LastTopic'
+      HELP_SHOW_PREV(); return;
   elif book = "" and str = ">" and Length(nwostr) = 1  then
-      HELP_SHOW_NEXT();
-
-  # if the topic is '<<' we are interested in the previous chapter intro
+      HELP_SHOW_NEXT(); return;
   elif book = "" and str = "<<"  then
-      HELP_SHOW_PREV_CHAPTER();
-
-  # if the topic is '>>' we are interested in the next chapter intro
+      HELP_SHOW_PREV_CHAPTER(); return;
   elif book = "" and str = ">>"  then
-      HELP_SHOW_NEXT_CHAPTER();
-
-  # if the subject is 'Welcome to GAP' display a welcome message
+      HELP_SHOW_NEXT_CHAPTER(); return;
   elif book = "" and str = "welcome to gap"  then
       if HELP_SHOW_WELCOME(book)  then
           add( books, "Welcome to GAP" );
       fi;
-
-  # if the topic is 'books' display the table of books
+      return;
   elif book = "" and str = "books"  then
       if HELP_SHOW_BOOKS()  then
           add( books, "books" );
       fi;
-
-  # if the topic is 'chapters' display the table of chapters
+      return;
   elif str = "chapters"  or str = "contents" or book <> "" and str = "" then
       if ForAll(books, b->  HELP_SHOW_CHAPTERS(b)) then
         add( books, "chapters" );
       fi;
-
-  # if the topic is 'sections' display the table of sections
+      return;
   elif str = "sections"  then
       if ForAll(books, b-> HELP_SHOW_SECTIONS(b)) then
         add(books, "sections");
       fi;
-
-  # if the topic is '?<string>' search the index for any entries for
-  # which <string> is a substring (as opposed to an abbreviation)
+      return;
   elif Length(str) > 0 and str[1] = '?'  then
+      # '??<topic>' — substring search rather than prefix match.
       str := str{[2..Length(str)]};
       NormalizeWhitespace(str);
       return JUPYTER_HELP_SHOW_MATCHES( books, str, false);
+  fi;
 
-  # search for this topic — call the Jupyter-flavoured matcher exactly
-  # once, return its renderable if it found something, otherwise fall
-  # through. The previous version called GAP's HELP_SHOW_MATCHES (which
-  # returns true/false, never a renderable), so this branch was a no-op.
-  elif IsJupyterRenderable( res := JUPYTER_HELP_SHOW_MATCHES( books, str, true ) ) then
+  # General topic search. We had to lift this out of the elif chain
+  # above because GAP doesn't allow `:=` inside an expression, so we
+  # can't both call JUPYTER_HELP_SHOW_MATCHES and inspect its return
+  # value within a single elif test.
+  res := JUPYTER_HELP_SHOW_MATCHES( books, str, true );
+  if IsJupyterRenderable(res) then
       return res;
-  elif origstr in NAMES_SYSTEM_GVARS then
+  fi;
+
+  # Fallback hints when the search came back empty.
+  if origstr in NAMES_SYSTEM_GVARS then
       Print( "Help: '", origstr, "' is currently undocumented.\n",
              "      For details, try ?Undocumented Variables\n" );
   elif book = "" and
@@ -263,10 +257,6 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
       Print( "Help: Are you looking for a certain book? (Trying '?", origstr,
              ":' ...\n");
       return HELP( Concatenation(origstr, ":") );
-  else
-     # seems unnecessary, since some message is already printed in all
-     # cases above (?):
-     # Print( "Help: Sorry, could not find a match for '", origstr, "'.\n");
   fi;
 end);
 

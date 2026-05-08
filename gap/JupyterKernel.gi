@@ -522,9 +522,10 @@ InstallMethod( Run
              , function(x)
                  JupyterLog("Run: entered, GAPInfo.Version=",
                             GAPInfo.Version, "\n");
-                 # Help system rerouting: SetHelpViewer points at our online
-                 # viewer; we no longer rebind the global HELP function (a
-                 # PR 6 follow-up will route ?topic through execute_request).
+                 # Help system rerouting: SetHelpViewer points at our
+                 # online viewer. We do NOT rebind the global HELP
+                 # function — instead execute_request intercepts a
+                 # leading `?` and dispatches to JUPYTER_HELP directly.
                  SetUserPreference("browse", "SelectHelpMatches", false);
                  SetUserPreference("Pager", "tail");
                  SetUserPreference("PagerOptions", "");

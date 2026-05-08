@@ -59,6 +59,10 @@ __pycache__/
 /build/
 /dist/
 
+# Jupyter creates these when you open a new notebook in the package
+# directory. Easy to commit by accident.
+/Untitled*.ipynb
+
 # JupyterLab labextension build artefacts.
 /node_modules/
 /gap_jupyter_kernel/labextension/

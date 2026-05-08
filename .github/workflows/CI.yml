@@ -96,23 +96,12 @@ jobs:
       - uses: gap-actions/build-pkg@v1
       - name: 'Replace bundled JupyterKernel with checkout'
         # setup-gap's bootstrap-pkg-full unpacks every standard package,
-        # including the released JupyterKernel-1.5.1. Without this step,
-        # LoadPackage("JupyterKernel") in the kernel launcher would find
-        # that copy instead of the working tree, so the tests would run
-        # against the upstream-released code, not our changes.
-        #
-        # We dump the pkg dir contents both before and after so any
-        # surprise (case-insensitive matches, missing dirs, alternative
-        # package paths) is visible in the CI log.
+        # including the released JupyterKernel. Without this step,
+        # LoadPackage("JupyterKernel") in the kernel launcher would
+        # find that copy instead of the working tree.
         run: |
-          set -x
-          echo "GAP root: $HOME/gap"
-          ls -la "$HOME/gap/pkg/" | grep -i jupyter || echo "(no jupyter* before)"
           rm -rf "$HOME"/gap/pkg/[Jj]upyter[Kk]ernel*
           ln -s "$GITHUB_WORKSPACE" "$HOME/gap/pkg/JupyterKernel"
-          ls -la "$HOME/gap/pkg/" | grep -i jupyter || echo "(no jupyter* after)"
-          # Sanity: ask GAP which path it would pick up.
-          gap -q -c 'p := DirectoriesPackagePrograms("JupyterKernel"); for d in p do Print(Filename(d, ""), "\n"); od; QUIT_GAP(0);' || true
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

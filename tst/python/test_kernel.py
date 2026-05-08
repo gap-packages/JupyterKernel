@@ -277,11 +277,9 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual(content["status"], "ok")
 
     def test_stream_batching(self):
-        """Regression test for output batching (PR 3).
-
-        100 byte-sized prints with no newlines must NOT produce 100
-        separate stream messages — the kernel buffers and flushes on
-        newline / threshold."""
+        """100 byte-sized prints with no newlines must NOT produce 100
+        separate stream messages — the kernel buffers stdout and
+        flushes on newline / 4096-byte threshold."""
         self.flush_channels()
         self.kc.execute('for i in [1..100] do Print("x"); od; Print("\\n");')
         stream_msgs = 0

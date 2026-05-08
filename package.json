@@ -1,6 +1,6 @@
 {
   "name": "jupyterlab-gap-mode",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "GAP syntax highlighting for JupyterLab 4 / Notebook 7",
   "keywords": [
     "jupyter",

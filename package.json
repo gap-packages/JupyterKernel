@@ -27,13 +27,13 @@
     "url": "https://github.com/gap-packages/JupyterKernel.git"
   },
   "scripts": {
-    "build": "jlpm build:lib && jlpm build:labextension:dev",
-    "build:prod": "jlpm clean && jlpm build:lib && jlpm build:labextension",
+    "build": "npm run build:lib && npm run build:labextension:dev",
+    "build:prod": "npm run clean && npm run build:lib && npm run build:labextension",
     "build:labextension": "jupyter labextension build .",
     "build:labextension:dev": "jupyter labextension build --development True .",
     "build:lib": "tsc",
-    "clean": "jlpm clean:lib",
-    "clean:all": "jlpm clean:lib && jlpm clean:labextension",
+    "clean": "npm run clean:lib",
+    "clean:all": "npm run clean:lib && npm run clean:labextension",
     "clean:labextension": "rimraf gap_jupyter_kernel/labextension",
     "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
     "watch": "run-p watch:src watch:labextension",

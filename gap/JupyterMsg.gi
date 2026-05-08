@@ -21,12 +21,17 @@ function(kernel, raw)
 
     result := rec();
 
+    # Capture the ZMQ envelope frames (everything before <IDS|MSG>). On
+    # ROUTER sockets (Control, StdIn, and Shell now), the first frame is
+    # the originating peer's identity; replies must prepend it so libzmq
+    # can route the message back. On DEALER sockets the envelope is empty.
     ids := [];
     sl := 1;
     while raw[sl] <> "<IDS|MSG>" do
         Add(ids, raw[sl]);
         sl := sl + 1;
     od;
+    result.ids  := ids;
     result.hmac := raw[sl + 1];
 
     Assert(0, IsBound(raw[sl + 2]) and IsBound(raw[sl + 3])
@@ -63,14 +68,23 @@ function(kernel, msg)
     meta_j    := GapToJsonString(msg.metadata);
     content_j := GapToJsonString(msg.content);
 
+    # ZMQ envelope: for replies on a ROUTER socket the envelope must be the
+    # originating peer's identity (captured into msg.ids by JupyterMsgDecode
+    # and copied onto the reply by HandleShellMsg/HandleControlMsg). For
+    # IOPub (PUB) the first frame is the topic — we use msg.uuid as a per-
+    # kernel topic so subscribers can filter, but most subscribe to all.
     raw := [];
-    raw[1] := msg.uuid;
-    raw[2] := "<IDS|MSG>";
-    raw[3] := JUPYTER_ComputeHMAC(msg.key, header_j, parent_j, meta_j, content_j);
-    raw[4] := header_j;
-    raw[5] := parent_j;
-    raw[6] := meta_j;
-    raw[7] := content_j;
+    if IsBound(msg.ids) and Length(msg.ids) > 0 then
+        Append(raw, msg.ids);
+    else
+        Add(raw, msg.uuid);
+    fi;
+    Add(raw, "<IDS|MSG>");
+    Add(raw, JUPYTER_ComputeHMAC(msg.key, header_j, parent_j, meta_j, content_j));
+    Add(raw, header_j);
+    Add(raw, parent_j);
+    Add(raw, meta_j);
+    Add(raw, content_j);
     return raw;
 end);
 

@@ -323,6 +323,7 @@ function(conf)
         t := msg.header.msg_type;
         if IsBound(kernel!.MsgHandlers.(t)) then
             reply := kernel!.MsgHandlers.(t)(msg);
+            reply.ids := msg.ids;
             JupyterMsgSend(kernel, kernel!.Shell, reply);
             kernel!.SignalIdle();
             return true;
@@ -346,6 +347,7 @@ function(conf)
         t := msg.header.msg_type;
         if IsBound(kernel!.MsgHandlers.(t)) then
             reply := kernel!.MsgHandlers.(t)(msg);
+            reply.ids := msg.ids;
             JupyterMsgSend(kernel, kernel!.Control, reply);
             return true;
         fi;
@@ -361,7 +363,10 @@ function(conf)
         # semantics — anything sent before the subscriber is wired is lost).
         kernel!.IOPub   := ZmqPublisherSocket( Concatenation(address, String(conf.iopub_port))
                                              , kernel!.ZmqIdentity);
-        kernel!.Shell   := ZmqDealerSocket(    Concatenation(address, String(conf.shell_port))
+        # Per Jupyter wire spec, Shell is ROUTER on the kernel side. The
+        # envelope (peer identity) frames are captured at recv time by
+        # JupyterMsgDecode and prepended at send time by JupyterMsgEncode.
+        kernel!.Shell   := ZmqRouterSocket(    Concatenation(address, String(conf.shell_port))
                                              , kernel!.ZmqIdentity);
         kernel!.StdIn   := ZmqRouterSocket(    Concatenation(address, String(conf.stdin_port))
                                              , kernel!.ZmqIdentity);

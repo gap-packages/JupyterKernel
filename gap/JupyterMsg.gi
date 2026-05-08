@@ -4,6 +4,28 @@
 # Implementations
 #
 
+# Override the json package's IsBool encoder so it round-trips GAP's
+# `fail` to JSON `null` (and back). JsonStringToGap already turns null
+# into fail (json.cc:18-19); the encoder side gained the matching
+# behaviour upstream after json 2.2.3, but until that release ships we
+# bundle the override here. Without it, JupyterLab 4 messages with
+# `subshell_id: null` round-trip through parent_header into an
+# unencodable record, the encoder errors, the error captured by our
+# stderr stream is flushed back as iopub, the flush re-encodes the
+# bad parent_header, and the kernel recurses to death.
+# TODO: drop this once we can require json >= 2.3.0 in PackageInfo.g.
+InstallMethod(_GapToJsonStreamInternal, [IsOutputStream, IsBool],
+function(o, b)
+    if b = true then
+        WriteAll(o, "true");
+    elif b = false then
+        WriteAll(o, "false");
+    else
+        WriteAll(o, "null");
+    fi;
+end);
+
+
 # Compute the lowercase hex SHA-256 HMAC over the four canonical
 # Jupyter message JSON strings, in protocol order. Used by both encode
 # (to sign outgoing messages) and decode (to verify incoming).

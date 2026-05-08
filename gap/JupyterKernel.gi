@@ -319,13 +319,19 @@ function(conf)
     kernel.HandleShellMsg := function(msg)
         local t, reply;
         kernel!.CurrentMsg := msg.header;
+        JupyterLog("    HandleShellMsg: type=", msg.header.msg_type,
+                 " ids-len=", Length(msg.ids), "\n");
         kernel!.SignalBusy();
+        JupyterLog("    HandleShellMsg: SignalBusy done\n");
         t := msg.header.msg_type;
         if IsBound(kernel!.MsgHandlers.(t)) then
             reply := kernel!.MsgHandlers.(t)(msg);
+            JupyterLog("    HandleShellMsg: handler returned\n");
             reply.ids := msg.ids;
             JupyterMsgSend(kernel, kernel!.Shell, reply);
+            JupyterLog("    HandleShellMsg: send done\n");
             kernel!.SignalIdle();
+            JupyterLog("    HandleShellMsg: SignalIdle done\n");
             return true;
         else
             Print("unhandled shell message type: ", t, "\n");
@@ -345,10 +351,14 @@ function(conf)
         local t, reply;
         kernel!.CurrentMsg := msg.header;
         t := msg.header.msg_type;
+        JupyterLog("    HandleControlMsg: type=", t,
+                 " ids-len=", Length(msg.ids), "\n");
         if IsBound(kernel!.MsgHandlers.(t)) then
             reply := kernel!.MsgHandlers.(t)(msg);
+            JupyterLog("    HandleControlMsg: handler returned, sending\n");
             reply.ids := msg.ids;
             JupyterMsgSend(kernel, kernel!.Control, reply);
+            JupyterLog("    HandleControlMsg: send done\n");
             return true;
         fi;
         Print("unhandled control message type: ", t, "\n");
@@ -384,29 +394,47 @@ function(conf)
     end;
 
     kernel.Loop := function()
-        local topoll, poll, raw;
+        local topoll, poll, raw, status, iter;
+        JupyterLog("Loop: entering\n");
         kernel!.SignalStarting();
+        JupyterLog("Loop: SignalStarting sent\n");
         topoll := [ kernel!.HB, kernel!.Control, kernel!.Shell, kernel!.StdIn ];
+        iter := 0;
         while not kernel!.quitting do
+            iter := iter + 1;
             poll := ZmqPoll(topoll, [], 100);
+            if poll <> [] then
+                JupyterLog("Loop iter ", iter, ": poll=", poll, "\n");
+            fi;
             if 1 in poll then
                 raw := ZmqReceiveList(kernel!.HB);
                 ZmqSend(kernel!.HB, raw);
+                JupyterLog("  HB echoed\n");
             fi;
             if 2 in poll then
-                CALL_WITH_CATCH(function()
+                status := CALL_WITH_CATCH(function()
                     kernel!.HandleControlMsg(JupyterMsgRecv(kernel, kernel!.Control));
                 end, []);
+                JupyterLog("  Control: status[1]=", status[1], "\n");
+                if status[1] = false then
+                    JupyterLog("    Control error: ", status[2], "\n");
+                fi;
             fi;
             if 3 in poll then
-                CALL_WITH_CATCH(function()
+                status := CALL_WITH_CATCH(function()
                     kernel!.HandleShellMsg(JupyterMsgRecv(kernel, kernel!.Shell));
                 end, []);
+                JupyterLog("  Shell: status[1]=", status[1], "\n");
+                if status[1] = false then
+                    JupyterLog("    Shell error: ", status[2], "\n");
+                fi;
             fi;
             if 4 in poll then
                 ZmqReceiveList(kernel!.StdIn);
+                JupyterLog("  StdIn drained\n");
             fi;
         od;
+        JupyterLog("Loop: exited because quitting=true\n");
     end;
 
     _KERNEL := kernel;
@@ -423,6 +451,8 @@ InstallMethod( Run
              , "for Jupyter kernel"
              , [ IsGAPJupyterKernel ]
              , function(x)
+                 JupyterLog("Run: entered, GAPInfo.Version=",
+                            GAPInfo.Version, "\n");
                  # Help system rerouting: SetHelpViewer points at our online
                  # viewer; we no longer rebind the global HELP function (a
                  # PR 6 follow-up will route ?topic through execute_request).
@@ -430,8 +460,11 @@ InstallMethod( Run
                  SetUserPreference("Pager", "tail");
                  SetUserPreference("PagerOptions", "");
                  SetHelpViewer("jupyter_online");
+                 JupyterLog("Run: about to BindSockets\n");
                  x!.BindSockets();
+                 JupyterLog("Run: about to Loop\n");
                  x!.Loop();
+                 JupyterLog("Run: Loop returned, QUIT_GAP\n");
                  QUIT_GAP(0);
              end);
 

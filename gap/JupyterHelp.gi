@@ -239,10 +239,7 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
       return JUPYTER_HELP_SHOW_MATCHES( books, str, false);
   fi;
 
-  # General topic search. We had to lift this out of the elif chain
-  # above because GAP doesn't allow `:=` inside an expression, so we
-  # can't both call JUPYTER_HELP_SHOW_MATCHES and inspect its return
-  # value within a single elif test.
+  # General topic search; result captured for inspection below.
   res := JUPYTER_HELP_SHOW_MATCHES( books, str, true );
   if IsJupyterRenderable(res) then
       return res;

@@ -1,9 +1,10 @@
-# Diagnostic trace state. The kernel logs through `JupyterLog`; toggle off
-# by setting `JUPYTER_TRACE.enabled := false` (or redirect with `.file`).
-# We deliberately do NOT use GAP's `Info` here: the trace fires inside C-
-# level ZMQ callbacks where Info classes / the break loop interact poorly,
-# and we want a deterministic file-side audit log when the kernel crashes.
-JUPYTER_TRACE := rec( enabled := true,
+# Diagnostic trace state. Off by default; turn on from a notebook cell
+# via `JUPYTER_TRACE.enabled := true;` (or redirect with `.file`) when
+# investigating a kernel-side issue. We deliberately do NOT use GAP's
+# `Info` here: the trace fires inside C-level ZMQ callbacks where Info
+# classes / the break loop interact poorly, and we want a deterministic
+# file-side audit log when the kernel crashes.
+JUPYTER_TRACE := rec( enabled := false,
                       file    := "/tmp/gap-kernel-trace.log" );
 
 InstallGlobalFunction( JupyterLog,

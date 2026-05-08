@@ -47,11 +47,41 @@ def _bootstrap_script(connection_file: str) -> str:
     )
 
 
+def _redirect_stdin_to_devnull() -> None:
+    """Replace fd 0 with /dev/null before exec'ing GAP.
+
+    Jupyter spawns kernels with a stdin pipe that nothing ever writes
+    to. If GAP code calls `InputFromUser` (or anything else that reads
+    from `*stdin*`), the read blocks indefinitely and the kernel
+    appears to hang. Pointing fd 0 at /dev/null instead causes those
+    reads to return EOF, which GAP surfaces as a clear error rather
+    than a deadlock.
+
+    Real interactive input via the Jupyter `input_request` protocol is
+    a separate piece of work. Once that lands, the GAP-side helper
+    will read from the StdIn ZMQ socket; this redirect stays as the
+    safety net for `*stdin*` reads outside that helper.
+    """
+    try:
+        devnull = os.open(os.devnull, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.dup2(devnull, 0)
+    finally:
+        if devnull != 0:
+            try:
+                os.close(devnull)
+            except OSError:
+                pass
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         sys.exit("usage: python -m gap_jupyter_kernel <connection_file>")
     gap = _find_gap()
     script = _bootstrap_script(sys.argv[1])
+    _redirect_stdin_to_devnull()
     try:
         os.execvp(gap, [gap, "-q", "-T", "--alwaystrace", "-c", script])
     except OSError as e:

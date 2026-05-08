@@ -61,9 +61,13 @@ InstallMethod( WriteAll,
     [ IsOutputTextStream and IsOutputStreamZmqRep,
       IsString ],
 function( stream, string )
+    JupyterLog("        WriteAll(", stream!.streamname,
+               ", len=", Length(string), ", '",
+               string{[1..Minimum(80, Length(string))]}, "')\n");
     Append( stream!.buffer, string );
     if Length(stream!.buffer) >= JUPYTER_STREAM_FLUSH_THRESHOLD
        or '\n' in string then
+        JupyterLog("        WriteAll: flushing\n");
         FlushOutputStream(stream);
     fi;
     return true;

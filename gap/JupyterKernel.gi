@@ -290,12 +290,16 @@ function(conf)
         end );
 
     kernel.SignalBusy := function()
-        JupyterMsgSend( kernel, kernel!.IOPub
-                      , JupyterMsg( kernel
-                                  , "status"
-                                  , kernel!.CurrentMsg
-                                  , rec( execution_state := "busy" )
-                                  , rec() ) );
+        local m;
+        JupyterLog("      SignalBusy: building msg\n");
+        m := JupyterMsg( kernel
+                       , "status"
+                       , kernel!.CurrentMsg
+                       , rec( execution_state := "busy" )
+                       , rec() );
+        JupyterLog("      SignalBusy: msg built, sending\n");
+        JupyterMsgSend( kernel, kernel!.IOPub, m );
+        JupyterLog("      SignalBusy: sent\n");
     end;
 
     kernel.SignalIdle := function()

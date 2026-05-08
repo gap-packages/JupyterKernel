@@ -146,23 +146,37 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.fail("no kernel_info_reply on control channel")
 
     def _execute_and_collect(self, code, timeout=30):
-        """Send `code` and return (reply_content, iopub_msgs). Helper
-        for the multi-cell tests below."""
+        """Send `code` and return (reply_content, iopub_msgs).
+
+        Drain iopub until we see status="idle" for our msg_id (the spec
+        guarantee that no further iopub messages will follow for this
+        execution), then read the matching execute_reply on shell.
+        Reading shell first races: the kernel sends iopub before the
+        reply, but the client's two channels are independent threads
+        and can deliver out of order."""
         self.flush_channels()
         msg_id = self.kc.execute(code)
         iopub = []
-        reply = None
         deadline = time.time() + timeout
+        # Phase 1: drain iopub for our msg_id until idle.
         while time.time() < deadline:
             try:
                 msg = self.kc.get_iopub_msg(timeout=2)
             except Empty:
-                pass
-            else:
-                if msg["parent_header"].get("msg_id") == msg_id:
-                    iopub.append(msg)
+                continue
+            if msg["parent_header"].get("msg_id") != msg_id:
+                continue
+            iopub.append(msg)
+            if (msg["msg_type"] == "status"
+                    and msg["content"]["execution_state"] == "idle"):
+                break
+        else:
+            self.fail(f"no idle status received within {timeout}s")
+        # Phase 2: pick up the execute_reply on shell.
+        reply = None
+        while time.time() < deadline:
             try:
-                rmsg = self.kc.get_shell_msg(timeout=0.1)
+                rmsg = self.kc.get_shell_msg(timeout=2)
             except Empty:
                 continue
             if (rmsg["msg_type"] == "execute_reply"
@@ -189,10 +203,12 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
 
     def test_unicode_string(self):
         """GAP can hold arbitrary bytes in strings; UTF-8 round-trip
-        through stdout must reach the client unaltered."""
-        # Greek lower case alpha is U+03B1 → UTF-8 0xCE 0xB1.
+        through stdout must reach the client unaltered. We embed the α
+        directly in the source — GAP strings are byte arrays, so the
+        UTF-8 bytes (0xCE 0xB1) are stored as-is and Print emits them
+        verbatim."""
         content, iopub = self._execute_and_collect(
-            'Print("\\xce\\xb1\\n");'
+            'Print("α\\n");'
         )
         self.assertEqual(content["status"], "ok")
         streams = [m for m in iopub

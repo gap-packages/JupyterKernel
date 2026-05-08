@@ -154,7 +154,16 @@ function(conf)
             od;
             if i <= Length(code) and code[i] = '?' then
                 kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
-                helpres := JUPYTER_HELP( code{[i+1..Length(code)]} );
+                # Wrap in CALL_WITH_CATCH so a bug in JUPYTER_HELP (or
+                # in any of GAP's help-system internals it calls into)
+                # can't leave the cell without a reply.
+                run := CALL_WITH_CATCH( JUPYTER_HELP,
+                                        [ code{[i+1..Length(code)]} ] );
+                if run[1] then
+                    helpres := run[2];
+                else
+                    helpres := fail;
+                fi;
                 if IsJupyterRenderable(helpres) then
                     metadata := JupyterRenderableMetadata(helpres);
                     data := JupyterRenderableData(helpres);

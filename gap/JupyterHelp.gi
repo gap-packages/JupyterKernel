@@ -128,7 +128,7 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n, res;
 end);
 
 InstallGlobalFunction(JUPYTER_HELP, function( str )
-  local origstr, nwostr, p, book, books, move, add;
+  local origstr, nwostr, p, book, books, move, add, res;
 
   origstr := ShallowCopy(str);
   nwostr := NormalizedWhitespace(origstr);
@@ -247,11 +247,14 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
   elif Length(str) > 0 and str[1] = '?'  then
       str := str{[2..Length(str)]};
       NormalizeWhitespace(str);
-      return HELP_SHOW_MATCHES( books, str, false);
+      return JUPYTER_HELP_SHOW_MATCHES( books, str, false);
 
-  # search for this topic
-  elif IsJupyterRenderable( HELP_SHOW_MATCHES( books, str, true ) ) then
-      return HELP_SHOW_MATCHES( books, str, true );
+  # search for this topic — call the Jupyter-flavoured matcher exactly
+  # once, return its renderable if it found something, otherwise fall
+  # through. The previous version called GAP's HELP_SHOW_MATCHES (which
+  # returns true/false, never a renderable), so this branch was a no-op.
+  elif IsJupyterRenderable( res := JUPYTER_HELP_SHOW_MATCHES( books, str, true ) ) then
+      return res;
   elif origstr in NAMES_SYSTEM_GVARS then
       Print( "Help: '", origstr, "' is currently undocumented.\n",
              "      For details, try ?Undocumented Variables\n" );

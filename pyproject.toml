@@ -34,6 +34,13 @@ test = [
     # freshly-installed kernel; also handy for local sanity-checks.
     "nbconvert>=7",
 ]
+# Pulls in JupyterLab and Notebook 7 alongside the kernel, so a user
+# can `pip install gap-jupyter[server]` and get a working notebook
+# environment in one go. Used by start-jupyter.sh.
+server = [
+    "jupyterlab>=4",
+    "notebook>=7",
+]
 
 [project.urls]
 Homepage = "https://github.com/gap-packages/JupyterKernel"

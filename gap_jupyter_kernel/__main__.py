@@ -6,6 +6,11 @@ also starts on Windows. Resolves the GAP binary in this order:
 1. ``$JUPYTER_GAP_EXECUTABLE``
 2. ``$GAP``
 3. ``shutil.which("gap")``
+4. ``../../gap`` relative to the package source — picks up the GAP
+   binary at ``<gap-root>/gap`` when this package is installed in the
+   conventional ``<gap-root>/pkg/jupyterkernel`` layout. Only fires
+   for editable installs where ``__file__`` still resolves to the
+   package source.
 
 then ``execvp``s ``gap -q -T --alwaystrace -c '<bootstrap>'`` with the
 connection file path passed through from Jupyter.
@@ -20,6 +25,7 @@ a parent, the signal would land on Python and never reach GAP.
 import os
 import shutil
 import sys
+from pathlib import Path
 
 
 def _find_gap() -> str:
@@ -30,6 +36,10 @@ def _find_gap() -> str:
     found = shutil.which("gap")
     if found:
         return found
+    # __main__.py / gap_jupyter_kernel / pkg-root / pkg / <gap-root>
+    candidate = Path(__file__).resolve().parents[3] / "gap"
+    if candidate.is_file() and os.access(candidate, os.X_OK):
+        return str(candidate)
     sys.exit(
         "gap-jupyter: could not find a GAP executable. "
         "Set JUPYTER_GAP_EXECUTABLE to the gap binary, or put `gap` on PATH."

@@ -24,6 +24,21 @@ The required GAP packages are listed in `PackageInfo.g` (`io`, `json`,
 
 ### Installing the kernel
 
+#### Quick start (no Jupyter installed)
+
+From the package directory:
+
+    ./start-jupyter.sh
+
+That creates a venv under `~/.cache/gap-jupyter/venv`, installs the
+kernel + JupyterLab into it, then opens a JupyterLab session.
+Subsequent runs reuse the venv. Requires Python 3.8+ and Node.js 18+.
+The kernel auto-discovers GAP via `JUPYTER_GAP_EXECUTABLE`, `GAP`,
+`$PATH`, or the conventional `<gap-root>/gap` next to the `pkg/`
+directory — in that order.
+
+#### Adding the kernel to your existing Jupyter
+
 From the package directory:
 
     pip install .

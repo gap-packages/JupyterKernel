@@ -156,10 +156,12 @@ function(conf)
                 kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
                 # Wrap in CALL_WITH_CATCH so a bug in JUPYTER_HELP (or
                 # in any of GAP's help-system internals it calls into)
-                # can't leave the cell without a reply.
+                # can't leave the cell without a reply. JUPYTER_HELP
+                # may also return nothing (void) on its fall-through
+                # paths — guard against an unbound run[2].
                 run := CALL_WITH_CATCH( JUPYTER_HELP,
                                         [ code{[i+1..Length(code)]} ] );
-                if run[1] then
+                if run[1] and IsBound(run[2]) then
                     helpres := run[2];
                 else
                     helpres := fail;

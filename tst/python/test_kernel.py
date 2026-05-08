@@ -145,6 +145,122 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
                 return
         self.fail("no kernel_info_reply on control channel")
 
+    def _execute_and_collect(self, code, timeout=30):
+        """Send `code` and return (reply_content, iopub_msgs). Helper
+        for the multi-cell tests below."""
+        self.flush_channels()
+        msg_id = self.kc.execute(code)
+        iopub = []
+        reply = None
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                msg = self.kc.get_iopub_msg(timeout=2)
+            except Empty:
+                pass
+            else:
+                if msg["parent_header"].get("msg_id") == msg_id:
+                    iopub.append(msg)
+            try:
+                rmsg = self.kc.get_shell_msg(timeout=0.1)
+            except Empty:
+                continue
+            if (rmsg["msg_type"] == "execute_reply"
+                    and rmsg["parent_header"].get("msg_id") == msg_id):
+                reply = rmsg
+                break
+        self.assertIsNotNone(reply, "no execute_reply received")
+        return reply["content"], iopub
+
+    def test_multiline_function_definition(self):
+        """A function definition split across newlines must execute as
+        one statement — not be parsed as several."""
+        code = (
+            "double := function(x)\n"
+            "    return 2 * x;\n"
+            "end;;\n"
+            "double(21);"
+        )
+        content, iopub = self._execute_and_collect(code)
+        self.assertEqual(content["status"], "ok")
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(len(results), 1, f"expected one result, got {results}")
+        self.assertEqual(results[0]["content"]["data"]["text/plain"], "42")
+
+    def test_unicode_string(self):
+        """GAP can hold arbitrary bytes in strings; UTF-8 round-trip
+        through stdout must reach the client unaltered."""
+        # Greek lower case alpha is U+03B1 → UTF-8 0xCE 0xB1.
+        content, iopub = self._execute_and_collect(
+            'Print("\\xce\\xb1\\n");'
+        )
+        self.assertEqual(content["status"], "ok")
+        streams = [m for m in iopub
+                   if m["msg_type"] == "stream"
+                   and m["content"]["name"] == "stdout"]
+        all_text = "".join(s["content"]["text"] for s in streams)
+        self.assertIn("α", all_text,
+                      f"expected α in stdout, got {all_text!r}")
+
+    def test_comments_only_cell(self):
+        """A cell containing nothing but comments must succeed with no
+        execute_result, no error."""
+        content, iopub = self._execute_and_collect(
+            "# just a comment\n"
+            "# and another\n"
+        )
+        self.assertEqual(content["status"], "ok")
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(results, [])
+        errors = [m for m in iopub if m["msg_type"] == "error"]
+        self.assertEqual(errors, [])
+
+    def test_runtime_vs_parse_error(self):
+        """A runtime error (1/0) and a parse error (`1 +`) both must
+        come back as status="error" with a non-empty traceback."""
+        for code in ["1/0;", "1 +"]:
+            with self.subTest(code=code):
+                content, iopub = self._execute_and_collect(code)
+                self.assertEqual(content["status"], "error",
+                                 f"expected error for {code!r}")
+                self.assertTrue(content.get("traceback"),
+                                f"expected non-empty traceback for {code!r}")
+
+    def test_long_output_stress(self):
+        """A burst of newline-separated output lines must arrive intact
+        and finish in reasonable time. Catches regressions in the
+        per-flush batching loop and in the iopub stream encoder."""
+        content, iopub = self._execute_and_collect(
+            'for i in [1..2000] do Print(i, "\\n"); od;', timeout=60
+        )
+        self.assertEqual(content["status"], "ok")
+        all_text = "".join(
+            m["content"]["text"] for m in iopub
+            if m["msg_type"] == "stream" and m["content"]["name"] == "stdout"
+        )
+        # First and last lines made it.
+        self.assertTrue(all_text.startswith("1\n"),
+                        f"missing leading line, head={all_text[:40]!r}")
+        self.assertTrue(all_text.rstrip().endswith("\n2000")
+                        or all_text.endswith("2000\n"),
+                        f"missing trailing line, tail={all_text[-40:]!r}")
+        # Right total count.
+        self.assertEqual(all_text.count("\n"), 2000)
+
+    def test_help_magic(self):
+        """A cell starting with `?` dispatches to JUPYTER_HELP, not to
+        READ_ALL_COMMANDS — so `?Group` returns help text rather than
+        a syntax error on `?`."""
+        content, iopub = self._execute_and_collect("?Group")
+        self.assertEqual(content["status"], "ok")
+        # JUPYTER_HELP returns either an HTML JupyterRenderable
+        # (rendered as execute_result) or it Prints to stdout.
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        streams = [m for m in iopub
+                   if m["msg_type"] == "stream" and m["content"]["name"] == "stdout"]
+        self.assertTrue(results or streams,
+                        "expected some output from ?Group")
+
     def test_stream_batching(self):
         """Regression test for output batching (PR 3).
 

@@ -130,16 +130,51 @@ function(conf)
 
         execute_request := function(msg)
             local publ, res, r, rep, str, data, metadata, t, content,
-                  errBuf, errText, savedErr, errored, ename, run;
+                  errBuf, errText, savedErr, errored, ename, run,
+                  code, helpres, i;
 
+            code := msg.content.code;
             JupyterMsgSend( kernel, kernel!.IOPub
                           , JupyterMsg( kernel
                                       , "execute_input"
                                       , msg.header
-                                      , rec( code := msg.content.code
+                                      , rec( code := code
                                            , execution_count := kernel!.ExecutionCount + 1 )
                                       , rec() ) );
-            str := InputTextString(msg.content.code);
+
+            # Dispatch leading '?'/'??' to JUPYTER_HELP, bypassing the
+            # READ_ALL_COMMANDS path. GAP's REPL treats `?topic` as a help
+            # query rather than an expression, so users typing it in a
+            # cell expect the same. JUPYTER_HELP itself handles the
+            # `??topic` case (substring search) once we hand it the
+            # post-`?` text.
+            i := 1;
+            while i <= Length(code) and code[i] in " \t\n\r" do
+                i := i + 1;
+            od;
+            if i <= Length(code) and code[i] = '?' then
+                kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
+                helpres := JUPYTER_HELP( code{[i+1..Length(code)]} );
+                if IsJupyterRenderable(helpres) then
+                    metadata := JupyterRenderableMetadata(helpres);
+                    data := JupyterRenderableData(helpres);
+                    JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
+                                                        , "execute_result"
+                                                        , msg.header
+                                                        , rec( data := data
+                                                             , metadata := metadata
+                                                             , execution_count := kernel!.ExecutionCount )
+                                                        , rec() ) );
+                fi;
+                FlushOutputStream(kernel!.StdOut);
+                FlushOutputStream(kernel!.StdErr);
+                return JupyterMsg( kernel, "execute_reply", msg.header,
+                                   rec( status := "ok",
+                                        execution_count := kernel!.ExecutionCount ),
+                                   rec() );
+            fi;
+
+            str := InputTextString(code);
 
             # Swap ERROR_OUTPUT to a buffer for the duration of the
             # evaluation, so we can tell apart "the user's code errored"

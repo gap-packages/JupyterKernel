@@ -81,12 +81,14 @@ jobs:
         os: [ubuntu, macos]
     steps:
       - uses: actions/checkout@v6
-      - name: 'Install libzmq (Linux)'
+      - name: 'Install libzmq + graphviz (Linux)'
         if: ${{ runner.os == 'Linux' }}
-        run: sudo apt-get install -y libzmq3-dev
-      - name: 'Install zeromq (macOS)'
+        # graphviz provides `dot`, used by JupyterSplashDot in the demo
+        # notebooks executed below.
+        run: sudo apt-get install -y libzmq3-dev graphviz
+      - name: 'Install zeromq + graphviz (macOS)'
         if: ${{ runner.os == 'macOS' }}
-        run: brew install zeromq
+        run: brew install zeromq graphviz
       - uses: gap-actions/setup-gap@v2
         with:
           GAP_PKGS_TO_BUILD: "io profiling crypting json ZeroMQInterface"
@@ -126,6 +128,21 @@ jobs:
           jupyter kernelspec install --user etc/jupyter --name gap-4
       - name: 'Run jupyter_kernel_test'
         run: pytest tst/python/ -v
+      - name: 'Execute demo notebooks'
+        # Cheap end-to-end smoke test: run every demo notebook against
+        # the freshly-installed kernel and fail the job if any cell
+        # raises. Catches regressions in the help-magic dispatch
+        # (`?topic`), in JupyterSplashDot, and in any rendering glue
+        # the demos exercise — all things we have no unit-test cover
+        # for.
+        run: |
+          set -e
+          for nb in demos/*.ipynb; do
+            echo "=== $nb ==="
+            jupyter nbconvert --to notebook --execute "$nb" \
+                --output "/tmp/$(basename "$nb" .ipynb).executed.ipynb" \
+                --ExecutePreprocessor.timeout=120
+          done
 
   # Independent smoke test that the labextension still builds end-to-end
   # in production mode. The python-test job exercises the editable build;

@@ -36,7 +36,7 @@ InstallMethod( FlushOutputStream,
     "send buffered output as one stream message",
     [ IsOutputStreamZmqRep ],
 function( stream )
-    local curmsg;
+    local curmsg, text, c;
     if Length(stream!.buffer) = 0 then
         return;
     fi;
@@ -45,13 +45,26 @@ function( stream )
     else
         curmsg := rec();
     fi;
+    # GAP's scanner uses byte 0xFF (\377) as its end-of-input sentinel.
+    # On certain syntax errors — most reliably ones involving a missing
+    # trailing token, e.g. `h := ;` — the sentinel still sits in the
+    # input-line buffer that SyntaxErrorOrWarning() prints verbatim
+    # alongside the error message. JSON/UTF-8 has no encoding for a
+    # stray 0xFF, so the front-end renders it as `ÿ`. Drop those bytes
+    # before sending.
+    text := "";
+    for c in stream!.buffer do
+        if IntChar(c) <> 255 then
+            Add(text, c);
+        fi;
+    od;
     JupyterMsgSend( stream!.kernel
                   , stream!.socket
                   , JupyterMsg( stream!.kernel
                               , "stream"
                               , curmsg
                               , rec( name := stream!.streamname
-                                   , text := stream!.buffer )
+                                   , text := text )
                               , rec() ) );
     stream!.buffer := "";
 end );

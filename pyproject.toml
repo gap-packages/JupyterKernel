@@ -1,0 +1,97 @@
+[build-system]
+requires = ["hatchling>=1.5.0", "hatch-jupyter-builder>=0.5", "jupyterlab>=4.0.0,<5"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gap-jupyter"
+version = "1.6.0.dev0"
+description = "Jupyter kernel for the GAP computer algebra system"
+readme = "README.md"
+license = "BSD-3-Clause"
+requires-python = ">=3.8"
+authors = [
+    { name = "GAP JupyterKernel contributors" },
+]
+keywords = ["jupyter", "jupyterlab", "kernel", "gap"]
+classifiers = [
+    "Framework :: Jupyter",
+    "Framework :: Jupyter :: JupyterLab",
+    "Framework :: Jupyter :: JupyterLab :: 4",
+    "Framework :: Jupyter :: JupyterLab :: Extensions",
+    "Framework :: Jupyter :: JupyterLab :: Extensions :: Prebuilt",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "jupyter_client>=8.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "jupyter_kernel_test>=0.7",
+    "pytest>=7",
+]
+
+[project.urls]
+Homepage = "https://github.com/gap-packages/JupyterKernel"
+Issues = "https://github.com/gap-packages/JupyterKernel/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["gap_jupyter_kernel"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"etc/jupyter/kernel.json"             = "share/jupyter/kernels/gap-4/kernel.json"
+"etc/jupyter/logo-32x32.png"          = "share/jupyter/kernels/gap-4/logo-32x32.png"
+"etc/jupyter/logo-64x64.png"          = "share/jupyter/kernels/gap-4/logo-64x64.png"
+"gap_jupyter_kernel/labextension"     = "share/jupyter/labextensions/jupyterlab-gap-mode"
+"install.json"                        = "share/jupyter/labextensions/jupyterlab-gap-mode/install.json"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "gap_jupyter_kernel",
+    "src",
+    "style",
+    "etc",
+    "package.json",
+    "tsconfig.json",
+    "install.json",
+    "README.md",
+    "COPYRIGHT.md",
+]
+exclude = [
+    "node_modules",
+    "*.tsbuildinfo",
+    "gap_jupyter_kernel/labextension",
+]
+
+# hatch-jupyter-builder runs `jlpm install && jlpm build:prod` whenever the
+# wheel is built and `gap_jupyter_kernel/labextension/static/style.js` is
+# missing. End users who install from a wheel never touch Node — the wheel
+# already ships the prebuilt JS. Contributors and source installers (pip
+# install -e .) need Node.
+[tool.hatch.build.hooks.jupyter-builder]
+dependencies = ["hatch-jupyter-builder>=0.5"]
+build-function = "hatch_jupyter_builder.npm_builder"
+ensured-targets = [
+    "gap_jupyter_kernel/labextension/static/style.js",
+    "gap_jupyter_kernel/labextension/package.json",
+]
+skip-if-exists = ["gap_jupyter_kernel/labextension/static/style.js"]
+
+[tool.hatch.build.hooks.jupyter-builder.build-kwargs]
+build_cmd = "build:prod"
+# Use npm rather than jlpm: jlpm pins to a yarn 1.x bundled with
+# JupyterLab, but on some sandboxed networks yarn's DNS resolution
+# fails where npm's succeeds.
+npm = ["npm"]
+
+# Editable installs (pip install -e .) skip the build hook entirely —
+# contributors run `jupyter labextension build .` themselves while
+# iterating. End users install from a wheel that already contains the
+# prebuilt labextension under share/jupyter/labextensions/, so they
+# never need Node.
+[tool.hatch.build.hooks.jupyter-builder.editable-build-kwargs]
+build_cmd = "build:prod"
+npm = ["npm"]
+source_dir = "src"
+build_dir = "gap_jupyter_kernel/labextension"

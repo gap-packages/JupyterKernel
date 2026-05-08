@@ -114,9 +114,40 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          # Node is needed during the editable install: hatch_jupyter_builder
+          # invokes `npm install && npm run build:prod` to compile the
+          # JupyterLab CodeMirror labextension that ships with the kernel.
+          node-version: '20'
       - name: 'Install kernel + test deps'
         run: |
           pip install -e '.[test]'
           jupyter kernelspec install --user etc/jupyter --name gap-4
       - name: 'Run jupyter_kernel_test'
         run: pytest tst/python/ -v
+
+  # Independent smoke test that the labextension still builds end-to-end
+  # in production mode. The python-test job exercises the editable build;
+  # this one exercises the wheel build path that end users hit.
+  labextension-build:
+    name: labextension build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 'Build the wheel'
+        run: |
+          pip install build
+          python -m build --wheel
+      - name: 'Confirm the wheel ships the prebuilt labextension'
+        run: |
+          set -e
+          wheel=$(ls dist/*.whl | head -1)
+          python -m zipfile -l "$wheel" | grep 'share/jupyter/labextensions/jupyterlab-gap-mode/static/style.js'
+          python -m zipfile -l "$wheel" | grep 'share/jupyter/kernels/gap-4/kernel.json'

@@ -27,14 +27,23 @@ The required GAP packages are listed in `PackageInfo.g` (`io`, `json`,
 From the package directory:
 
     pip install .
-    jupyter kernelspec install --user etc/jupyter --name gap-4
 
-`pip install .` installs the `gap_jupyter_kernel` Python launcher.
-`jupyter kernelspec install` registers the kernel with Jupyter so that
-`GAP 4` shows up in the kernel selector.
+That single command:
+
+- installs the `gap_jupyter_kernel` Python launcher,
+- registers the kernel spec under `share/jupyter/kernels/gap-4`,
+- registers the bundled JupyterLab extension under
+  `share/jupyter/labextensions/jupyterlab-gap-mode` for syntax
+  highlighting.
+
+JupyterLab and Notebook 7 discover both at startup; `GAP 4` shows up in
+the kernel selector and GAP cells get highlighted automatically.
 
 If GAP is not on your `PATH`, set `JUPYTER_GAP_EXECUTABLE` to the absolute
 path of the `gap` binary; the launcher reads it on every start.
+
+Building from source requires Node.js 18+ (only contributors need it; end
+users install from a wheel that already contains the prebuilt JS).
 
 ### Running
 
@@ -46,9 +55,21 @@ then pick `GAP 4` as the kernel.
 
 ### Syntax highlighting
 
-This release does not bundle a JupyterLab/Notebook 7 syntax-highlighting
-extension. Code is shown as plain text. A future release may ship a
-labextension; contributions welcome.
+GAP cells are highlighted by a CodeMirror 6 mode shipped as a prebuilt
+JupyterLab extension (`jupyterlab-gap-mode`). It is installed automatically
+by `pip install .` and discovered by JupyterLab and Notebook 7 without any
+extra step. Verify with:
+
+    jupyter labextension list
+
+The mode tokenises GAP keywords (`function`/`end`, `if`/`fi`, `for`/`od`
+…), comments (`#`-to-end-of-line), strings, character literals, numbers,
+and the standard operators (`:=`, `..`, `->`, `<>`).
+
+Source for the mode lives in `src/`; rebuild with:
+
+    npm install
+    jupyter labextension build .
 
 ### Interrupting a running computation
 

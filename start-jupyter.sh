@@ -24,15 +24,20 @@ PKGVER=$(awk -F'"' '/^version *= *"/ {print $2; exit}' "$HERE/pyproject.toml")
 
 if [ ! -x "$VENV/bin/jupyter" ] || [ "$(cat "$SENTINEL" 2>/dev/null || true)" != "$PKGVER" ]; then
     echo "==> Setting up venv at $VENV (gap-jupyter $PKGVER)"
+    mkdir -p "$(dirname "$VENV")"
     rm -rf "$VENV"
     python3 -m venv "$VENV"
-    "$VENV/bin/pip" install --quiet --upgrade pip
+    "$VENV/bin/pip" install --upgrade pip
 
-    echo "==> Installing gap-jupyter[server] — this needs Node + ~200MB on first run"
-    if ! "$VENV/bin/pip" install --quiet "$HERE[server]"; then
+    echo "==> Installing gap-jupyter[server] — this needs Node.js (>= 18)"
+    echo "    and downloads ~200MB on first run"
+    if ! "$VENV/bin/pip" install "$HERE[server]"; then
         echo
-        echo "Install failed. The labextension build step requires Node.js"
-        echo "(>= 18). Install Node, then re-run this script."
+        echo "Install failed. Common causes:"
+        echo "  - Node.js (>= 18) not installed; the labextension build needs it."
+        echo "  - No network, or PyPI / npm registry unreachable."
+        echo "  - Python < 3.8."
+        echo "Re-read the pip output above for the specific reason."
         exit 1
     fi
     echo "$PKGVER" > "$SENTINEL"

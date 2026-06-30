@@ -26,6 +26,7 @@ jobs:
       matrix:
         gap-branch:
           - master
+          - stable-4.16
           - stable-4.15
           - stable-4.14
           - stable-4.13

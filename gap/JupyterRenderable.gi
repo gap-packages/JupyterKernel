@@ -34,3 +34,8 @@ function(data, metadata)
     return Objectify( JupyterRenderableType
                     , rec( data := data, metadata := metadata ) );
 end);
+
+InstallMethod( JupyterRender, "for a record", [ IsRecord ],
+               r -> Objectify( JupyterRenderableType
+                             , rec( data := rec( text\/plain := String(r) )
+                                   , metadata := rec() ) ) );

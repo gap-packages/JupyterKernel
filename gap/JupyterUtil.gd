@@ -1,5 +1,9 @@
 #! @Chapter Jupyter Utility Functions
-#! @Section Functions
+#!
+#! Several utility functions for GAP Jupyter Kernel
+#!
+#! @Section Print and complete functions
+#!
 #! @Description
 #!   Jupyter printing
 DeclareGlobalFunction("JUPYTER_print");
@@ -28,3 +32,24 @@ DeclareGlobalFunction("JUPYTER_Inspect");
 #!   Don't trust this function.
 DeclareGlobalFunction("ISO8601Stamp");
 
+#! @Description
+#! @Arguments dot
+#! The input is a dot (grpahviz) string. 
+#!
+#! The output is the graph corresponding to the dot string.
+#!
+#! Examples can be found in the numericalsgps notebook in the demo folder
+#!
+#! Prerrequisites: dot must be installed in the system.
+DeclareGlobalFunction("JupyterSplashDot");
+
+#! @Description
+#! @Arguments tikz
+#! The input is a string containing a tikzfigure. 
+#!
+#! The output is the figure corresponding to that tikzfigure.
+#! 
+#! Examples can be found in the inpic notebook in the demo folder
+#!
+#! Prerrequisites: pdflatex, pdfinfo, pdftoppm, and base64 must be installed in the system.
+DeclareGlobalFunction("JupyterSplashTikZ");

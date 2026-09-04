@@ -4,9 +4,8 @@ Replaces the legacy ``bin/jupyter-kernel-gap`` shell script so that the kernel
 also starts on Windows. Resolves the GAP binary in this order:
 
 1. ``$JUPYTER_GAP_EXECUTABLE``
-2. ``$GAP``
-3. ``shutil.which("gap")``
-4. ``../../gap`` relative to the package source — picks up the GAP
+2. ``shutil.which("gap")``
+3. ``../../gap`` relative to the package source — picks up the GAP
    binary at ``<gap-root>/gap`` when this package is installed in the
    conventional ``<gap-root>/pkg/jupyterkernel`` layout. Only fires
    for editable installs where ``__file__`` still resolves to the
@@ -29,10 +28,9 @@ from pathlib import Path
 
 
 def _find_gap() -> str:
-    for env in ("JUPYTER_GAP_EXECUTABLE", "GAP"):
-        path = os.environ.get(env)
-        if path:
-            return path
+    path = os.environ.get("JUPYTER_GAP_EXECUTABLE")
+    if path:
+        return path
     found = shutil.which("gap")
     if found:
         return found

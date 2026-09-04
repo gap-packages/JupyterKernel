@@ -33,8 +33,8 @@ From the package directory:
 That creates a venv under `~/.cache/gap-jupyter/venv`, installs the
 kernel + JupyterLab into it, then opens a JupyterLab session.
 Subsequent runs reuse the venv. Requires Python 3.8+ and Node.js 18+.
-The kernel auto-discovers GAP via `JUPYTER_GAP_EXECUTABLE`, `GAP`,
-`$PATH`, or the conventional `<gap-root>/gap` next to the `pkg/`
+The kernel auto-discovers GAP via `JUPYTER_GAP_EXECUTABLE`, `$PATH`,
+or the conventional `<gap-root>/gap` next to the `pkg/`
 directory — in that order.
 
 #### Adding the kernel to your existing Jupyter
@@ -146,4 +146,3 @@ For details see the files COPYRIGHT.md and LICENSE.
 </td>
 </tr>
 </table>
-

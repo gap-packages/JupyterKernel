@@ -6,7 +6,7 @@
 # this package + JupyterLab into it, then starts `jupyter lab`.
 # Subsequent runs reuse the venv.
 #
-# The kernel finds GAP via JUPYTER_GAP_EXECUTABLE, GAP, $PATH, or the
+# The kernel finds GAP via JUPYTER_GAP_EXECUTABLE, $PATH, or the
 # conventional ../../gap relative to the package source — in that
 # order. If none of those work, set JUPYTER_GAP_EXECUTABLE before
 # running this script.
@@ -45,7 +45,7 @@ fi
 
 # Sanity-check that the kernel can find GAP. We don't want jupyter
 # to come up only for the kernel to die on first cell execution.
-if [ -z "${JUPYTER_GAP_EXECUTABLE:-}" ] && [ -z "${GAP:-}" ] \
+if [ -z "${JUPYTER_GAP_EXECUTABLE:-}" ] \
    && ! command -v gap >/dev/null 2>&1 \
    && [ ! -x "$HERE/../../gap" ]; then
     echo "Warning: no GAP binary found. Set JUPYTER_GAP_EXECUTABLE to" >&2

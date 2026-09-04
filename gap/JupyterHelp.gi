@@ -150,7 +150,7 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
   books := Filtered(HELP_KNOWN_BOOKS[1], bn-> MATCH_BEGIN(bn, book));
   if Length(book) > 0 and Length(books) = 0 then
     Print("Help: None of the available books matches (try: '?books').\n");
-    return;
+    return fail;
   fi;
 
   # function to add a topic to the ring
@@ -170,7 +170,7 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
        else
          return GET_HELP_URL( [HELP_LAST.BOOK, HELP_LAST.MATCH] );
        fi;
-       return;
+       return fail;
 
   # if topic is "&" shobn;w last topic again, but with next viewer in viewer
   # list, or with last viewer again if there is no next one
@@ -181,7 +181,7 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
          HELP_LAST.NEXT_VIEWER := true;
          return GET_HELP_URL( [HELP_LAST.BOOK, HELP_LAST.MATCH] );
        fi;
-       return;
+       return fail;
 
   # if the topic is '-' we are interested in the previous search again
   elif book = "" and str = "-" and Length(nwostr) = 1  then
@@ -199,39 +199,39 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
   fi;
 
   # Special-case dispatch for navigation tokens. Each branch performs
-  # its action and falls through the function (returning nothing).
+  # its action and returns fail to indicate that there is no renderable.
   if book = "" and ForAll(str, a-> a in "0123456789") then
       # number means topic from HELP_LAST.TOPICS list
       HELP_SHOW_FROM_LAST_TOPICS(Int(str));
-      return;
+      return fail;
   elif book = "" and str = "<" and Length(nwostr) = 1  then
-      HELP_SHOW_PREV(); return;
+      HELP_SHOW_PREV(); return fail;
   elif book = "" and str = ">" and Length(nwostr) = 1  then
-      HELP_SHOW_NEXT(); return;
+      HELP_SHOW_NEXT(); return fail;
   elif book = "" and str = "<<"  then
-      HELP_SHOW_PREV_CHAPTER(); return;
+      HELP_SHOW_PREV_CHAPTER(); return fail;
   elif book = "" and str = ">>"  then
-      HELP_SHOW_NEXT_CHAPTER(); return;
+      HELP_SHOW_NEXT_CHAPTER(); return fail;
   elif book = "" and str = "welcome to gap"  then
       if HELP_SHOW_WELCOME(book)  then
           add( books, "Welcome to GAP" );
       fi;
-      return;
+      return fail;
   elif book = "" and str = "books"  then
       if HELP_SHOW_BOOKS()  then
           add( books, "books" );
       fi;
-      return;
+      return fail;
   elif str = "chapters"  or str = "contents" or book <> "" and str = "" then
       if ForAll(books, b->  HELP_SHOW_CHAPTERS(b)) then
         add( books, "chapters" );
       fi;
-      return;
+      return fail;
   elif str = "sections"  then
       if ForAll(books, b-> HELP_SHOW_SECTIONS(b)) then
         add(books, "sections");
       fi;
-      return;
+      return fail;
   elif Length(str) > 0 and str[1] = '?'  then
       # '??<topic>' — substring search rather than prefix match.
       str := str{[2..Length(str)]};
@@ -253,8 +253,10 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
                  ForAny(HELP_KNOWN_BOOKS[1], bk -> MATCH_BEGIN(bk, str)) then
       Print( "Help: Are you looking for a certain book? (Trying '?", origstr,
              ":' ...\n");
-      return HELP( Concatenation(origstr, ":") );
+      HELP( Concatenation(origstr, ":") );
+      return fail;
   fi;
+  return fail;
 end);
 
 # Load some help stuff (Experimental)
@@ -278,4 +280,3 @@ function(file, name)
     od;
     return res;
 end);
-

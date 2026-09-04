@@ -32,6 +32,9 @@ end);
 InstallGlobalFunction( JUPYTER_ComputeHMAC,
 function(key, header, parent_header, metadata, content)
     local digest;
+    if key = "" then
+        return "";
+    fi;
     digest := CRYPTING_SHA256_HMAC( key,
                 Concatenation(header, parent_header, metadata, content) );
     return LowercaseString( Concatenation( List(digest, CRYPTING_HexStringIntPad8) ) );

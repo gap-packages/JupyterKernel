@@ -66,10 +66,11 @@ function(str, pos)
     found := false;
 
     if extracted.ident <> "" then
-        found := true;
         if extracted.fapp then
             textplain := JUPYTER_FindHelp(extracted.ident);
+            found := textplain <> "Undocumented";
         elif IsBoundGlobal(extracted.ident) then
+            found := true;
             var := ValueGlobal(extracted.ident);
             if IsFunction(var) then
                 textplain := JUPYTER_FindHelp(extracted.ident);

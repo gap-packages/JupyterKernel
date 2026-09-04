@@ -26,7 +26,9 @@ gap> ins := JUPYTER_Inspect("Gro", 3);;
 gap> ins.status;
 "ok"
 gap> ins.found;
-true
+false
+gap> JUPYTER_Inspect("DefinitelyNoSuchGlobal", 22).found;
+false
 gap> G := Group((1,2,3));;
 gap> ins2 := JUPYTER_Inspect("G", 1);;
 gap> ins2.status;

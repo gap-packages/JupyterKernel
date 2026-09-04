@@ -54,6 +54,7 @@ src/*.lo
 **/.ipynb_checkpoints/
 
 __pycache__/
+.pytest_cache/
 *.pyc
 *.egg-info/
 /build/

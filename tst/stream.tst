@@ -11,7 +11,7 @@ gap> START_TEST("JupyterKernel: stream.tst");
 # directly via Objectify, with a string in place of a socket.
 gap> kernel := Objectify(NewType(NewFamily("FakeKern3"), IsObject and IsComponentObjectRep), \
 >      rec( ZmqIdentity := "id", Username := "u", SessionID := "s",
->           SessionKey := "k", ProtocolVersion := "5.3" ));;
+>           SessionKey := "k", ProtocolVersion := "5.3", Silent := false ));;
 gap> stream := Objectify(OutputStreamZmqType, \
 >      rec( kernel := kernel, socket := "fakesock", format := false,
 >           streamname := "stdout", buffer := "" ));;

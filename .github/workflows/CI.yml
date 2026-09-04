@@ -156,3 +156,21 @@ jobs:
           wheel=$(ls dist/*.whl | head -1)
           python -m zipfile -l "$wheel" | grep 'share/jupyter/labextensions/jupyterlab-gap-mode/static/style.js'
           python -m zipfile -l "$wheel" | grep 'share/jupyter/kernels/gap-4/kernel.json'
+      - name: 'Smoke-test the installed wheel with JupyterLab and Notebook'
+        run: |
+          set -euo pipefail
+          wheel=$(ls dist/*.whl | head -1)
+          python -m venv /tmp/gap-jupyter-wheel-test
+          /tmp/gap-jupyter-wheel-test/bin/pip install "$wheel" 'jupyterlab>=4,<5' 'notebook>=7'
+
+          kernels=$(/tmp/gap-jupyter-wheel-test/bin/jupyter kernelspec list --json)
+          echo "$kernels"
+          grep -q '"gap-4"' <<< "$kernels"
+
+          extensions=$(/tmp/gap-jupyter-wheel-test/bin/jupyter labextension list 2>&1)
+          echo "$extensions"
+          grep -q 'jupyterlab-gap-mode' <<< "$extensions"
+          grep -Eq 'enabled.*OK' <<< "$extensions"
+
+          /tmp/gap-jupyter-wheel-test/bin/jupyter lab --version
+          /tmp/gap-jupyter-wheel-test/bin/jupyter notebook --version

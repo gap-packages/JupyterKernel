@@ -145,7 +145,39 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
                 return
         self.fail("no kernel_info_reply on control channel")
 
-    def _execute_and_collect(self, code, timeout=30):
+    def test_unsupported_comm_is_closed(self):
+        self.flush_channels()
+        request = self.kc.session.msg(
+            "comm_open",
+            content={
+                "comm_id": "unsupported-test-comm",
+                "target_name": "unsupported-test-target",
+                "data": {},
+            },
+        )
+        self.kc.shell_channel.send(request)
+
+        close = None
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            try:
+                msg = self.kc.get_iopub_msg(timeout=2)
+            except Empty:
+                continue
+            if msg["parent_header"].get("msg_id") != request["header"]["msg_id"]:
+                continue
+            if msg["msg_type"] == "comm_close":
+                close = msg
+            if (msg["msg_type"] == "status"
+                    and msg["content"]["execution_state"] == "idle"):
+                break
+
+        self.assertIsNotNone(close, "unsupported comm_open did not produce comm_close")
+        self.assertEqual(close["content"]["comm_id"], "unsupported-test-comm")
+        with self.assertRaises(Empty):
+            self.kc.get_shell_msg(timeout=0.2)
+
+    def _execute_and_collect(self, code, timeout=30, **execute_kwargs):
         """Send `code` and return (reply_content, iopub_msgs).
 
         Drain iopub until we see status="idle" for our msg_id (the spec
@@ -155,7 +187,7 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         reply, but the client's two channels are independent threads
         and can deliver out of order."""
         self.flush_channels()
-        msg_id = self.kc.execute(code)
+        msg_id = self.kc.execute(code, **execute_kwargs)
         iopub = []
         deadline = time.time() + timeout
         # Phase 1: drain iopub for our msg_id until idle.
@@ -185,6 +217,67 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
                 break
         self.assertIsNotNone(reply, "no execute_reply received")
         return reply["content"], iopub
+
+    def test_execution_count_is_per_request(self):
+        content, iopub = self._execute_and_collect("1; 2;")
+        self.assertEqual(content["status"], "ok")
+        count = content["execution_count"]
+        execute_inputs = [m for m in iopub if m["msg_type"] == "execute_input"]
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(len(execute_inputs), 1)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(execute_inputs[0]["content"]["execution_count"], count)
+        self.assertTrue(
+            all(m["content"]["execution_count"] == count for m in results)
+        )
+
+        next_content, _ = self._execute_and_collect("3;")
+        self.assertEqual(next_content["execution_count"], count + 1)
+
+    def test_silent_execution_has_no_output_or_history(self):
+        before, _ = self._execute_and_collect("", silent=True)
+        content, iopub = self._execute_and_collect(
+            'silent_value := 41; Print("hidden\\n"); silent_value + 1;',
+            silent=True,
+        )
+        self.assertEqual(content["status"], "ok")
+        self.assertEqual(content["execution_count"], before["execution_count"])
+        self.assertEqual(
+            [
+                m
+                for m in iopub
+                if m["msg_type"] not in {"status"}
+            ],
+            [],
+        )
+
+        visible, visible_iopub = self._execute_and_collect("silent_value;")
+        self.assertEqual(visible["execution_count"], before["execution_count"] + 1)
+        results = [m for m in visible_iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(results[0]["content"]["data"]["text/plain"], "41")
+
+    def test_silent_execution_still_reports_errors(self):
+        before, _ = self._execute_and_collect("", silent=True)
+        content, iopub = self._execute_and_collect("1/0;", silent=True)
+        self.assertEqual(content["status"], "error")
+        self.assertEqual(content["execution_count"], before["execution_count"])
+        self.assertTrue(content["traceback"])
+        self.assertEqual(
+            [m for m in iopub if m["msg_type"] not in {"status"}],
+            [],
+        )
+
+    def test_store_history_false_does_not_increment_count(self):
+        before, _ = self._execute_and_collect("", silent=True)
+        content, iopub = self._execute_and_collect(
+            "21 * 2;", store_history=False
+        )
+        self.assertEqual(content["status"], "ok")
+        self.assertEqual(content["execution_count"], before["execution_count"])
+        execute_inputs = [m for m in iopub if m["msg_type"] == "execute_input"]
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(execute_inputs[0]["content"]["execution_count"], before["execution_count"])
+        self.assertEqual(results[0]["content"]["execution_count"], before["execution_count"])
 
     def test_multiline_function_definition(self):
         """A function definition split across newlines must execute as

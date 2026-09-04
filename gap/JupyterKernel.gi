@@ -100,6 +100,7 @@ function(conf)
                  , SessionKey := conf.key
                  , SessionID := ""
                  , ExecutionCount := 0
+                 , Silent := false
                  , quitting := false );
 
     kernel.MsgHandlers := rec(
@@ -131,16 +132,24 @@ function(conf)
         execute_request := function(msg)
             local publ, res, r, rep, str, data, metadata, t, content,
                   errBuf, errText, savedErr, errored, ename, run,
-                  code, helpres, i;
+                  code, helpres, i, silent, storeHistory;
 
             code := msg.content.code;
-            JupyterMsgSend( kernel, kernel!.IOPub
-                          , JupyterMsg( kernel
-                                      , "execute_input"
-                                      , msg.header
-                                      , rec( code := code
-                                           , execution_count := kernel!.ExecutionCount + 1 )
-                                      , rec() ) );
+            silent := msg.content.silent;
+            storeHistory := msg.content.store_history and not silent;
+            if storeHistory then
+                kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
+            fi;
+            kernel!.Silent := silent;
+            if not silent then
+                JupyterMsgSend( kernel, kernel!.IOPub
+                              , JupyterMsg( kernel
+                                          , "execute_input"
+                                          , msg.header
+                                          , rec( code := code
+                                               , execution_count := kernel!.ExecutionCount )
+                                          , rec() ) );
+            fi;
 
             # Dispatch leading '?'/'??' to JUPYTER_HELP, bypassing the
             # READ_ALL_COMMANDS path. GAP's REPL treats `?topic` as a help
@@ -153,20 +162,8 @@ function(conf)
                 i := i + 1;
             od;
             if i <= Length(code) and code[i] = '?' then
-                kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
-                # Wrap in CALL_WITH_CATCH so a bug in JUPYTER_HELP (or
-                # in any of GAP's help-system internals it calls into)
-                # can't leave the cell without a reply. JUPYTER_HELP
-                # may also return nothing (void) on its fall-through
-                # paths — guard against an unbound run[2].
-                run := CALL_WITH_CATCH( JUPYTER_HELP,
-                                        [ code{[i+1..Length(code)]} ] );
-                if run[1] and IsBound(run[2]) then
-                    helpres := run[2];
-                else
-                    helpres := fail;
-                fi;
-                if IsJupyterRenderable(helpres) then
+                helpres := JUPYTER_HELP(code{[i+1..Length(code)]});
+                if not silent and IsJupyterRenderable(helpres) then
                     metadata := JupyterRenderableMetadata(helpres);
                     data := JupyterRenderableData(helpres);
                     JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
@@ -179,9 +176,11 @@ function(conf)
                 fi;
                 FlushOutputStream(kernel!.StdOut);
                 FlushOutputStream(kernel!.StdErr);
+                kernel!.Silent := false;
                 return JupyterMsg( kernel, "execute_reply", msg.header,
                                    rec( status := "ok",
-                                        execution_count := kernel!.ExecutionCount ),
+                                        execution_count := kernel!.ExecutionCount,
+                                        user_expressions := rec() ),
                                    rec() );
             fi;
 
@@ -219,7 +218,8 @@ function(conf)
             CloseStream(errBuf);
 
             content := rec( status := "ok"
-                          , execution_count := kernel!.ExecutionCount + 1 );
+                          , execution_count := kernel!.ExecutionCount
+                          , user_expressions := rec() );
             errored := false;
             ename := "GAPError";
             if run[1] = false then
@@ -236,8 +236,7 @@ function(conf)
             fi;
             for r in res do
                 if r[1] = true then
-                    kernel!.ExecutionCount := kernel!.ExecutionCount + 1;
-                    if IsBound(r[2]) and r[3] = false then
+                    if not silent and IsBound(r[2]) and r[3] = false then
                         rep := JupyterRender(r[2]);
                         metadata := JupyterRenderableMetadata(rep);
                         data := JupyterRenderableData(rep);
@@ -261,20 +260,22 @@ function(conf)
             FlushOutputStream(kernel!.StdErr);
 
             if errored then
-                # Errors during evaluation → iopub "error" message + status
-                # in reply. errText carries whatever Error() printed.
-                JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
-                                                    , "error"
-                                                    , msg.header
-                                                    , rec( ename := ename
-                                                         , evalue := errText
-                                                         , traceback := [ errText ] )
-                                                    , rec() ) );
+                if not silent then
+                    # Errors during evaluation → iopub "error" message.
+                    # errText carries whatever Error() printed.
+                    JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
+                                                        , "error"
+                                                        , msg.header
+                                                        , rec( ename := ename
+                                                             , evalue := errText
+                                                             , traceback := [ errText ] )
+                                                        , rec() ) );
+                fi;
                 content.status := "error";
                 content.ename := ename;
                 content.evalue := errText;
                 content.traceback := [ errText ];
-            elif Length(errText) > 0 then
+            elif not silent and Length(errText) > 0 then
                 # User wrote to stderr without erroring (Print(ERROR_OUTPUT,...)).
                 JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
                                                     , "stream"
@@ -284,6 +285,7 @@ function(conf)
                                                     , rec() ) );
             fi;
 
+            kernel!.Silent := false;
             content.execution_count := kernel!.ExecutionCount;
             return JupyterMsg( kernel, "execute_reply", msg.header, content, rec() );
         end,
@@ -323,11 +325,14 @@ function(conf)
         end,
 
         comm_open := function(msg)
-            return JupyterMsg( kernel
-                             , "comm_open_reply"
-                             , msg.header
-                             , rec( status := "ok" )
-                             , rec() );
+            JupyterMsgSend( kernel, kernel!.IOPub
+                          , JupyterMsg( kernel
+                                      , "comm_close"
+                                      , msg.header
+                                      , rec( comm_id := msg.content.comm_id
+                                           , data := rec() )
+                                      , rec() ) );
+            return fail;
         end,
 
         comm_info_request := function(msg)
@@ -396,9 +401,11 @@ function(conf)
         if IsBound(kernel!.MsgHandlers.(t)) then
             reply := kernel!.MsgHandlers.(t)(msg);
             JupyterLog("    HandleShellMsg: handler returned\n");
-            reply.ids := msg.ids;
-            JupyterMsgSend(kernel, kernel!.Shell, reply);
-            JupyterLog("    HandleShellMsg: send done\n");
+            if reply <> fail then
+                reply.ids := msg.ids;
+                JupyterMsgSend(kernel, kernel!.Shell, reply);
+                JupyterLog("    HandleShellMsg: send done\n");
+            fi;
             kernel!.SignalIdle();
             JupyterLog("    HandleShellMsg: SignalIdle done\n");
             return true;
@@ -463,7 +470,7 @@ function(conf)
     end;
 
     kernel.Loop := function()
-        local topoll, poll, raw, status, iter;
+        local topoll, poll, raw, iter;
         JupyterLog("Loop: entering\n");
         kernel!.SignalStarting();
         JupyterLog("Loop: SignalStarting sent\n");
@@ -481,22 +488,10 @@ function(conf)
                 JupyterLog("  HB echoed\n");
             fi;
             if 2 in poll then
-                status := CALL_WITH_CATCH(function()
-                    kernel!.HandleControlMsg(JupyterMsgRecv(kernel, kernel!.Control));
-                end, []);
-                JupyterLog("  Control: status[1]=", status[1], "\n");
-                if status[1] = false then
-                    JupyterLog("    Control error: ", status[2], "\n");
-                fi;
+                kernel!.HandleControlMsg(JupyterMsgRecv(kernel, kernel!.Control));
             fi;
             if 3 in poll then
-                status := CALL_WITH_CATCH(function()
-                    kernel!.HandleShellMsg(JupyterMsgRecv(kernel, kernel!.Shell));
-                end, []);
-                JupyterLog("  Shell: status[1]=", status[1], "\n");
-                if status[1] = false then
-                    JupyterLog("    Shell error: ", status[2], "\n");
-                fi;
+                kernel!.HandleShellMsg(JupyterMsgRecv(kernel, kernel!.Shell));
             fi;
             if 4 in poll then
                 ZmqReceiveList(kernel!.StdIn);

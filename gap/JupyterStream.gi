@@ -40,6 +40,10 @@ function( stream )
     if Length(stream!.buffer) = 0 then
         return;
     fi;
+    if stream!.kernel!.Silent then
+        stream!.buffer := "";
+        return;
+    fi;
     if IsBound(stream!.kernel!.CurrentMsg) then
         curmsg := stream!.kernel!.CurrentMsg;
     else

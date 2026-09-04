@@ -1,20 +1,22 @@
-
-_BUFFER := "";
 OutputStreamZmqType := NewType(
     StreamsFamily,
     IsOutputTextStream and IsOutputStreamZmqRep );
+
+JUPYTER_STREAM_FLUSH_THRESHOLD := 4096;
 
 InstallMethod( OutputStreamZmq,
     "output stream to Jupyter ZeroMQ",
     [ IsObject, IsZmqSocket, IsString ],
 function(kernel, socket, streamname)
-    # TODO: more specific, check kernel, connected socket, etc
     if not IsZmqSocket(socket)  then
         Error( "<socket> must be a IsZmqSocket" );
     fi;
     return Objectify( OutputStreamZmqType
-                    , rec( kernel := kernel, socket := socket
-                         , format := false, streamname := streamname ) );
+                    , rec( kernel := kernel
+                         , socket := socket
+                         , format := false
+                         , streamname := streamname
+                         , buffer := "" ) );
 end);
 
 
@@ -27,8 +29,48 @@ InstallMethod( ViewString,
     "output stream to Jupyter ZeroMQ",
     [ IsOutputStreamZmqRep ],
 function( obj )
-    # TODO: print some useful info about kernel/socket?
-    return "OutputStreamZmq()";
+    return Concatenation("OutputStreamZmq(", obj!.streamname, ")");
+end );
+
+InstallMethod( FlushOutputStream,
+    "send buffered output as one stream message",
+    [ IsOutputStreamZmqRep ],
+function( stream )
+    local curmsg, text, c;
+    if Length(stream!.buffer) = 0 then
+        return;
+    fi;
+    if stream!.kernel!.Silent then
+        stream!.buffer := "";
+        return;
+    fi;
+    if IsBound(stream!.kernel!.CurrentMsg) then
+        curmsg := stream!.kernel!.CurrentMsg;
+    else
+        curmsg := rec();
+    fi;
+    # GAP's scanner uses byte 0xFF (\377) as its end-of-input sentinel.
+    # On certain syntax errors — most reliably ones involving a missing
+    # trailing token, e.g. `h := ;` — the sentinel still sits in the
+    # input-line buffer that SyntaxErrorOrWarning() prints verbatim
+    # alongside the error message. JSON/UTF-8 has no encoding for a
+    # stray 0xFF, so the front-end renders it as `ÿ`. Drop those bytes
+    # before sending.
+    text := "";
+    for c in stream!.buffer do
+        if IntChar(c) <> 255 then
+            Add(text, c);
+        fi;
+    od;
+    JupyterMsgSend( stream!.kernel
+                  , stream!.socket
+                  , JupyterMsg( stream!.kernel
+                              , "stream"
+                              , curmsg
+                              , rec( name := stream!.streamname
+                                   , text := text )
+                              , rec() ) );
+    stream!.buffer := "";
 end );
 
 InstallMethod( WriteAll,
@@ -36,49 +78,31 @@ InstallMethod( WriteAll,
     [ IsOutputTextStream and IsOutputStreamZmqRep,
       IsString ],
 function( stream, string )
-    local curmsg, msg;
-    if IsBound(stream!.kernel!.CurrentMsg) then
-        curmsg := stream!.kernel!.CurrentMsg;
-    else
-        curmsg := rec();
+    JupyterLog("        WriteAll(", stream!.streamname,
+               ", len=", Length(string), ", '",
+               string{[1..Minimum(80, Length(string))]}, "')\n");
+    Append( stream!.buffer, string );
+    if Length(stream!.buffer) >= JUPYTER_STREAM_FLUSH_THRESHOLD
+       or '\n' in string then
+        JupyterLog("        WriteAll: flushing\n");
+        FlushOutputStream(stream);
     fi;
-    Append( _BUFFER, string );
-    JupyterMsgSend( stream!.kernel
-                  , stream!.kernel!.IOPub
-                  , JupyterMsg( stream!.kernel
-                              , "stream"
-                              , curmsg
-                              , rec( name := stream!.streamname
-                                   , text := string )
-                              , rec () ) );
     return true;
 end );
 
 InstallMethod( WriteByte,
-    "output text string",
+    "output text byte",
     [ IsOutputTextStream and IsOutputStreamZmqRep,
       IsInt ],
 function(stream, byte)
-    local curmsg, msg;
-    if byte < 0 or 255 < byte  then
-        Error( "<byte> must an integer between 0 and 255" );
+    if byte < 0 or 255 < byte then
+        Error( "<byte> must be an integer between 0 and 255" );
     fi;
-    # TODO
-    if IsBound(stream!.kernel!.CurrentMsg) then
-        curmsg := stream!.kernel!.CurrentMsg;
-    else
-        curmsg := rec();
+    Add( stream!.buffer, CharInt(byte) );
+    if byte = INT_CHAR('\n')
+       or Length(stream!.buffer) >= JUPYTER_STREAM_FLUSH_THRESHOLD then
+        FlushOutputStream(stream);
     fi;
-    Add( _BUFFER, CharInt(byte) );
-    JupyterMsgSend( stream!.kernel
-                  , stream!.kernel!.IOPub
-                  , JupyterMsg( stream!.kernel
-                              , "stream"
-                              , curmsg
-                              , rec( name := stream!.streamname
-                                   , text := CharInt(byte) )
-                              , rec () ) );
-
     return true;
 end );
 
@@ -96,5 +120,3 @@ function(str, stat)
         str!.format := stat;
     fi;
 end);
-
-

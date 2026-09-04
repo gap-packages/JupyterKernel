@@ -7,83 +7,108 @@ This package implements the [Jupyter](https://www.jupyter.org) protocol in GAP.
 
 ## Installation
 
-**Note: If you need to reinstall this package, you will also need to re-run
-`pip3 install .`, and re-add the Jupyter kernel to your PATH**
+This package targets Jupyter Notebook 7 / JupyterLab 4 and Python 3.8+.
+Classic Notebook (5/6) is no longer supported.
 
-### Dependencies and installation
+### Dependencies
 
+JupyterKernel itself does not need compilation, but it depends on several
+other GAP packages that do. On Debian/Ubuntu the system-level prerequisites
+are:
 
-Download and unpack the corresponding archive from the GAP website at
+- `libzmq3-dev`
+- `m4`
 
-  <https://www.gap-system.org/Releases/>
-  
-For Windows installations, it is recommended to utilise an installation of
-Windows Subsystem for Linux (WSL) as this makes the installation process
-much more streamlined. JupyterKernel does not require compilation, 
-but it depends on several other GAP packages, of which several have to be built
-and require the following dependencies:
+The required GAP packages are listed in `PackageInfo.g` (`io`, `json`,
+`uuid`, `ZeroMQInterface`, `crypting`, `GAPDoc`).
 
-- libzmq3-dev
-- m4
+### Installing the kernel
 
-### Jupyter Setup
+#### Quick start (no Jupyter installed)
 
-Jupyter can be installed using the following:
+From the package directory:
 
-    pip3 install notebook
-            
-in your terminal (or for Windows, under WSL's terminal). While other methods
-do work for installing python, this method has been tested to work well with
-JupyterKernel.
+    ./start-jupyter.sh
 
-Note that a Python version >= 3.5 is required. Once that is done, the GAP Jupyter
-kernel must be registered with Jupyter, by running the following command 
-in the `pkg/JupyterKernel` directory of your GAP installation:
+That creates a venv under `~/.cache/gap-jupyter/venv`, installs the
+kernel + JupyterLab into it, then opens a JupyterLab session.
+Subsequent runs reuse the venv. Requires Python 3.8+ and Node.js 18+.
+The kernel auto-discovers GAP via `JUPYTER_GAP_EXECUTABLE`, `$PATH`,
+or the conventional `<gap-root>/gap` next to the `pkg/`
+directory — in that order.
 
-    pip3 install .
+#### Adding the kernel to your existing Jupyter
 
-or for your user only:
+From the package directory:
 
-    pip3 install . --user
+    pip install .
 
-### Adding JupyterKernel to your PATH
+That single command:
 
-If GAP is not in your PATH, then you have to set the environment variable
-`JUPYTER_GAP_EXECUTABLE` to point to your GAP executable for Jupyter to
-be able to execute GAP, and the script `jupyter-kernel-gap` that is
-distributed with this package in the directory `bin/` needs to be in
-your path.
+- installs the `gap_jupyter_kernel` Python launcher,
+- registers the kernel spec under `share/jupyter/kernels/gap-4`,
+- registers the bundled JupyterLab extension under
+  `share/jupyter/labextensions/jupyterlab-gap-mode` for syntax
+  highlighting.
 
-This can be done through symlinking:
+JupyterLab and Notebook 7 discover both at startup; `GAP 4` shows up in
+the kernel selector and GAP cells get highlighted automatically.
 
-    sudo ln -s <GAP-installation-directory>/gap gap
-  
-    sudo ln -s <GAP-installation-directory>/pkg/JupyterKernel-X.Y.Z/bin/jupyter-kernel-gap
+If GAP is not on your `PATH`, set `JUPYTER_GAP_EXECUTABLE` to the absolute
+path of the `gap` binary; the launcher reads it on every start.
 
-And an export command to set `JUPYTER_GAP_EXECUTABLE`:
+Building from source requires Node.js 18+ (only contributors need it; end
+users install from a wheel that already contains the prebuilt JS).
 
-    export JUPYTER_GAP_EXECUTABLE=gap
+### Running
 
-### Running JupyterKernel
-
-With all of the setup complete, you should be able to start Jupyter notebook with
-  
     jupyter notebook
-  
-and chose GAP as a kernel option.
+    # or
+    jupyter lab
+
+then pick `GAP 4` as the kernel.
+
+### Syntax highlighting
+
+GAP cells are highlighted by a CodeMirror 6 mode shipped as a prebuilt
+JupyterLab extension (`jupyterlab-gap-mode`). It is installed automatically
+by `pip install .` and discovered by JupyterLab and Notebook 7 without any
+extra step. Verify with:
+
+    jupyter labextension list
+
+The mode tokenises GAP keywords (`function`/`end`, `if`/`fi`, `for`/`od`
+…), comments (`#`-to-end-of-line), strings, character literals, numbers,
+and the standard operators (`:=`, `..`, `->`, `<>`).
+
+Source for the mode lives in `src/`; rebuild with:
+
+    npm install
+    jupyter labextension build .
+
+### Interrupting a running computation
+
+The notebook's interrupt button sends SIGINT directly to the GAP process
+(`interrupt_mode: "signal"` in `kernel.json`). GAP's own interrupt handler
+turns that into a normal "user interrupt" error, which the kernel converts
+to an `execute_reply` with `status: "error"` and `ename: "KeyboardInterrupt"`.
+
+Caveat: GAP only checks for an interrupt at GAP-level statement boundaries.
+Tight C-level loops — e.g. some `Factors(BigInteger)` calls — will not be
+interruptible until they return to the interpreter.
 
 ### Troubleshooting
 
-If you have registered the GAP Jupyter kernel, but it does not start, open GAP and enter
+If the kernel does not start, first check that the package loads in plain
+GAP:
 
-    LoadPackage("JupyterKernel");
+    gap -c 'LoadPackage("JupyterKernel"); QUIT;'
 
-If this returns `fail`, follow the displayed instructions to attempt loading it second
-time with a more verbose output in order to find out which of the dependencies fail to
-load, and check their installation. If this returns `true` but it still does not work
-in Jupyter, check that you have set the environment variable `JUPYTER_GAP_EXECUTABLE`
-and the script `jupyter-kernel-gap` is in your path as described above. For some more
-details, see <https://github.com/gap-packages/JupyterKernel/issues/74>.
+If that prints `fail`, follow the diagnostic instructions GAP prints to find
+which dependency is missing. If it prints `true` but Jupyter still cannot
+start the kernel, check that `python -m gap_jupyter_kernel /tmp/dummy.json`
+runs (it will error out parsing the dummy file, but the launcher itself
+should be reachable).
 
 ## Documentation
 
@@ -121,4 +146,3 @@ For details see the files COPYRIGHT.md and LICENSE.
 </td>
 </tr>
 </table>
-

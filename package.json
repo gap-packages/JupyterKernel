@@ -1,0 +1,63 @@
+{
+  "name": "jupyterlab-gap-mode",
+  "version": "2.0.0",
+  "description": "GAP syntax highlighting for JupyterLab 4 / Notebook 7",
+  "keywords": [
+    "jupyter",
+    "jupyterlab",
+    "jupyterlab-extension",
+    "gap"
+  ],
+  "homepage": "https://github.com/gap-packages/JupyterKernel",
+  "bugs": {
+    "url": "https://github.com/gap-packages/JupyterKernel/issues"
+  },
+  "license": "BSD-3-Clause",
+  "author": "GAP JupyterKernel contributors",
+  "files": [
+    "lib/**/*.{d.ts,js,js.map,json}",
+    "style/**/*.{css,js}",
+    "style/index.js"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "style": "style/index.css",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gap-packages/JupyterKernel.git"
+  },
+  "scripts": {
+    "build": "npm run build:lib && npm run build:labextension:dev",
+    "build:prod": "npm run clean && npm run build:lib && npm run build:labextension",
+    "build:labextension": "jupyter labextension build .",
+    "build:labextension:dev": "jupyter labextension build --development True .",
+    "build:lib": "tsc",
+    "clean": "npm run clean:lib",
+    "clean:all": "npm run clean:lib && npm run clean:labextension",
+    "clean:labextension": "rimraf gap_jupyter_kernel/labextension",
+    "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
+    "watch": "run-p watch:src watch:labextension",
+    "watch:labextension": "jupyter labextension watch .",
+    "watch:src": "tsc -w"
+  },
+  "dependencies": {
+    "@codemirror/language": "^6.0.0",
+    "@jupyterlab/application": "^4.0.0",
+    "@jupyterlab/codemirror": "^4.0.0",
+    "@lezer/highlight": "^1.0.0"
+  },
+  "devDependencies": {
+    "@jupyterlab/builder": "^4.0.0",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^5.0.0",
+    "typescript": "~5.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "jupyterlab": {
+    "extension": true,
+    "outputDir": "gap_jupyter_kernel/labextension"
+  },
+  "styleModule": "style/index.js"
+}

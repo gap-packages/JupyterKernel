@@ -18,24 +18,21 @@ jobs:
   # On Windows, GAP runs under Cygwin via gap-actions/setup-cygwin (same as
   # the io package; the kernel itself is Cygwin-only on Windows).
   test:
-    name: ${{ matrix.os }} - GAP ${{ matrix.gap-branch }}
+    name: ${{ matrix.os }} - GAP ${{ matrix.gap-version }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu]
-        gap-branch:
-          - master
-          - stable-4.15
-          - stable-4.14
-          - stable-4.13
-          - stable-4.12
-          - stable-4.11
+        gap-version:
+          - 'devel'   # current GAP development version from git
+          - 'latest'  # latest GAP release
+          - 'minimal' # oldest GAP release supported by this package
         include:
           - os: macos
-            gap-branch: master
+            gap-version: 'devel'
           - os: windows
-            gap-branch: master
+            gap-version: 'devel'
     steps:
       - uses: actions/checkout@v6
       - name: 'Install libzmq (Linux)'
@@ -51,19 +48,20 @@ jobs:
           # -lzmq, so libzmq-devel is the only Cygwin package we need
           # beyond the setup-cygwin defaults.
           extra-pkgs-to-install: 'libzmq-devel'
-      - uses: gap-actions/setup-gap@v2
+      - uses: gap-actions/setup-gap@v3
         with:
-          GAP_PKGS_TO_BUILD: "io profiling crypting json ZeroMQInterface"
-          GAPBRANCH: ${{ matrix.gap-branch }}
-      - uses: gap-actions/build-pkg@v1
-      - uses: gap-actions/run-pkg-tests@v3
-      - uses: gap-actions/run-pkg-tests@v3
+          gap-version: ${{ matrix.gap-version }}
+      - uses: gap-actions/build-pkg@v3
         with:
-          only-needed: true
-      - uses: gap-actions/process-coverage@v2
-        if: ${{ runner.os == 'Linux' && matrix.gap-branch == 'master' }}
+          extra-pkgs: "io profiling crypting json ZeroMQInterface"
+      - uses: gap-actions/run-pkg-tests@v4
+      - uses: gap-actions/run-pkg-tests@v4
+        with:
+          mode: onlyneeded
+      - uses: gap-actions/process-coverage@v3
+        if: ${{ runner.os == 'Linux' && matrix.gap-version == 'devel' }}
       - uses: codecov/codecov-action@v6
-        if: ${{ runner.os == 'Linux' && matrix.gap-branch == 'master' }}
+        if: ${{ runner.os == 'Linux' && matrix.gap-version == 'devel' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -89,11 +87,12 @@ jobs:
       - name: 'Install zeromq + graphviz (macOS)'
         if: ${{ runner.os == 'macOS' }}
         run: brew install zeromq graphviz
-      - uses: gap-actions/setup-gap@v2
+      - uses: gap-actions/setup-gap@v3
         with:
-          GAP_PKGS_TO_BUILD: "io profiling crypting json ZeroMQInterface"
-          GAPBRANCH: master
-      - uses: gap-actions/build-pkg@v1
+          gap-version: 'devel'
+      - uses: gap-actions/build-pkg@v3
+        with:
+          extra-pkgs: "io profiling crypting json ZeroMQInterface"
       - name: 'Replace bundled JupyterKernel with checkout'
         # setup-gap's bootstrap-pkg-full unpacks every standard package,
         # including the released JupyterKernel. Without this step,

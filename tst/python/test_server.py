@@ -41,6 +41,10 @@ class JupyterLabTests(unittest.TestCase):
                 f"--ServerApp.port={port}",
                 "--ServerApp.port_retries=0",
                 "--ServerApp.base_url=/user/gap-test/",
+                # Do not let unrelated language-server autodetection affect
+                # this GAP kernel test (GitHub's Linux image includes Julia).
+                "--ServerApp.jpserver_extensions",
+                "jupyter_lsp=False",
                 f"--ServerApp.root_dir={root}",
                 "--ServerApp.shutdown_no_activity_timeout=60",
             ]

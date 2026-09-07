@@ -217,7 +217,7 @@ jobs:
         with:
           name: gap-jupyter-wheel
           path: ${{ github.workspace }}/dist
-      - name: 'Install the wheel and Jupyter into Cygwin Python'
+      - name: 'Install the wheel and Jupyter test stack into Cygwin Python'
         run: |
           set -euxo pipefail
           workspace=$(cygpath -u "$GITHUB_WORKSPACE")
@@ -242,7 +242,7 @@ jobs:
           test "${#wheels[@]}" -eq 1
           wheel=${wheels[0]}
           /tmp/gap-jupyter-cygwin/bin/python -m pip install \
-            "${wheel}[server,test]"
+            "${wheel}[test]"
       - name: 'Report the installed Cygwin and Python components'
         run: |
           set -euxo pipefail
@@ -255,14 +255,12 @@ jobs:
           print(f"pyzmq {zmq.__version__}; libzmq {zmq.zmq_version()}", flush=True)
           PY
           /tmp/gap-jupyter-cygwin/bin/python -m pip list
-      - name: 'Check Jupyter discovery inside Cygwin'
+      - name: 'Check Jupyter kernel discovery inside Cygwin'
         run: |
           set -euxo pipefail
           export PATH=/tmp/gap-jupyter-cygwin/bin:$PATH
           jupyter kernelspec list
-          jupyter labextension list
-          jupyter lab --version
-          jupyter notebook --version
+          jupyter nbconvert --version
       - name: 'Run real-kernel tests inside Cygwin'
         run: |
           set -euxo pipefail

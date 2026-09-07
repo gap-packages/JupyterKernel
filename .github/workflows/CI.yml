@@ -66,11 +66,11 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   # End-to-end protocol tests via jupyter_kernel_test (drives the kernel
-  # over real ZMQ). This job covers the usual native Python installations;
-  # the separate windows-cygwin-jupyter job keeps both Python and GAP inside
-  # Cygwin, matching the GAP Windows distribution.
+  # over real ZMQ), plus a real JupyterLab server. This is the supported
+  # frontend path on Linux and macOS. The separate Cygwin job exercises the
+  # experimental kernel-only Windows path.
   python-test:
-    name: jupyter_kernel_test (${{ matrix.os }})
+    name: JupyterLab + GAP kernel (${{ matrix.os }})
     runs-on: ${{ matrix.os }}-latest
     needs: labextension-build
     strategy:
@@ -180,12 +180,13 @@ jobs:
           name: gap-jupyter-wheel
           path: dist/*.whl
 
-  # GAP's Windows distribution is entirely Cygwin-based. Keep Jupyter and
-  # Python inside that same environment: a native Windows Python cannot
-  # reliably manage or signal a Cygwin GAP process. The wheel itself is
-  # platform-independent and comes from the Linux wheel-build job above.
+  # Experimental Windows support. GAP's Windows distribution is entirely
+  # Cygwin-based, so keep the Python client and GAP in that same environment.
+  # This proves the kernel protocol and notebook execution, but deliberately
+  # does not install or claim support for JupyterLab/Jupyter Server in Cygwin.
+  # The wheel itself is platform-independent and comes from Linux above.
   windows-cygwin-jupyter:
-    name: Jupyter inside Cygwin
+    name: Experimental GAP kernel inside Cygwin
     runs-on: windows-latest
     needs: labextension-build
     defaults:

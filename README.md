@@ -7,8 +7,9 @@ This package implements the [Jupyter](https://www.jupyter.org) protocol in GAP.
 
 ## Installation
 
-This package targets Jupyter Notebook 7 / JupyterLab 4 and Python 3.8+.
-Classic Notebook (5/6) is no longer supported.
+The supported frontend environment is Jupyter Notebook 7 / JupyterLab 4
+with Python 3.8+ on Linux and macOS. Classic Notebook (5/6) is no longer
+supported.
 
 ### Dependencies
 
@@ -67,6 +68,31 @@ users install from a wheel that already contains the prebuilt JS).
     jupyter lab
 
 then pick `GAP 4` as the kernel.
+
+### JupyterHub
+
+JupyterHub starts an ordinary Jupyter server for each user, so it does not
+need a separate GAP integration. Install the `gap-jupyter` wheel in the
+Python environment used by `jupyterhub-singleuser`, or in a shared Jupyter
+prefix visible to those environments. GAP must also be available to each
+single-user server through `PATH` or `JUPYTER_GAP_EXECUTABLE`.
+
+For container-based deployments, install both GAP and the wheel in the
+single-user image. See JupyterHub's
+[user environment documentation](https://jupyterhub.readthedocs.io/en/stable/howto/configuration/config-user-env.html)
+for the available shared and per-environment installation models.
+
+### Windows (experimental)
+
+GAP's Windows distribution runs inside Cygwin. The kernel has been tested
+with Cygwin Python as a Jupyter client, including real protocol tests,
+interrupts, and execution of the demo notebooks through `nbconvert`.
+
+The full JupyterLab / Jupyter Server stack is not currently supported inside
+Cygwin, because some of its Python dependencies do not build there. In
+particular, `start-jupyter.sh` is not a supported Windows installation path.
+This experimental support is useful for testing the GAP kernel from Cygwin,
+but it is not yet an end-user JupyterLab installation for Windows.
 
 ### Syntax highlighting
 

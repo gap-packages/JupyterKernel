@@ -15,8 +15,8 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   and `setup.py` are gone.
 - **Cross-platform launcher.** The kernel is now started by a Python
   launcher (`python -m gap_jupyter_kernel <connection_file>`), which
-  `os.execvp`s into GAP. Works on Windows under Cygwin where the bash
-  launcher used to fail (issue #140).
+  `os.execvp`s into GAP. The launcher and kernel protocol are tested on
+  Windows under Cygwin, where the bash launcher used to fail (issue #140).
 - **Single-process kernel.** The 1.x design `IO_fork`'d a worker
   child; this release runs everything in one process. The fork-side
   IOPub status `starting` was missing, which is what caused the
@@ -34,8 +34,9 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   need Node.
 - **End-to-end protocol tests** via `jupyter_kernel_test` in
   `tst/python/`, exercised in CI on Linux + macOS.
-- **CI on Linux, macOS, and Windows** (Windows via Cygwin and the
-  `gap-actions/setup-cygwin` action with `libzmq-devel`).
+- **CI on Linux, macOS, and Windows.** Linux and macOS run the supported
+  JupyterLab path. Windows runs the experimental kernel and notebook execution
+  path entirely inside Cygwin.
 - **`is_complete_request` heuristic** that tracks GAP block keywords
   (`function`/`end`, `if`/`fi`, `for`/`od`, `while`/`od`,
   `repeat`/`until`) plus brackets, so multi-line cells in the JupyterLab
@@ -59,6 +60,10 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   spec; `1/0;` no longer drops the message client-side.
 
 ### Known limitations / out of scope
+
+- **Windows frontend.** Cygwin support is experimental. The kernel protocol,
+  interrupts, and notebook execution via `nbconvert` are tested, but the full
+  JupyterLab / Jupyter Server stack is not currently installable in Cygwin.
 
 - **Interactive input.** GAP cells that call `InputFromUser` see EOF
   immediately rather than hanging the kernel; full

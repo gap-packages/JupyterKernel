@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import socket
 import subprocess
 import sys
@@ -11,8 +12,12 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 
-class JupyterServerTests(unittest.TestCase):
-    def test_server_lists_and_launches_gap_kernel(self):
+@unittest.skipIf(
+    sys.platform == "cygwin",
+    "JupyterLab is outside the experimental Cygwin support scope",
+)
+class JupyterLabTests(unittest.TestCase):
+    def test_lab_serves_extension_and_launches_gap_kernel(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             runtime = root / "runtime"
@@ -30,11 +35,12 @@ class JupyterServerTests(unittest.TestCase):
             command = [
                 sys.executable,
                 "-m",
-                "jupyter_server",
+                "jupyterlab",
                 "--no-browser",
                 "--ServerApp.ip=127.0.0.1",
                 f"--ServerApp.port={port}",
                 "--ServerApp.port_retries=0",
+                "--ServerApp.base_url=/user/gap-test/",
                 f"--ServerApp.root_dir={root}",
                 "--ServerApp.shutdown_no_activity_timeout=60",
             ]
@@ -53,6 +59,28 @@ class JupyterServerTests(unittest.TestCase):
                         f"{info['base_url']}api"
                     )
                     headers = {"Authorization": f"token {info['token']}"}
+
+                    status, page = self._request(
+                        f"http://127.0.0.1:{info['port']}"
+                        f"{info['base_url']}lab",
+                        headers=headers,
+                        parse_json=False,
+                    )
+                    self.assertEqual(status, 200)
+                    self.assertIn(b"JupyterLab", page)
+                    match = re.search(
+                        rb'<script id="jupyter-config-data" '
+                        rb'type="application/json">\s*(.*?)\s*</script>',
+                        page,
+                        re.DOTALL,
+                    )
+                    self.assertIsNotNone(match)
+                    page_config = json.loads(match.group(1))
+                    extension_names = {
+                        extension["name"]
+                        for extension in page_config["federated_extensions"]
+                    }
+                    self.assertIn("jupyterlab-gap-mode", extension_names)
 
                     status, kernelspecs = self._request(
                         f"{base_url}/kernelspecs", headers=headers
@@ -121,13 +149,17 @@ class JupyterServerTests(unittest.TestCase):
             f"({last_error!r}):\n{self._read_log(log)}"
         )
 
-    def _request(self, url, method="GET", headers=None, body=None):
+    def _request(
+        self, url, method="GET", headers=None, body=None, parse_json=True
+    ):
         data = None if body is None else json.dumps(body).encode()
         request = Request(url, data=data, method=method, headers=headers or {})
         if data is not None:
             request.add_header("Content-Type", "application/json")
         with urlopen(request, timeout=5) as response:
             content = response.read()
+            if not parse_json:
+                return response.status, content
             return response.status, json.loads(content) if content else None
 
     def _read_log(self, log):

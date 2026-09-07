@@ -218,20 +218,25 @@ jobs:
       - name: 'Install the wheel and Jupyter into Cygwin Python'
         run: |
           set -euxo pipefail
-          python3.12 -m venv --system-site-packages /tmp/gap-jupyter-cygwin
+          # Cygwin disables ensurepip: pip is supplied by python312-pip.
+          # Expose that packaged module inside the venv instead of asking
+          # venv to bootstrap a second copy.
+          python3.12 -m venv --without-pip --system-site-packages \
+            /tmp/gap-jupyter-cygwin
           /tmp/gap-jupyter-cygwin/bin/python -m pip install --upgrade pip
 
           # jupyter_client requires pyzmq >= 23, while Cygwin only packages
           # pyzmq 22.3 for Python 3.9. Build against Cygwin's libzmq and
           # forbid pyzmq's bundled-library fallback.
           ZMQ_PREFIX=/usr CMAKE_ARGS=-DPYZMQ_NO_BUNDLE=ON \
-            /tmp/gap-jupyter-cygwin/bin/pip install \
+            /tmp/gap-jupyter-cygwin/bin/python -m pip install \
             --no-binary pyzmq 'pyzmq>=23'
 
           wheels=(dist/*.whl)
           test "${#wheels[@]}" -eq 1
           wheel=${wheels[0]}
-          /tmp/gap-jupyter-cygwin/bin/pip install "${wheel}[server,test]"
+          /tmp/gap-jupyter-cygwin/bin/python -m pip install \
+            "${wheel}[server,test]"
       - name: 'Report the installed Cygwin and Python components'
         run: |
           set -euxo pipefail
@@ -243,7 +248,7 @@ jobs:
           print(sys.version, flush=True)
           print(f"pyzmq {zmq.__version__}; libzmq {zmq.zmq_version()}", flush=True)
           PY
-          /tmp/gap-jupyter-cygwin/bin/pip list
+          /tmp/gap-jupyter-cygwin/bin/python -m pip list
       - name: 'Check Jupyter discovery inside Cygwin'
         run: |
           set -euxo pipefail

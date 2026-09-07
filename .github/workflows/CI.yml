@@ -259,8 +259,8 @@ jobs:
         run: |
           set -euxo pipefail
           export PATH=/tmp/gap-jupyter-cygwin/bin:$PATH
-          jupyter kernelspec list
-          jupyter nbconvert --version
+          /tmp/gap-jupyter-cygwin/bin/python -m jupyter_core kernelspec list
+          /tmp/gap-jupyter-cygwin/bin/python -m nbconvert --version
       - name: 'Run real-kernel tests inside Cygwin'
         run: |
           set -euxo pipefail
@@ -270,7 +270,7 @@ jobs:
           export JUPYTER_DATA_DIR=/tmp/gap-jupyter-cygwin-data
           export JUPYTER_CONFIG_DIR=/tmp/gap-jupyter-cygwin-config
           export JUPYTER_RUNTIME_DIR=/tmp/gap-jupyter-cygwin-runtime
-          pytest tst/python/ -v
+          /tmp/gap-jupyter-cygwin/bin/python -m pytest tst/python/ -v
       - name: 'Execute demo notebooks inside Cygwin'
         run: |
           set -euxo pipefail
@@ -282,7 +282,8 @@ jobs:
           export JUPYTER_RUNTIME_DIR=/tmp/gap-jupyter-cygwin-runtime
           for nb in demos/*.ipynb; do
             echo "=== $nb ==="
-            jupyter nbconvert --to notebook --execute "$nb" \
+            /tmp/gap-jupyter-cygwin/bin/python -m nbconvert \
+                --to notebook --execute "$nb" \
                 --output "/tmp/$(basename "$nb" .ipynb).executed.ipynb" \
                 --ExecutePreprocessor.timeout=120
           done

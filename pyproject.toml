@@ -29,6 +29,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "jupyter_kernel_test>=0.7",
+    "jupyter-server>=2",
     "pytest>=7",
     # Used by the CI step that runs every demo notebook against the
     # freshly-installed kernel; also handy for local sanity-checks.

@@ -226,9 +226,11 @@ jobs:
           /tmp/gap-jupyter-cygwin/bin/python -m pip install --upgrade pip
 
           # jupyter_client requires pyzmq >= 23, while Cygwin only packages
-          # pyzmq 22.3 for Python 3.9. Build against Cygwin's libzmq and
-          # forbid pyzmq's bundled-library fallback.
-          ZMQ_PREFIX=/usr CMAKE_ARGS=-DPYZMQ_NO_BUNDLE=ON \
+          # pyzmq 22.3 for Python 3.9. Let pyzmq find Cygwin's libzmq via
+          # pkg-config, and forbid its bundled-library fallback. Setting
+          # ZMQ_PREFIX=/usr instead takes a CMake path which does not model
+          # Cygwin's import library correctly.
+          CMAKE_ARGS=-DPYZMQ_NO_BUNDLE=ON \
             /tmp/gap-jupyter-cygwin/bin/python -m pip install \
             --no-binary pyzmq 'pyzmq>=23'
 

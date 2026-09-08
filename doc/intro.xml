@@ -18,12 +18,10 @@ This kernel is implemented in &GAP;.
 <Section>
 <Heading>Installation</Heading>
 
-This package requires &Jupyter; to be installed on your system, which
-on most Python installations can be achieved by issuing the following command.
-<Log>
-> pip install --user notebook
-</Log>
-Further instructions can be found at  <URL>https://jupyter.org/install</URL>. 
+The supported frontend environment is &Jupyter; Notebook 7 or JupyterLab 4,
+with Python 3.8 or later, on Linux or macOS. Classic Notebook 5 and 6 are not
+supported. Further instructions for installing &Jupyter; can be found at
+<URL>https://jupyter.org/install</URL>.
 This package requires the &GAP; packages &IO;, &uuid;, &ZeroMQInterface;,
 &crypting;, and &json;, all of which are distributed with &GAP;, and some of which
 require compilation.
@@ -34,7 +32,8 @@ To compile &ZeroMQInterface; you need to install &ZeroMQ;, for details please re
 
 It is necessary to register &JupyterKernel; with your &Jupyter; installation.
 
-Registering the GAP jupyter kernel system-wide works as follows:
+Installing the kernel and its prebuilt JupyterLab extension from the package
+directory works as follows:
 <Log>
 > pip install .
 </Log>
@@ -45,17 +44,34 @@ or registering for your user only
 > pip install . --user
 </Log>
 
-If &GAP; is not in your PATH, then you have to set the environment variable
-<C>JUPYTER_GAP_EXECUTABLE</C> to point to your GAP executable for &Jupyter; to
-be able to execute &GAP;, and the script <C>jupyter-kernel-gap</C> that is
-distributed with this package in the directory <C>bin/</C> needs to be in
-your path.
+This installs the Python launcher, the <C>gap-4</C> kernel specification, and
+the <C>jupyterlab-gap-mode</C> syntax-highlighting extension. End users who
+install a wheel do not need Node.js; building from a source checkout requires
+Node.js 18 or later.
+
+If &GAP; is not in your <C>PATH</C>, set the environment variable
+<C>JUPYTER_GAP_EXECUTABLE</C> to the absolute path of the &GAP; executable.
 
 To start &Jupyter; run:
 <Log>
 > jupyter notebook
 </Log>
+or:
+<Log>
+> jupyter lab
+</Log>
 Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
+
+JupyterHub does not require a separate integration. Install the wheel in the
+Python environment used by <C>jupyterhub-singleuser</C>, or in a shared
+&Jupyter; prefix visible to the single-user environments. Each single-user
+server must be able to find &GAP; through <C>PATH</C> or
+<C>JUPYTER_GAP_EXECUTABLE</C>.
+
+Support on Windows is experimental. The kernel protocol, interrupts, and demo
+notebook execution are tested with both Python and &GAP; inside Cygwin. The full
+JupyterLab / &Jupyter; Server stack is not currently supported in Cygwin, so
+this is not yet an end-user JupyterLab installation path for Windows.
 
 </Section>
 
@@ -75,22 +91,18 @@ Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
   <Log>
     > jupyter kernelspec list
     Available kernels:
-    python2        /usr/local/lib/python2.7/site-packages/ipykernel/resources
+    python3        /usr/local/share/jupyter/kernels/python3
     gap-4          /usr/local/share/jupyter/kernels/gap-4
   </Log>
 
   If there is no line containing the <C>gap-4</C> kernel, something went
-  wrong with <C>setup.py</C>. You can try to manually install the file
-  <C>kernel.json</C> which is in the <C>etc</C> directory of the &JupyterKernel;
-  package by copying it. Better yet, you should report this issue on the issue
-  tracker giving wich operating system you are using, your version of &Jupyter;
-  and &GAP;, and which commands you tried to execute.
+  wrong with the Python package installation. Report the issue on the issue
+  tracker, giving which operating system you are using, your versions of
+  &Jupyter; and &GAP;, and which installation commands you ran.
   
-  What happens when &Jupyter; wants to start a &GAP; kernel is that it tries
-  to execute the small script <C>jupyter-kernel-gap</C> (which is distributed with
-  the &JupyterKernel; package), which in turn executes &GAP;, loading the package
-  and then running the kernel. This script currently has to be in your <C>PATH</C>
-  environment variable, too.
+  When &Jupyter; starts a &GAP; kernel, the kernel specification invokes
+  <C>python -m gap_jupyter_kernel</C>. This launcher finds &GAP;, replaces
+  itself with the &GAP; process, loads this package, and runs the kernel.
 </Subsection>
 
 <Subsection>
@@ -121,9 +133,9 @@ Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
 <Section Label="Code Highlighting and Indentation">
   <Heading>Code Highlighting and Indentation</Heading>
   
-  &JupyterKernel; provides a &GAP; mode with code highlighting and indentation. 
-  This mode is installed as a notebook extension and registers 'text/x-gap' as 
-  a MIME type.
+  &JupyterKernel; provides a CodeMirror 6 &GAP; mode with syntax highlighting.
+  It is installed as the prebuilt <C>jupyterlab-gap-mode</C> extension and
+  registers <C>text/x-gap</C> as a MIME type in JupyterLab 4 and Notebook 7.
 
 </Section>
 
@@ -134,6 +146,9 @@ Then &JupyterKernel; should show up in your &Jupyter; installation as "GAP 4".
   a work in progress. In particular, certain outputs that are
   printed by &GAP; cannot be captured by the &Jupyter; frontend and will
   not show up.
+
+  On Windows, only the experimental Cygwin kernel path described above is
+  tested; the full JupyterLab / &Jupyter; Server stack is not supported.
 
   At current, the output of the function <Ref BookName="ref" Func="Exec"/> will print output in the terminal,
   rather than the &Jupyter; notebook it is currently executing in. Some objects are also not 

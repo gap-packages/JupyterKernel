@@ -1,32 +1,23 @@
-# This is a rather basic helper function to do
-# completion. It is related to the completion
-# function provided in lib/cmdledit.g in the GAP
-# distribution
+# Tab completion: returns identifiers from IDENTS_BOUND_GVARS that share
+# the prefix at the cursor. Identifier extraction is shared with
+# JUPYTER_Inspect via JUPYTER_ExtractIdentifier (gap/JupyterUtil.gi).
 InstallGlobalFunction(JUPYTER_Complete,
 function(code, cursor_pos)
-    local default, cand, i, matches, tokens, tok;
+    local extracted, matches;
 
-    default := rec( matches := [], cursor_start := 0,
+    extracted := JUPYTER_ExtractIdentifier(code, cursor_pos);
+    if extracted.ident = "" then
+        return rec( matches := [], cursor_start := cursor_pos,
                     cursor_end := cursor_pos, metadata := rec(),
                     status := "ok" );
-
-    code := code{[1..cursor_pos]};
-    if Length(code) = 0 then
-        return default;
-    fi;
-    tokens := SplitString(code, "():=<>,.[]?-+*/; ");
-
-    if tokens = [] then
-        return default;
     fi;
 
-    tok := tokens[Length(tokens)];
-    cand := IDENTS_BOUND_GVARS();
-    matches := Filtered(cand, i -> PositionSublist(i, tok) = 1);
+    matches := Filtered( IDENTS_BOUND_GVARS(),
+                         x -> PositionSublist(x, extracted.ident) = 1 );
     SortBy(matches, Length);
     return rec( matches := matches
-              , cursor_start := cursor_pos - Length(tok)
-              , cursor_end := cursor_pos
+              , cursor_start := extracted.startpos
+              , cursor_end := extracted.endpos
               , metadata := rec()
               , status := "ok" );
 end);

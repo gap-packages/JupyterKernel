@@ -3,45 +3,77 @@
 #
 # Implementations
 #
-# TODO: Check signature
+
+# Override the json package's IsBool encoder so it round-trips GAP's
+# `fail` to JSON `null` (and back). JsonStringToGap already turns null
+# into fail (json.cc:18-19); the encoder side gained the matching
+# behaviour upstream after json 2.2.3, but until that release ships we
+# bundle the override here. Without it, JupyterLab 4 messages with
+# `subshell_id: null` round-trip through parent_header into an
+# unencodable record, the encoder errors, the error captured by our
+# stderr stream is flushed back as iopub, the flush re-encodes the
+# bad parent_header, and the kernel recurses to death.
+# TODO: drop this once we can require json >= 2.3.0 in PackageInfo.g.
+InstallMethod(_GapToJsonStreamInternal, [IsOutputStream, IsBool],
+function(o, b)
+    if b = true then
+        WriteAll(o, "true");
+    elif b = false then
+        WriteAll(o, "false");
+    else
+        WriteAll(o, "null");
+    fi;
+end);
+
+
+# Compute the lowercase hex SHA-256 HMAC over the four canonical
+# Jupyter message JSON strings, in protocol order. Used by both encode
+# (to sign outgoing messages) and decode (to verify incoming).
+InstallGlobalFunction( JUPYTER_ComputeHMAC,
+function(key, header, parent_header, metadata, content)
+    local digest;
+    if key = "" then
+        return "";
+    fi;
+    digest := CRYPTING_SHA256_HMAC( key,
+                Concatenation(header, parent_header, metadata, content) );
+    return LowercaseString( Concatenation( List(digest, CRYPTING_HexStringIntPad8) ) );
+end);
+
 InstallGlobalFunction( JupyterMsgDecode,
 function(kernel, raw)
-    local result, bindIfBound, sl, ids, tmp;
-
-    bindIfBound := function(name, pos)
-        if IsBound(raw[pos]) then
-            result.(name) := JsonStringToGap(raw[pos]);
-        fi;
-    end;
+    local result, sl, ids, expected;
 
     result := rec();
 
+    # Capture the ZMQ envelope frames (everything before <IDS|MSG>). On
+    # ROUTER sockets (Control, StdIn, and Shell now), the first frame is
+    # the originating peer's identity; replies must prepend it so libzmq
+    # can route the message back. On DEALER sockets the envelope is empty.
     ids := [];
     sl := 1;
     while raw[sl] <> "<IDS|MSG>" do
         Add(ids, raw[sl]);
         sl := sl + 1;
     od;
+    result.ids  := ids;
     result.hmac := raw[sl + 1];
-    result.remainder := raw;
 
-    bindIfBound("header", sl + 2);
-    bindIfBound("parent_header", sl + 3);
-    bindIfBound("metadata", sl + 4);
-    bindIfBound("content", sl + 5);
+    Assert(0, IsBound(raw[sl + 2]) and IsBound(raw[sl + 3])
+           and IsBound(raw[sl + 4]) and IsBound(raw[sl + 5]));
 
-    tmp := CRYPTING_SHA256_HMAC( kernel!.SessionKey
-                               , Concatenation( raw[sl + 2]
-                                              , raw[sl + 3]
-                                              , raw[sl + 4]
-                                              , raw[sl + 5] ) );
-    tmp := List(tmp, CRYPTING_HexStringIntPad8);
-    tmp := LowercaseString(Concatenation(tmp));
-    result.hmac_verify := tmp;
+    result.header        := JsonStringToGap(raw[sl + 2]);
+    result.parent_header := JsonStringToGap(raw[sl + 3]);
+    result.metadata      := JsonStringToGap(raw[sl + 4]);
+    result.content       := JsonStringToGap(raw[sl + 5]);
 
-    if result.hmac <> result.hmac_verify then
-        PrintTo( "*errout*", "HMAC verification for message failed: "
-                 , result.hmac, " <> ", result.hmac_verify, "\n" );
+    expected := JUPYTER_ComputeHMAC( kernel!.SessionKey,
+                                     raw[sl + 2], raw[sl + 3],
+                                     raw[sl + 4], raw[sl + 5] );
+    if result.hmac <> expected then
+        Error("HMAC verification failed: refusing to process message ",
+              "(received ", result.hmac, ", expected ", expected,
+              "). Connection-file key mismatch?");
     fi;
 
     return result;
@@ -49,39 +81,35 @@ end);
 
 InstallGlobalFunction( JupyterMsgEncode,
 function(kernel, msg)
-    local raw, k, bindIfBound, tmp;
+    local raw, header_j, parent_j, meta_j, content_j;
 
-    bindIfBound := function(pos, name)
-        if IsBound(msg.(name)) then
-            raw[pos] := GapToJsonString(msg.(name));
-        fi;
-    end;
+    Assert(0, IsBound(msg.header)        and IsRecord(msg.header));
+    Assert(0, IsBound(msg.parent_header) and IsRecord(msg.parent_header));
+    Assert(0, IsBound(msg.metadata)      and IsRecord(msg.metadata));
+    Assert(0, IsBound(msg.content)       and IsRecord(msg.content));
 
+    header_j  := GapToJsonString(msg.header);
+    parent_j  := GapToJsonString(msg.parent_header);
+    meta_j    := GapToJsonString(msg.metadata);
+    content_j := GapToJsonString(msg.content);
+
+    # ZMQ envelope: for replies on a ROUTER socket the envelope must be the
+    # originating peer's identity (captured into msg.ids by JupyterMsgDecode
+    # and copied onto the reply by HandleShellMsg/HandleControlMsg). For
+    # IOPub (PUB) the first frame is the topic — we use msg.uuid as a per-
+    # kernel topic so subscribers can filter, but most subscribe to all.
     raw := [];
-    # TODO: What is the correct behaviour here?
-    if IsBound(msg.uuid) then
-        raw[1] := msg.uuid;
+    if IsBound(msg.ids) and Length(msg.ids) > 0 then
+        Append(raw, msg.ids);
     else
-        raw[1] := "";
+        Add(raw, msg.uuid);
     fi;
-    raw[2] := "<IDS|MSG>";
-    raw[3] := msg.hmac;
-    bindIfBound(4, "header");
-    bindIfBound(5, "parent_header");
-    bindIfBound(6, "metadata");
-    bindIfBound(7, "content");
-
-    # TODO: Ugly
-    if Length(raw) > 3 then
-        tmp := CRYPTING_SHA256_HMAC(msg.key,
-                                    Concatenation( raw[4]
-                                                 , raw[5]
-                                                 , raw[6]
-                                                 , raw[7]));
-        tmp := List(tmp, CRYPTING_HexStringIntPad8);
-        tmp := LowercaseString(Concatenation(tmp));
-        raw[3] := LowercaseString(tmp);
-    fi;
+    Add(raw, "<IDS|MSG>");
+    Add(raw, JUPYTER_ComputeHMAC(msg.key, header_j, parent_j, meta_j, content_j));
+    Add(raw, header_j);
+    Add(raw, parent_j);
+    Add(raw, meta_j);
+    Add(raw, content_j);
     return raw;
 end);
 
@@ -98,21 +126,25 @@ end);
 
 InstallGlobalFunction(JupyterMsgSend,
 function(kernel, sock, msg)
-    local msg2;
+    local raw;
+    JupyterLog("        JupyterMsgSend: encoding type=",
+               msg.header.msg_type, "\n");
+    raw := JupyterMsgEncode(kernel, msg);
+    JupyterLog("        JupyterMsgSend: encoded, ", Length(raw),
+               " frames, total bytes=", Sum(raw, Length), "\n");
     if IsBound(kernel!.ProtocolLog) then
-        msg2 := JupyterMsgEncode(kernel, msg);
-        AppendTo(kernel!.ProtocolLog, msg2);
+        AppendTo(kernel!.ProtocolLog, raw);
         AppendTo(kernel!.ProtocolLog, "\n");
     fi;
-    ZmqSend(sock, JupyterMsgEncode(kernel, msg));
+    JupyterLog("        JupyterMsgSend: about to ZmqSend\n");
+    ZmqSend(sock, raw);
+    JupyterLog("        JupyterMsgSend: ZmqSend returned\n");
 end);
 
-# Create a message template with the necessasry fields filled
+# Create a message template with the necessary fields filled
 InstallGlobalFunction(JupyterMsg,
 function(kernel, msg_type, parent_header, content, metadata)
     return rec( uuid := kernel!.ZmqIdentity
-              , sep := "<IDS|MSG>"                 # This could be in JupyterEncode
-              , hmac := ""
               , header := rec( username := kernel!.Username
                              , session := kernel!.SessionID
                              , msg_type := msg_type
@@ -124,10 +156,5 @@ function(kernel, msg_type, parent_header, content, metadata)
               , metadata := metadata
               , content := content
               , key := kernel!.SessionKey
-                             # This shouldn't be here as all
-                             # messaging functions
-                             # should just be running in kernel context
               );
 end);
-
-

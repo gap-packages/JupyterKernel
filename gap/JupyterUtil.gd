@@ -28,3 +28,13 @@ DeclareGlobalFunction("JUPYTER_Inspect");
 #!   Don't trust this function.
 DeclareGlobalFunction("ISO8601Stamp");
 
+#! @Description
+#!   Diagnostic trace logging used by the kernel core. Intended for
+#!   debugging the protocol layer (which fires from the C-level ZMQ
+#!   bindings, where ordinary GAP errors surface poorly). Append-writes
+#!   the concatenation of its arguments — followed by whatever you put
+#!   in them, so usually end with <C>"\n"</C> — to <C>JUPYTER_TRACE.file</C>.
+#!   Toggle <C>JUPYTER_TRACE.enabled</C> from a notebook cell or in
+#!   <F>JupyterUtil.gi</F> to silence.
+DeclareGlobalFunction("JupyterLog");
+

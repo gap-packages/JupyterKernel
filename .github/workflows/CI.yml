@@ -1,39 +1,53 @@
 name: CI
 
-# Trigger the workflow on push or pull request
+# Trigger the workflow on push or pull request or manually
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
       - main
   pull_request:
 
-# the `concurrency` settings ensure that not too many CI jobs run in parallel
 concurrency:
-  # group by workflow and ref; the last slightly strange component ensures that for pull
-  # requests, we limit to 1 concurrent job, but for the default repository branch we don't
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.ref_name != github.event.repository.default_branch || github.run_number }}
-  # Cancel intermediate builds, but only if it is a pull request build.
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
-  # The CI test job
+  # GAP-side .tst tests across the supported version matrix and three OSes.
+  # On Windows, GAP runs under Cygwin via gap-actions/setup-cygwin (same as
+  # the io package; the kernel itself is Cygwin-only on Windows).
   test:
-    name: ${{ matrix.gap-version }}
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }} - GAP ${{ matrix.gap-version }}
+    runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu]
         gap-version:
           - 'devel'   # current GAP development version from git
           - 'latest'  # latest GAP release
           - 'minimal' # oldest GAP release supported by this package
-
+        include:
+          - os: macos
+            gap-version: 'devel'
+          - os: windows
+            gap-version: 'devel'
     steps:
       - uses: actions/checkout@v6
-      - name: 'Install initial dependencies'
-        run: |
-          sudo apt-get install libzmq3-dev
+      - name: 'Install libzmq (Linux)'
+        if: ${{ runner.os == 'Linux' }}
+        run: sudo apt-get install -y libzmq3-dev
+      - name: 'Install zeromq (macOS)'
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install zeromq
+      - uses: gap-actions/setup-cygwin@v2
+        if: ${{ runner.os == 'Windows' }}
+        with:
+          # ZeroMQInterface's configure does AC_CHECK_HEADER(zmq.h) +
+          # -lzmq, so libzmq-devel is the only Cygwin package we need
+          # beyond the setup-cygwin defaults.
+          extra-pkgs-to-install: 'libzmq-devel'
       - uses: gap-actions/setup-gap@v3
         with:
           gap-version: ${{ matrix.gap-version }}
@@ -45,6 +59,232 @@ jobs:
         with:
           mode: onlyneeded
       - uses: gap-actions/process-coverage@v3
+        if: ${{ runner.os == 'Linux' && matrix.gap-version == 'devel' }}
       - uses: codecov/codecov-action@v6
+        if: ${{ runner.os == 'Linux' && matrix.gap-version == 'devel' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  # End-to-end protocol tests via jupyter_kernel_test (drives the kernel
+  # over real ZMQ), plus a real JupyterLab server. This is the supported
+  # frontend path on Linux and macOS. The separate Cygwin job exercises the
+  # experimental kernel-only Windows path.
+  python-test:
+    name: JupyterLab + GAP kernel (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}-latest
+    needs: labextension-build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos]
+    steps:
+      - uses: actions/checkout@v6
+      - name: 'Install libzmq + graphviz (Linux)'
+        if: ${{ runner.os == 'Linux' }}
+        # graphviz provides `dot`, used by JupyterSplashDot in the demo
+        # notebooks executed below.
+        run: sudo apt-get install -y libzmq3-dev graphviz
+      - name: 'Install zeromq + graphviz (macOS)'
+        if: ${{ runner.os == 'macOS' }}
+        run: brew install zeromq graphviz
+      - uses: gap-actions/setup-gap@v3
+        with:
+          gap-version: 'devel'
+      - uses: gap-actions/build-pkg@v3
+        with:
+          extra-pkgs: "io profiling crypting json ZeroMQInterface"
+      - name: 'Replace bundled JupyterKernel with checkout'
+        # setup-gap's bootstrap-pkg-full unpacks every standard package,
+        # including the released JupyterKernel. Without this step,
+        # LoadPackage("JupyterKernel") in the kernel launcher would
+        # find that copy instead of the working tree.
+        run: |
+          rm -rf "$HOME"/gap/pkg/[Jj]upyter[Kk]ernel*
+          ln -s "$GITHUB_WORKSPACE" "$HOME/gap/pkg/JupyterKernel"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: gap-jupyter-wheel
+          path: dist
+      - name: 'Install kernel + test deps'
+        run: |
+          set -euo pipefail
+          wheels=(dist/*.whl)
+          test "${#wheels[@]}" -eq 1
+          wheel=${wheels[0]}
+          pip install "${wheel}[test]"
+          jupyter kernelspec list
+      - name: 'Run jupyter_kernel_test'
+        run: pytest tst/python/ -v
+      - name: 'Execute demo notebooks'
+        # Cheap end-to-end smoke test: run every demo notebook against
+        # the freshly-installed kernel and fail the job if any cell
+        # raises. Catches regressions in the help-magic dispatch
+        # (`?topic`), in JupyterSplashDot, and in any rendering glue
+        # the demos exercise — all things we have no unit-test cover
+        # for.
+        run: |
+          set -e
+          for nb in demos/*.ipynb; do
+            echo "=== $nb ==="
+            jupyter nbconvert --to notebook --execute "$nb" \
+                --output "/tmp/$(basename "$nb" .ipynb).executed.ipynb" \
+                --ExecutePreprocessor.timeout=120
+          done
+
+  # Build the distributable wheel once. The smoke test below and the native
+  # and Cygwin real-kernel jobs all install this exact artefact.
+  labextension-build:
+    name: labextension build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 'Build the wheel'
+        run: |
+          pip install build
+          python -m build --wheel
+      - name: 'Confirm the wheel ships the prebuilt labextension'
+        run: |
+          set -e
+          wheel=$(ls dist/*.whl | head -1)
+          python -m zipfile -l "$wheel" | grep 'share/jupyter/labextensions/jupyterlab-gap-mode/static/style.js'
+          python -m zipfile -l "$wheel" | grep 'share/jupyter/kernels/gap-4/kernel.json'
+      - name: 'Smoke-test the installed wheel with JupyterLab and Notebook'
+        run: |
+          set -euo pipefail
+          wheel=$(ls dist/*.whl | head -1)
+          python -m venv /tmp/gap-jupyter-wheel-test
+          /tmp/gap-jupyter-wheel-test/bin/pip install "$wheel" 'jupyterlab>=4,<5' 'notebook>=7'
+
+          kernels=$(/tmp/gap-jupyter-wheel-test/bin/jupyter kernelspec list --json)
+          echo "$kernels"
+          grep -q '"gap-4"' <<< "$kernels"
+
+          extensions=$(/tmp/gap-jupyter-wheel-test/bin/jupyter labextension list 2>&1)
+          echo "$extensions"
+          grep -q 'jupyterlab-gap-mode' <<< "$extensions"
+          grep -Eq 'enabled.*OK' <<< "$extensions"
+
+          /tmp/gap-jupyter-wheel-test/bin/jupyter lab --version
+          /tmp/gap-jupyter-wheel-test/bin/jupyter notebook --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gap-jupyter-wheel
+          path: dist/*.whl
+
+  # Experimental Windows support. GAP's Windows distribution is entirely
+  # Cygwin-based, so keep the Python client and GAP in that same environment.
+  # This proves the kernel protocol and notebook execution, but deliberately
+  # does not install or claim support for JupyterLab/Jupyter Server in Cygwin.
+  # The wheel itself is platform-independent and comes from Linux above.
+  windows-cygwin-jupyter:
+    name: Experimental GAP kernel inside Cygwin
+    runs-on: windows-latest
+    needs: labextension-build
+    defaults:
+      run:
+        shell: C:\cygwin64\bin\bash.exe --login -o igncr '{0}'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: gap-actions/setup-cygwin@v2
+        with:
+          # Prefer Cygwin packages wherever they exist. Current Cygwin has
+          # no python312-zmq, so pyzmq is the one native module built below.
+          extra-pkgs-to-install: 'cmake,gcc-core,gcc-g++,graphviz,libzmq-devel,ninja,pkg-config,python312,python312-cffi,python312-cryptography,python312-devel,python312-fastjsonschema,python312-jinja2,python312-jupyter_core,python312-markupsafe,python312-nbformat,python312-packaging,python312-pip,python312-pygments,python312-pytest,python312-rpds-py,python312-traitlets'
+      - uses: gap-actions/setup-gap@v3
+        with:
+          gap-version: 'devel'
+      - uses: gap-actions/build-pkg@v3
+        with:
+          extra-pkgs: "io profiling crypting json ZeroMQInterface"
+      - name: 'Replace bundled JupyterKernel with checkout'
+        run: |
+          set -euxo pipefail
+          gaproot=$(cygpath -u "$GAPROOT")
+          workspace=$(cygpath -u "$GITHUB_WORKSPACE")
+          rm -rf "$gaproot"/pkg/[Jj]upyter[Kk]ernel*
+          ln -s "$workspace" "$gaproot/pkg/JupyterKernel"
+          command -v gap
+          gap -q -c 'if LoadPackage("JupyterKernel") <> true then Error("could not load JupyterKernel"); fi; QUIT_GAP(0);'
+      - uses: actions/download-artifact@v4
+        with:
+          name: gap-jupyter-wheel
+          path: ${{ github.workspace }}/dist
+      - name: 'Install the wheel and Jupyter test stack into Cygwin Python'
+        run: |
+          set -euxo pipefail
+          workspace=$(cygpath -u "$GITHUB_WORKSPACE")
+          cd "$workspace"
+          # Cygwin disables ensurepip: pip is supplied by python312-pip.
+          # Expose that packaged module inside the venv instead of asking
+          # venv to bootstrap a second copy.
+          python3.12 -m venv --without-pip --system-site-packages \
+            /tmp/gap-jupyter-cygwin
+          /tmp/gap-jupyter-cygwin/bin/python -m pip install --upgrade pip
+
+          # jupyter_client requires pyzmq >= 23, while Cygwin only packages
+          # pyzmq 22.3 for Python 3.9. Let pyzmq find Cygwin's libzmq via
+          # pkg-config, and forbid its bundled-library fallback. Setting
+          # ZMQ_PREFIX=/usr instead takes a CMake path which does not model
+          # Cygwin's import library correctly.
+          CMAKE_ARGS=-DPYZMQ_NO_BUNDLE=ON \
+            /tmp/gap-jupyter-cygwin/bin/python -m pip install \
+            --no-binary pyzmq 'pyzmq>=23'
+
+          wheels=(dist/*.whl)
+          test "${#wheels[@]}" -eq 1
+          wheel=${wheels[0]}
+          /tmp/gap-jupyter-cygwin/bin/python -m pip install \
+            "${wheel}[test]"
+      - name: 'Report the installed Cygwin and Python components'
+        run: |
+          set -euxo pipefail
+          cygcheck -c python312
+          cygcheck -c libzmq-devel
+          /tmp/gap-jupyter-cygwin/bin/python - <<'PY'
+          import sys
+          import zmq
+          print(sys.version, flush=True)
+          print(f"pyzmq {zmq.__version__}; libzmq {zmq.zmq_version()}", flush=True)
+          PY
+          /tmp/gap-jupyter-cygwin/bin/python -m pip list
+      - name: 'Check Jupyter kernel discovery inside Cygwin'
+        run: |
+          set -euxo pipefail
+          export PATH=/tmp/gap-jupyter-cygwin/bin:$PATH
+          /tmp/gap-jupyter-cygwin/bin/python -m jupyter_core kernelspec list
+          /tmp/gap-jupyter-cygwin/bin/python -m nbconvert --version
+      - name: 'Run real-kernel tests inside Cygwin'
+        run: |
+          set -euxo pipefail
+          workspace=$(cygpath -u "$GITHUB_WORKSPACE")
+          cd "$workspace"
+          export PATH=/tmp/gap-jupyter-cygwin/bin:$PATH
+          export JUPYTER_DATA_DIR=/tmp/gap-jupyter-cygwin-data
+          export JUPYTER_CONFIG_DIR=/tmp/gap-jupyter-cygwin-config
+          export JUPYTER_RUNTIME_DIR=/tmp/gap-jupyter-cygwin-runtime
+          /tmp/gap-jupyter-cygwin/bin/python -m pytest tst/python/ -v
+      - name: 'Execute demo notebooks inside Cygwin'
+        run: |
+          set -euxo pipefail
+          workspace=$(cygpath -u "$GITHUB_WORKSPACE")
+          cd "$workspace"
+          export PATH=/tmp/gap-jupyter-cygwin/bin:$PATH
+          export JUPYTER_DATA_DIR=/tmp/gap-jupyter-cygwin-data
+          export JUPYTER_CONFIG_DIR=/tmp/gap-jupyter-cygwin-config
+          export JUPYTER_RUNTIME_DIR=/tmp/gap-jupyter-cygwin-runtime
+          for nb in demos/*.ipynb; do
+            echo "=== $nb ==="
+            /tmp/gap-jupyter-cygwin/bin/python -m nbconvert \
+                --to notebook --execute "$nb" \
+                --output "/tmp/$(basename "$nb" .ipynb).executed.ipynb" \
+                --ExecutePreprocessor.timeout=120
+          done

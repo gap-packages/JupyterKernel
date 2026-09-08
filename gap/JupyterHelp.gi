@@ -128,7 +128,7 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n, res;
 end);
 
 InstallGlobalFunction(JUPYTER_HELP, function( str )
-  local origstr, nwostr, p, book, books, move, add;
+  local origstr, nwostr, p, book, books, move, add, res;
 
   origstr := ShallowCopy(str);
   nwostr := NormalizedWhitespace(origstr);
@@ -150,7 +150,7 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
   books := Filtered(HELP_KNOWN_BOOKS[1], bn-> MATCH_BEGIN(bn, book));
   if Length(book) > 0 and Length(books) = 0 then
     Print("Help: None of the available books matches (try: '?books').\n");
-    return;
+    return fail;
   fi;
 
   # function to add a topic to the ring
@@ -170,7 +170,7 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
        else
          return GET_HELP_URL( [HELP_LAST.BOOK, HELP_LAST.MATCH] );
        fi;
-       return;
+       return fail;
 
   # if topic is "&" shobn;w last topic again, but with next viewer in viewer
   # list, or with last viewer again if there is no next one
@@ -181,7 +181,7 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
          HELP_LAST.NEXT_VIEWER := true;
          return GET_HELP_URL( [HELP_LAST.BOOK, HELP_LAST.MATCH] );
        fi;
-       return;
+       return fail;
 
   # if the topic is '-' we are interested in the previous search again
   elif book = "" and str = "-" and Length(nwostr) = 1  then
@@ -198,73 +198,65 @@ InstallGlobalFunction(JUPYTER_HELP, function( str )
       move := true;
   fi;
 
-  # number means topic from HELP_LAST.TOPICS list
+  # Special-case dispatch for navigation tokens. Each branch performs
+  # its action and returns fail to indicate that there is no renderable.
   if book = "" and ForAll(str, a-> a in "0123456789") then
+      # number means topic from HELP_LAST.TOPICS list
       HELP_SHOW_FROM_LAST_TOPICS(Int(str));
-
-  # if the topic is '<' we are interested in the one before 'LastTopic'
+      return fail;
   elif book = "" and str = "<" and Length(nwostr) = 1  then
-      HELP_SHOW_PREV();
-
-  # if the topic is '>' we are interested in the one after 'LastTopic'
+      HELP_SHOW_PREV(); return fail;
   elif book = "" and str = ">" and Length(nwostr) = 1  then
-      HELP_SHOW_NEXT();
-
-  # if the topic is '<<' we are interested in the previous chapter intro
+      HELP_SHOW_NEXT(); return fail;
   elif book = "" and str = "<<"  then
-      HELP_SHOW_PREV_CHAPTER();
-
-  # if the topic is '>>' we are interested in the next chapter intro
+      HELP_SHOW_PREV_CHAPTER(); return fail;
   elif book = "" and str = ">>"  then
-      HELP_SHOW_NEXT_CHAPTER();
-
-  # if the subject is 'Welcome to GAP' display a welcome message
+      HELP_SHOW_NEXT_CHAPTER(); return fail;
   elif book = "" and str = "welcome to gap"  then
       if HELP_SHOW_WELCOME(book)  then
           add( books, "Welcome to GAP" );
       fi;
-
-  # if the topic is 'books' display the table of books
+      return fail;
   elif book = "" and str = "books"  then
       if HELP_SHOW_BOOKS()  then
           add( books, "books" );
       fi;
-
-  # if the topic is 'chapters' display the table of chapters
+      return fail;
   elif str = "chapters"  or str = "contents" or book <> "" and str = "" then
       if ForAll(books, b->  HELP_SHOW_CHAPTERS(b)) then
         add( books, "chapters" );
       fi;
-
-  # if the topic is 'sections' display the table of sections
+      return fail;
   elif str = "sections"  then
       if ForAll(books, b-> HELP_SHOW_SECTIONS(b)) then
         add(books, "sections");
       fi;
-
-  # if the topic is '?<string>' search the index for any entries for
-  # which <string> is a substring (as opposed to an abbreviation)
+      return fail;
   elif Length(str) > 0 and str[1] = '?'  then
+      # '??<topic>' — substring search rather than prefix match.
       str := str{[2..Length(str)]};
       NormalizeWhitespace(str);
-      return HELP_SHOW_MATCHES( books, str, false);
+      return JUPYTER_HELP_SHOW_MATCHES( books, str, false);
+  fi;
 
-  # search for this topic
-  elif IsJupyterRenderable( HELP_SHOW_MATCHES( books, str, true ) ) then
-      return HELP_SHOW_MATCHES( books, str, true );
-  elif origstr in NAMES_SYSTEM_GVARS then
+  # General topic search; result captured for inspection below.
+  res := JUPYTER_HELP_SHOW_MATCHES( books, str, true );
+  if IsJupyterRenderable(res) then
+      return res;
+  fi;
+
+  # Fallback hints when the search came back empty.
+  if origstr in NAMES_SYSTEM_GVARS then
       Print( "Help: '", origstr, "' is currently undocumented.\n",
              "      For details, try ?Undocumented Variables\n" );
   elif book = "" and
                  ForAny(HELP_KNOWN_BOOKS[1], bk -> MATCH_BEGIN(bk, str)) then
       Print( "Help: Are you looking for a certain book? (Trying '?", origstr,
              ":' ...\n");
-      return HELP( Concatenation(origstr, ":") );
-  else
-     # seems unnecessary, since some message is already printed in all
-     # cases above (?):
-     # Print( "Help: Sorry, could not find a match for '", origstr, "'.\n");
+      HELP( Concatenation(origstr, ":") );
+      return fail;
   fi;
+  return fail;
 end);
 
 # Load some help stuff (Experimental)
@@ -288,4 +280,3 @@ function(file, name)
     od;
     return res;
 end);
-

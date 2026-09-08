@@ -52,3 +52,24 @@ src/*.lo
 /tmp/
 /gh-pages/
 **/.ipynb_checkpoints/
+
+__pycache__/
+.pytest_cache/
+*.pyc
+*.egg-info/
+/build/
+/dist/
+
+# Jupyter creates these when you open a new notebook in the package
+# directory. Easy to commit by accident.
+/Untitled*.ipynb
+
+# JupyterLab labextension build artefacts.
+/node_modules/
+/gap_jupyter_kernel/labextension/
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+*.tgz
+yarn.lock
+package-lock.json

@@ -37,6 +37,16 @@ Persons := [
     Place        := "Lisbon, PT"
   ),
   rec(
+    LastName     := "Jefferson",
+    FirstNames   := "Chris",
+    IsAuthor     := true,
+    IsMaintainer := false,
+    Email        := "chris@bubblescope.net",
+    WWWHome      := "https://heather.cafe/",
+    Institution  := "University of St Andrews",
+    Place        := "St Andrews",
+  ),
+  rec(
     LastName      := "Konovalov",
     FirstNames    := "Olexandr",
     IsAuthor      := false,
@@ -160,5 +170,4 @@ TestFile := "tst/testinstall.g",
 Keywords := [ "Jupyter", "User Interface" ],
 
 ));
-
 

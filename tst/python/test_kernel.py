@@ -335,6 +335,45 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
                 self.assertTrue(content.get("traceback"),
                                 f"expected non-empty traceback for {code!r}")
 
+    def test_undefined_variable_does_not_hang_kernel(self):
+        content, _ = self._execute_and_collect(
+            "DefinitelyUndefinedJupyterKernelVariable"
+        )
+        self.assertEqual(content["status"], "error")
+
+        content, iopub = self._execute_and_collect("6 * 7;")
+        self.assertEqual(content["status"], "ok")
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["content"]["data"]["text/plain"], "42")
+
+    def test_enumerator_has_compact_display(self):
+        content, iopub = self._execute_and_collect(
+            "Enumerator(SymmetricGroup(99));"
+        )
+        self.assertEqual(content["status"], "ok")
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(
+            results[0]["content"]["data"]["text/plain"],
+            "<enumerator of perm group>",
+        )
+
+    def test_restart_after_error(self):
+        content, _ = self._execute_and_collect("1/0;")
+        self.assertEqual(content["status"], "error")
+
+        started = time.monotonic()
+        self.km.restart_kernel(now=False)
+        self.kc.wait_for_ready(timeout=15)
+        self.assertLess(time.monotonic() - started, 15)
+
+        content, iopub = self._execute_and_collect("6 * 7;")
+        self.assertEqual(content["status"], "ok")
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["content"]["data"]["text/plain"], "42")
+
     def test_long_output_stress(self):
         """A burst of newline-separated output lines must arrive intact
         and finish in reasonable time. Catches regressions in the

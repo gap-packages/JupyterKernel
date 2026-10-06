@@ -34,7 +34,7 @@ jobs:
           - os: windows
             gap-version: 'devel'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: 'Install libzmq (Linux)'
         if: ${{ runner.os == 'Linux' }}
         run: sudo apt-get install -y libzmq3-dev
@@ -78,7 +78,7 @@ jobs:
       matrix:
         os: [ubuntu, macos]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: 'Install libzmq + graphviz (Linux)'
         if: ${{ runner.os == 'Linux' }}
         # graphviz provides `dot`, used by JupyterSplashDot in the demo
@@ -140,7 +140,7 @@ jobs:
     name: labextension build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -193,7 +193,7 @@ jobs:
       run:
         shell: C:\cygwin64\bin\bash.exe --login -o igncr '{0}'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: gap-actions/setup-cygwin@v2
         with:
           # Prefer Cygwin packages wherever they exist. Current Cygwin has

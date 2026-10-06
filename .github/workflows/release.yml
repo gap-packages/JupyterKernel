@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: gap-actions/setup-gap@v3
         with:
           gap-version: 'devel'
@@ -35,9 +35,22 @@ jobs:
       - name: Run .release script
         run: |
           ./.release
+          rm .release
       - uses: gap-actions/release-pkg@v1
         with:
           dry-run: ${{ inputs.dry-run }}
           force: ${{ inputs.force }}
       - uses: gap-actions/update-gh-pages@v1
         if: ${{ !inputs.dry-run }}
+
+  close-pending-release-issue:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gap-actions/check-pending-release@v1

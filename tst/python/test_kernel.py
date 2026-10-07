@@ -446,6 +446,11 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual(self._stream_and_results('Print("next\\n");'),
                          ["next\n"])
 
+    def test_results_in_statement_order(self):
+        self.assertEqual(
+            self._stream_and_results('Print("a\\n"); 1; Print("b"); 2; 3;; 4;'),
+            ["a\n", "1", "b", "2", "4"])
+
     def test_result_follows_output_after_flood(self):
         """Output batched after a flood must still precede the result."""
         out = self._stream_and_results(

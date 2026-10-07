@@ -132,7 +132,7 @@ function(conf)
         execute_request := function(msg)
             local publ, res, r, rep, str, data, metadata, t, content,
                   errBuf, errText, savedErr, errored, ename, run,
-                  code, helpres, i, silent, storeHistory;
+                  code, helpres, i, silent, storeHistory, sendResult;
 
             code := msg.content.code;
             silent := msg.content.silent;
@@ -205,9 +205,27 @@ function(conf)
             # an execute_reply with status="error" rather than killing the
             # kernel. With -T, GAP's SIGINT handler raises a normal "user
             # interrupt at ..." error that CALL_WITH_CATCH captures.
+            # Called for each statement with a value not ending in ';;'.
+            # GAP holds an unterminated line until "\c"; flushing first keeps
+            # results in statement order and partial lines in this cell.
+            sendResult := function(val)
+                Print("\c");
+                FlushOutputStream(kernel!.StdOut);
+                if not silent then
+                    rep := JupyterRender(val);
+                    JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
+                        , "execute_result"
+                        , msg.header
+                        , rec( data := JupyterRenderableData(rep)
+                             , metadata := JupyterRenderableMetadata(rep)
+                             , execution_count := kernel!.ExecutionCount )
+                        , rec() ) );
+                fi;
+            end;
+
             t := NanosecondsSinceEpoch();
             run := CALL_WITH_CATCH(
-                READ_ALL_COMMANDS, [str, false, false, IdFunc]);
+                READ_ALL_COMMANDS, [str, false, false, sendResult]);
             if IsBound(UPDATE_STAT) then
                 UPDATE_STAT( "time", QuoInt((NanosecondsSinceEpoch() - t), 1000000) );
             fi;
@@ -217,9 +235,6 @@ function(conf)
             MakeReadOnlyGlobal("ERROR_OUTPUT");
             CloseStream(errBuf);
 
-            # GAP holds an unterminated line until "\c"; without it the line
-            # would open the next cell's output. Flush before sending results
-            # so they follow the output that preceded them.
             Print("\c");
             FlushOutputStream(kernel!.StdOut);
             FlushOutputStream(kernel!.StdErr);
@@ -242,29 +257,13 @@ function(conf)
                 res := run[2];
             fi;
             for r in res do
-                if r[1] = true then
-                    if not silent and IsBound(r[2]) and r[3] = false then
-                        rep := JupyterRender(r[2]);
-                        metadata := JupyterRenderableMetadata(rep);
-                        data := JupyterRenderableData(rep);
-                        JupyterMsgSend(kernel, kernel!.IOPub, JupyterMsg( kernel
-                                                            , "execute_result"
-                                                            , msg.header
-                                                            , rec( data := data
-                                                                 , metadata := metadata
-                                                                 , execution_count := kernel!.ExecutionCount )
-                                                            , rec() ) );
-                    fi;
-                else
+                if r[1] = false then
                     errored := true;
                     if PositionSublist(errText, "user interrupt") <> fail then
                         ename := "KeyboardInterrupt";
                     fi;
                 fi;
             od;
-
-            FlushOutputStream(kernel!.StdOut);
-            FlushOutputStream(kernel!.StdErr);
 
             if errored then
                 if not silent then

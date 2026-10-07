@@ -65,8 +65,9 @@
         "requiredVersion": "^4.0.0"
       }
     },
+    "webpackConfig": "./webpack.config.js",
     "_build": {
-      "load": "static/remoteEntry.d567ef5c29bb898171d3.js",
+      "load": "static/remoteEntry.8f87727232f6ddfddda0.js",
       "extension": "./extension",
       "style": "./style"
     }

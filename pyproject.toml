@@ -71,6 +71,7 @@ include = [
     "etc",
     "package.json",
     "tsconfig.json",
+    "webpack.config.js",
     "install.json",
     "PackageInfo.g",
     "README.md",

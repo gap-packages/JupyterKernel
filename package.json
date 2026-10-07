@@ -64,7 +64,8 @@
         "singleton": true,
         "requiredVersion": "^4.0.0"
       }
-    }
+    },
+    "webpackConfig": "./webpack.config.js"
   },
   "styleModule": "style/index.js"
 }

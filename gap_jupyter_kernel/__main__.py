@@ -26,6 +26,8 @@ import shutil
 import sys
 from pathlib import Path
 
+REQUIRED_VERSION = ">= 2.0"
+
 
 def _find_gap() -> str:
     path = os.environ.get("JUPYTER_GAP_EXECUTABLE")
@@ -48,11 +50,23 @@ def _bootstrap_script(connection_file: str) -> str:
     # The connection file path is passed verbatim into a GAP string literal.
     # GAP string syntax escapes backslash and double-quote with backslash.
     escaped = connection_file.replace("\\", "\\\\").replace('"', '\\"')
-    return (
-        f'LoadPackage("JupyterKernel");'
-        f'JUPYTER_KernelStart_GAP("{escaped}");'
-        f'QUIT_GAP(0);'
-    )
+    # GAP's own pkg/ may hold a JupyterKernel 1.x, which this launcher
+    # cannot drive.
+    return f"""
+if LoadPackage("JupyterKernel", "{REQUIRED_VERSION}") <> true then
+    err := OutputTextFile("*errout*", true);
+    SetPrintFormattingStatus(err, false);
+    PrintTo(err, "gap-jupyter: cannot load JupyterKernel {REQUIRED_VERSION}\\n");
+    for r in PackageInfo("JupyterKernel") do
+        PrintTo(err, "  found ", r.Version, " in ", r.InstallationPath, "\\n");
+    od;
+    PrintTo(err, "To see why, run in GAP: SetInfoLevel(InfoPackageLoading, 4);",
+                 " LoadPackage(\\"JupyterKernel\\");\\n");
+    QUIT_GAP(1);
+fi;
+JUPYTER_KernelStart_GAP("{escaped}");
+QUIT_GAP(0);
+"""
 
 
 def _redirect_stdin_to_devnull() -> None:

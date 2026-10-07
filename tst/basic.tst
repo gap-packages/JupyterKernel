@@ -33,4 +33,11 @@ gap> G := Group((1,2,3));;
 gap> ins2 := JUPYTER_Inspect("G", 1);;
 gap> ins2.status;
 "ok"
+
+# Code point <-> UTF-8 byte offsets: alpha is 2 bytes, U+1F600 is 4.
+gap> code := "\316\261x\360\237\230\200y";;
+gap> List([0 .. 5], cp -> JUPYTER_ByteOffset(code, cp));
+[ 0, 2, 3, 7, 8, 8 ]
+gap> List([0, 2, 3, 7, 8], b -> JUPYTER_CodePointOffset(code, b));
+[ 0, 1, 2, 3, 4 ]
 gap> STOP_TEST("basic.tst", 1);

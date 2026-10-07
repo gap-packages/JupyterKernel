@@ -310,21 +310,24 @@ function(conf)
         end,
 
         inspect_request := function(msg)
+            local code;
+            code := msg.content.code;
             return JupyterMsg( kernel
                              , "inspect_reply"
                              , msg.header
-                             , JUPYTER_Inspect( msg.content.code
-                                              , msg.content.cursor_pos )
+                             , JUPYTER_Inspect( code
+                                 , JUPYTER_ByteOffset(code, msg.content.cursor_pos) )
                              , rec() );
         end,
 
         complete_request := function(msg)
-            return JupyterMsg( kernel
-                             , "complete_reply"
-                             , msg.header
-                             , JUPYTER_Complete( msg.content.code
-                                               , msg.content.cursor_pos )
-                             , rec() );
+            local code, reply;
+            code := msg.content.code;
+            reply := JUPYTER_Complete( code
+                       , JUPYTER_ByteOffset(code, msg.content.cursor_pos) );
+            reply.cursor_start := JUPYTER_CodePointOffset(code, reply.cursor_start);
+            reply.cursor_end := JUPYTER_CodePointOffset(code, reply.cursor_end);
+            return JupyterMsg(kernel, "complete_reply", msg.header, reply, rec());
         end,
 
         history_request := function(msg)

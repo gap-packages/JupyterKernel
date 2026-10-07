@@ -173,6 +173,15 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
                 continue
             self.assertNotEqual(msg["msg_type"], "stream", msg["content"])
 
+    def test_complete_after_non_ascii(self):
+        """cursor_pos counts code points, not UTF-8 bytes."""
+        code = "# \u03b1\u03b2\nx := Gro"
+        self.kc.complete(code, len(code))
+        reply = self.get_non_kernel_info_reply(timeout=10)
+        content = reply["content"]
+        self.assertIn("Group", content["matches"])
+        self.assertEqual(code[content["cursor_start"]:content["cursor_end"]], "Gro")
+
     def test_kernel_info_on_control(self):
         """JupyterLab 4 / jupyter_server sends kernel_info_request on the
         Control channel as a liveness probe. If we don't reply there, Lab

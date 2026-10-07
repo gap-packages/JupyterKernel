@@ -24,6 +24,28 @@ InstallMethod( JupyterRender, [ IsRecord ],
                              , rec( data := rec( text\/plain := String(r) )
                                    , metadata := rec() ) ) );
 
+# Jupyter counts cursor positions in code points; GAP strings are UTF-8
+# bytes. Both take and return 0-based offsets.
+BindGlobal("JUPYTER_IsUTF8Continuation", c -> IntChar(c) >= 128 and IntChar(c) < 192);
+
+BindGlobal("JUPYTER_ByteOffset",
+function(code, cp)
+    local off, n;
+    off := 0;
+    n := Length(code);
+    while cp > 0 and off < n do
+        off := off + 1;
+        while off < n and JUPYTER_IsUTF8Continuation(code[off + 1]) do
+            off := off + 1;
+        od;
+        cp := cp - 1;
+    od;
+    return off;
+end);
+
+BindGlobal("JUPYTER_CodePointOffset", {code, off} ->
+    Number([1 .. off], i -> not JUPYTER_IsUTF8Continuation(code[i])));
+
 # Extract the identifier ending at (or just before) cursor_pos. Returns a
 # record { ident, startpos, endpos, fapp }: ident is the identifier as a string
 # (possibly empty), start/end are 0-based [start, end) cursor positions

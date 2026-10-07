@@ -129,8 +129,8 @@ function(conf)
                                   , banner := Concatenation( "GAP Jupyter kernel ", GAPInfo.PackagesInfo.jupyterkernel[1].Version, "\n",
                                                              "Running on GAP ", GAPInfo.BuildVersion, "\n")
                                   , help_links := [ rec( text := "GAP website", url := "https://www.gap-system.org/")
-                                                  , rec( text := "GAP documentation", url := "https://www.gap-system.org/Doc/doc.html")
-                                                  , rec( text := "GAP tutorial", url := "https://docs.gap-system.org/doc/chap0_mj.html")
+                                                  , rec( text := "GAP documentation", url := "https://docs.gap-system.org/")
+                                                  , rec( text := "GAP tutorial", url := "https://docs.gap-system.org/doc/tut/chap0_mj.html")
                                                   , rec( text := "GAP reference", url := "https://docs.gap-system.org/doc/ref/chap0_mj.html") ]
                                   , status := "ok" )
                              , rec() );

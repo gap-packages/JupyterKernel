@@ -50,12 +50,15 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
     code_inspect_sample = "Group"
 
     # Framework's test_is_complete checks each sample maps to the right status.
-    complete_code_samples = ["1+1;", 'Print("hi\\n");', "[1,2,3];"]
+    complete_code_samples = ["1+1;", 'Print("hi\\n");', "[1,2,3];",
+                             "c := '\"';", "c := '(';", 's := """a"b""";']
     incomplete_code_samples = [
         "f := function(x)",
         "[1, 2, 3",
         "if true then 1",
         'x := "unclosed',
+        "x := '#'; y := (1",
+        's := """multi\nline',
     ]
 
     # We deliberately skip the framework's set-equality test_completion

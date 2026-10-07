@@ -32,14 +32,14 @@ end);
 # otherwise "complete". We do not try to distinguish syntactically invalid
 # input from incomplete input — the evaluator will report syntax errors
 # more precisely than the parser would.
-JUPYTER_IS_IDENT_CHAR := function(c)
+BindGlobal("JUPYTER_IS_IDENT_CHAR", function(c)
     return (c >= 'a' and c <= 'z')
         or (c >= 'A' and c <= 'Z')
         or (c >= '0' and c <= '9')
         or c = '_';
-end;
+end);
 
-JUPYTER_IsCompleteCode := function(code)
+BindGlobal("JUPYTER_IsCompleteCode", function(code)
     local i, n, c, depth, j, ident;
 
     depth := 0;
@@ -49,9 +49,16 @@ JUPYTER_IsCompleteCode := function(code)
         c := code[i];
         if c = '#' then
             while i <= n and code[i] <> '\n' do i := i + 1; od;
-        elif c = '"' then
+        elif c = '"' and i + 2 <= n and code{[i + 1, i + 2]} = "\"\"" then
+            # Triple-quoted strings have no escapes and may contain '"'.
+            j := PositionSublist(code, "\"\"\"", i + 2);
+            if j = fail then
+                return rec(status := "incomplete", indent := "");
+            fi;
+            i := j + 2;
+        elif c = '"' or c = '\'' then
             i := i + 1;
-            while i <= n and code[i] <> '"' do
+            while i <= n and code[i] <> c do
                 if code[i] = '\\' and i < n then i := i + 1; fi;
                 i := i + 1;
             od;
@@ -82,7 +89,7 @@ JUPYTER_IsCompleteCode := function(code)
         return rec(status := "incomplete", indent := "");
     fi;
     return rec(status := "complete");
-end;
+end);
 
 
 InstallGlobalFunction( NewJupyterKernel,

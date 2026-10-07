@@ -154,7 +154,7 @@ Dependencies := rec(
   GAP := ">= 4.11",
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.6.1" ]
                          , [ "io",     ">= 4.5.4" ]
-                         , [ "json",   ">= 2.3.0" ]
+                         , [ "json",   ">= 2.0.0" ]
                          , [ "uuid",   ">= 0.6" ]
                          , [ "ZeroMQInterface", ">= 0.10" ]
                          , [ "crypting", ">= 0.9"] ],

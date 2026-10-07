@@ -4,6 +4,22 @@
 # Implementations
 #
 
+# JupyterLab sends `subshell_id: null`, which decodes to fail and is echoed
+# back in parent headers. json before 2.3.0 (bundled up to GAP 4.15) cannot
+# encode fail; later versions write null, as done here.
+if not CompareVersionNumbers(GAPInfo.PackagesLoaded.json[2], "2.3.0") then
+    InstallMethod(_GapToJsonStreamInternal, [IsOutputStream, IsBool],
+    function(o, b)
+        if b = true then
+            WriteAll(o, "true");
+        elif b = false then
+            WriteAll(o, "false");
+        else
+            WriteAll(o, "null");
+        fi;
+    end);
+fi;
+
 # Compute the lowercase hex SHA-256 HMAC over the four canonical
 # Jupyter message JSON strings, in protocol order. Used by both encode
 # (to sign outgoing messages) and decode (to verify incoming).

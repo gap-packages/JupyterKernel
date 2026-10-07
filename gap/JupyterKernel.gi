@@ -470,7 +470,7 @@ function(conf)
     end;
 
     kernel.Loop := function()
-        local topoll, poll, raw, iter;
+        local topoll, poll, raw, iter, msg;
         JupyterLog("Loop: entering\n");
         kernel!.SignalStarting();
         JupyterLog("Loop: SignalStarting sent\n");
@@ -488,10 +488,16 @@ function(conf)
                 JupyterLog("  HB echoed\n");
             fi;
             if 2 in poll then
-                kernel!.HandleControlMsg(JupyterMsgRecv(kernel, kernel!.Control));
+                msg := JupyterMsgRecv(kernel, kernel!.Control);
+                if msg <> fail then
+                    kernel!.HandleControlMsg(msg);
+                fi;
             fi;
             if 3 in poll then
-                kernel!.HandleShellMsg(JupyterMsgRecv(kernel, kernel!.Shell));
+                msg := JupyterMsgRecv(kernel, kernel!.Shell);
+                if msg <> fail then
+                    kernel!.HandleShellMsg(msg);
+                fi;
             fi;
             if 4 in poll then
                 ZmqReceiveList(kernel!.StdIn);

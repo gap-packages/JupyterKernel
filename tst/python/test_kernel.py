@@ -11,6 +11,8 @@ import unittest
 from queue import Empty
 
 import jupyter_kernel_test
+import zmq
+from jupyter_client.session import Session
 
 
 KERNEL_NAME = "gap-4"
@@ -144,6 +146,35 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
                 self.assertEqual(reply["content"]["implementation"], "GAP")
                 return
         self.fail("no kernel_info_reply on control channel")
+
+    def test_bad_messages_are_dropped_silently(self):
+        """A wrongly signed or malformed message must be ignored: no reply,
+        nothing on IOPub (which once leaked the expected signature), and
+        the kernel stays up."""
+        info = self.km.get_connection_info()
+        ctx = zmq.Context.instance()
+        shell = ctx.socket(zmq.DEALER)
+        shell.connect(f"tcp://{info['ip']}:{info['shell_port']}")
+        try:
+            forger = Session(key=b"not-the-key")
+            forged = forger.msg("execute_request", content={
+                "code": "forged_marker := 1;", "silent": False,
+                "store_history": True, "user_expressions": {},
+                "allow_stdin": False, "stop_on_error": True})
+            self.flush_channels()
+            shell.send_multipart(forger.serialize(forged))
+            shell.send_multipart([b"garbage"])
+            self.assertFalse(shell.poll(2000), "kernel replied to a bad message")
+        finally:
+            shell.close(linger=0)
+        with self.assertRaises(Empty):
+            self.kc.get_iopub_msg(timeout=0.5)
+        self.assertTrue(self.km.is_alive())
+
+        content, iopub = self._execute_and_collect('IsBoundGlobal("forged_marker");')
+        self.assertEqual(content["status"], "ok")
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(results[0]["content"]["data"]["text/plain"], "false")
 
     def test_unsupported_comm_is_closed(self):
         self.flush_channels()

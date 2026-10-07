@@ -35,16 +35,20 @@ gap> back.content.foo;
 gap> back.header.msg_type;
 "kernel_info_request"
 
-# Decoding with the wrong key must error, not warn.
-# Redirect *errout* to a sink so the Error message doesn't pollute test output.
+# A wrong key or malformed frames give fail, and nothing reveals the
+# expected signature.
 gap> wrong := Objectify(NewType(NewFamily("FakeKern2"), IsObject and IsComponentObjectRep), \
 >      rec( SessionKey := "different-key" ));;
-gap> sink := OutputTextString("", true);;
-gap> MakeReadWriteGlobal("ERROR_OUTPUT");; saved := ERROR_OUTPUT;; ERROR_OUTPUT := sink;;
-gap> catch := CALL_WITH_CATCH(JupyterMsgDecode, [wrong, raw]);;
-gap> ERROR_OUTPUT := saved;; MakeReadOnlyGlobal("ERROR_OUTPUT");;
-gap> catch[1];
-false
+gap> JupyterMsgDecode(wrong, raw);
+fail
+gap> JupyterMsgDecode(kernel, ["garbage"]);
+fail
+gap> JupyterMsgDecode(kernel, []);
+fail
+gap> JupyterMsgDecode(kernel, raw{[1 .. 6]});
+fail
+gap> JupyterMsgDecode(kernel, Concatenation(["id1", "id2"], raw{[2 .. 7]})).ids;
+[ "id1", "id2" ]
 
 # An empty connection-file key disables authentication. Such messages carry
 # an empty signature rather than an HMAC computed with an empty key.

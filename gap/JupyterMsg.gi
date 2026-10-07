@@ -40,41 +40,35 @@ function(key, header, parent_header, metadata, content)
     return LowercaseString( Concatenation( List(digest, CRYPTING_HexStringIntPad8) ) );
 end);
 
+# Returns fail if raw is not a well-formed Jupyter message or its signature
+# does not match. Such messages must be dropped without a reply: reporting the
+# expected signature to the sender would let it forge messages.
 InstallGlobalFunction( JupyterMsgDecode,
 function(kernel, raw)
-    local result, sl, ids, expected;
-
-    result := rec();
+    local result, sl;
 
     # Capture the ZMQ envelope frames (everything before <IDS|MSG>). On
     # ROUTER sockets (Control, StdIn, and Shell now), the first frame is
     # the originating peer's identity; replies must prepend it so libzmq
     # can route the message back. On DEALER sockets the envelope is empty.
-    ids := [];
-    sl := 1;
-    while raw[sl] <> "<IDS|MSG>" do
-        Add(ids, raw[sl]);
-        sl := sl + 1;
-    od;
-    result.ids  := ids;
+    sl := Position(raw, "<IDS|MSG>");
+    if sl = fail or Length(raw) < sl + 5 then
+        return fail;
+    fi;
+
+    if raw[sl + 1] <> JUPYTER_ComputeHMAC( kernel!.SessionKey,
+                                           raw[sl + 2], raw[sl + 3],
+                                           raw[sl + 4], raw[sl + 5] ) then
+        return fail;
+    fi;
+
+    result := rec();
+    result.ids  := raw{[1 .. sl - 1]};
     result.hmac := raw[sl + 1];
-
-    Assert(0, IsBound(raw[sl + 2]) and IsBound(raw[sl + 3])
-           and IsBound(raw[sl + 4]) and IsBound(raw[sl + 5]));
-
     result.header        := JsonStringToGap(raw[sl + 2]);
     result.parent_header := JsonStringToGap(raw[sl + 3]);
     result.metadata      := JsonStringToGap(raw[sl + 4]);
     result.content       := JsonStringToGap(raw[sl + 5]);
-
-    expected := JUPYTER_ComputeHMAC( kernel!.SessionKey,
-                                     raw[sl + 2], raw[sl + 3],
-                                     raw[sl + 4], raw[sl + 5] );
-    if result.hmac <> expected then
-        Error("HMAC verification failed: refusing to process message ",
-              "(received ", result.hmac, ", expected ", expected,
-              "). Connection-file key mismatch?");
-    fi;
 
     return result;
 end);
@@ -113,15 +107,23 @@ function(kernel, msg)
     return raw;
 end);
 
+# Returns fail for a message JupyterMsgDecode rejects.
 InstallGlobalFunction(JupyterMsgRecv,
 function(kernel, sock)
-    local raw;
+    local raw, result, note;
     raw := ZmqReceiveList(sock);
     if IsBound(kernel!.ProtocolLog) then
         AppendTo(kernel!.ProtocolLog, raw);
         AppendTo(kernel!.ProtocolLog, "\n");
     fi;
-    return JupyterMsgDecode(kernel, raw);
+    result := JupyterMsgDecode(kernel, raw);
+    if result = fail then
+        # Write to the server's terminal directly: GAP's own output streams,
+        # *errout* included, are copied to IOPub.
+        note := "JupyterKernel: dropped malformed or wrongly signed message\n";
+        IO_write(2, note, 0, Length(note));
+    fi;
+    return result;
 end);
 
 InstallGlobalFunction(JupyterMsgSend,

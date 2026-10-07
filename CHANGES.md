@@ -46,9 +46,9 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   messages instead of one per byte.
 - **Tightened wire protocol.** ZMQ envelopes are now threaded through
   request-reply pairs (Shell, Control, StdIn are all ROUTER on the
-  kernel side per spec). HMAC mismatches `Error` rather than warning
-  silently, and the encoder asserts the four canonical message slots
-  are present.
+  kernel side per spec). Messages with a wrong signature or malformed
+  frames are dropped (1.x accepted any signature), and the encoder
+  asserts the four canonical message slots are present.
 
 ### Fixes
 

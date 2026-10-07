@@ -104,18 +104,13 @@ end);
 InstallGlobalFunction(JupyterMsgSend,
 function(kernel, sock, msg)
     local raw;
-    JupyterLog("        JupyterMsgSend: encoding type=",
-               msg.header.msg_type, "\n");
+    JupyterLog("sent ", msg.header.msg_type, "\n");
     raw := JupyterMsgEncode(kernel, msg);
-    JupyterLog("        JupyterMsgSend: encoded, ", Length(raw),
-               " frames, total bytes=", Sum(raw, Length), "\n");
     if IsBound(kernel!.ProtocolLog) then
         AppendTo(kernel!.ProtocolLog, raw);
         AppendTo(kernel!.ProtocolLog, "\n");
     fi;
-    JupyterLog("        JupyterMsgSend: about to ZmqSend\n");
     ZmqSend(sock, raw);
-    JupyterLog("        JupyterMsgSend: ZmqSend returned\n");
 end);
 
 # Create a message template with the necessary fields filled

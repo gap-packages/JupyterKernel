@@ -1,15 +1,13 @@
-# Diagnostic trace state. Off by default; turn on from a notebook cell
-# via `JUPYTER_TRACE.enabled := true;` (or redirect with `.file`) when
-# investigating a kernel-side issue. We deliberately do NOT use GAP's
-# `Info` here: the trace fires inside C-level ZMQ callbacks where Info
-# classes / the break loop interact poorly, and we want a deterministic
-# file-side audit log when the kernel crashes.
-JUPYTER_TRACE := rec( enabled := false,
-                      file    := "/tmp/gap-kernel-trace.log" );
+# Diagnostic trace, off by default. To enable, set
+# JUPYTER_TRACE.file to a path and JUPYTER_TRACE.enabled to true.
+JUPYTER_TRACE := rec( enabled := false );
 
 InstallGlobalFunction( JupyterLog,
 function(arg)
     if JUPYTER_TRACE.enabled then
+        if not IsBound(JUPYTER_TRACE.file) then
+            Error("set JUPYTER_TRACE.file before enabling the trace");
+        fi;
         CallFuncList(AppendTo, Concatenation([JUPYTER_TRACE.file], arg));
     fi;
 end);

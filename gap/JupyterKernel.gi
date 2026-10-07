@@ -380,15 +380,12 @@ function(conf)
 
     kernel.SignalBusy := function()
         local m;
-        JupyterLog("      SignalBusy: building msg\n");
         m := JupyterMsg( kernel
                        , "status"
                        , kernel!.CurrentMsg
                        , rec( execution_state := "busy" )
                        , rec() );
-        JupyterLog("      SignalBusy: msg built, sending\n");
         JupyterMsgSend( kernel, kernel!.IOPub, m );
-        JupyterLog("      SignalBusy: sent\n");
     end;
 
     kernel.SignalIdle := function()
@@ -432,21 +429,16 @@ function(conf)
     kernel.HandleShellMsg := function(msg)
         local t, reply;
         kernel!.CurrentMsg := msg.header;
-        JupyterLog("    HandleShellMsg: type=", msg.header.msg_type,
-                 " ids-len=", Length(msg.ids), "\n");
+        JupyterLog("recv shell ", msg.header.msg_type, "\n");
         kernel!.SignalBusy();
-        JupyterLog("    HandleShellMsg: SignalBusy done\n");
         t := msg.header.msg_type;
         if IsBound(kernel!.MsgHandlers.(t)) then
             reply := kernel!.MsgHandlers.(t)(msg);
-            JupyterLog("    HandleShellMsg: handler returned\n");
             if reply <> fail then
                 reply.ids := msg.ids;
                 JupyterMsgSend(kernel, kernel!.Shell, reply);
-                JupyterLog("    HandleShellMsg: send done\n");
             fi;
             kernel!.SignalIdle();
-            JupyterLog("    HandleShellMsg: SignalIdle done\n");
             if t = "execute_request" and reply.content.status = "error"
                and not msg.content.silent
                and not (IsBound(msg.content.stop_on_error)
@@ -472,15 +464,12 @@ function(conf)
         local t, reply;
         kernel!.CurrentMsg := msg.header;
         t := msg.header.msg_type;
-        JupyterLog("    HandleControlMsg: type=", t,
-                 " ids-len=", Length(msg.ids), "\n");
+        JupyterLog("recv control ", t, "\n");
         if IsBound(kernel!.MsgHandlers.(t)) then
             reply := kernel!.MsgHandlers.(t)(msg);
-            JupyterLog("    HandleControlMsg: handler returned\n");
             if reply <> fail then
                 reply.ids := msg.ids;
                 JupyterMsgSend(kernel, kernel!.Control, reply);
-                JupyterLog("    HandleControlMsg: send done\n");
             fi;
             return true;
         fi;
@@ -520,12 +509,10 @@ function(conf)
         local poll, raw, msg;
         poll := ZmqPoll(topoll, [], 100);
         if poll <> [] then
-            JupyterLog("PollOnce: poll=", poll, "\n");
         fi;
         if 1 in poll then
             raw := ZmqReceiveList(kernel!.HB);
             ZmqSend(kernel!.HB, raw);
-            JupyterLog("  HB echoed\n");
         fi;
         if 2 in poll then
             msg := JupyterMsgRecv(kernel, kernel!.Control);
@@ -541,15 +528,12 @@ function(conf)
         fi;
         if 4 in poll then
             ZmqReceiveList(kernel!.StdIn);
-            JupyterLog("  StdIn drained\n");
         fi;
     end;
 
     kernel.Loop := function()
         local topoll, errText, errBuf, ok;
-        JupyterLog("Loop: entering\n");
         kernel!.SignalStarting();
-        JupyterLog("Loop: SignalStarting sent\n");
         topoll := [ kernel!.HB, kernel!.Control, kernel!.Shell, kernel!.StdIn ];
         while not kernel!.quitting do
             # An error outside user code must not kill the kernel. The
@@ -567,13 +551,12 @@ function(conf)
             MakeReadOnlyGlobal("ERROR_OUTPUT");
             CloseStream(errBuf);
             if not ok and PositionSublist(errText, "user interrupt") <> fail then
-                JupyterLog("Loop: interrupt outside user code ignored\n");
+                JupyterLog("interrupt outside user code ignored\n");
             elif Length(errText) > 0 then
                 WriteAll(kernel!.StdErr, errText);
                 FlushOutputStream(kernel!.StdErr);
             fi;
         od;
-        JupyterLog("Loop: exited because quitting=true\n");
     end;
 
     _KERNEL := kernel;
@@ -590,8 +573,6 @@ InstallMethod( Run
              , "for Jupyter kernel"
              , [ IsGAPJupyterKernel ]
              , function(x)
-                 JupyterLog("Run: entered, GAPInfo.Version=",
-                            GAPInfo.Version, "\n");
                  # Help system rerouting: SetHelpViewer points at our
                  # online viewer. We do NOT rebind the global HELP
                  # function — instead execute_request intercepts a
@@ -600,11 +581,8 @@ InstallMethod( Run
                  SetUserPreference("Pager", "tail");
                  SetUserPreference("PagerOptions", "");
                  SetHelpViewer("jupyter_online");
-                 JupyterLog("Run: about to BindSockets\n");
                  x!.BindSockets();
-                 JupyterLog("Run: about to Loop\n");
                  x!.Loop();
-                 JupyterLog("Run: Loop returned, QUIT_GAP\n");
                  QUIT_GAP(0);
              end);
 

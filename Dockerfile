@@ -1,21 +1,29 @@
-FROM gapsystem/gap-docker
+# JupyterLab with GAP and this checkout of JupyterKernel, also used by Binder.
+#   docker build -t gap-jupyter .
+#   docker run --rm -p 8888:8888 gap-jupyter
+# Binder needs an explicit tag; update it with each GAP image release.
+ARG GAP_VERSION=4.15.1
+FROM ghcr.io/gap-system/gap:${GAP_VERSION}-full
+ARG GAP_VERSION
 
-MAINTAINER Olexandr Konovalov <obk1@st-andrews.ac.uk>
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir /home/gap \
+    && chown gap:gap /home/gap
 
-# Update version number each time after gap-docker container is updated
-ENV GAP_VERSION 4.11.1
-
-# Remove previous JupyterKernel installation, copy this repository and make new install
-
-RUN cd /home/gap/inst/gap-${GAP_VERSION}/pkg/ \
-    && rm -rf JupyterKernel \
-    && wget https://github.com/gap-packages/JupyterKernel/archive/master.zip \
-    && unzip -q master.zip \
-    && rm master.zip \
-    && mv JupyterKernel-master JupyterKernel \
-    && cd JupyterKernel \
-    && pip3 install . --user
-
+# Binder runs as uid 1000, the image's "gap" user, with the repository in $HOME.
+ENV HOME=/home/gap
+COPY --chown=gap:gap . ${HOME}
 USER gap
 
-WORKDIR /home/gap/inst/gap-${GAP_VERSION}/pkg/JupyterKernel/demos
+# GAP must load this checkout, not the JupyterKernel it ships.
+RUN rm -rf /opt/gap/gap-${GAP_VERSION}/pkg/jupyterkernel* \
+    && ln -s ${HOME} /opt/gap/gap-${GAP_VERSION}/pkg/jupyterkernel \
+    && python3 -m pip install --no-cache-dir --user "${HOME}[server]"
+ENV PATH=${HOME}/.local/bin:${PATH}
+
+WORKDIR ${HOME}/demos
+EXPOSE 8888
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser"]

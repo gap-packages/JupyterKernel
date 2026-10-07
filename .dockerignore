@@ -1,0 +1,11 @@
+.git
+node_modules
+venv
+build
+dist
+*.egg-info
+lib
+tsconfig.tsbuildinfo
+**/.ipynb_checkpoints
+**/__pycache__
+.pytest_cache

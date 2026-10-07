@@ -127,6 +127,34 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
             return
         self.fail("no execute_reply received within 30s of interrupt_kernel()")
 
+    def test_interrupt_idle(self):
+        """Interrupting an idle kernel is a no-op: the kernel and its
+        state survive, and nothing is printed."""
+        content, _ = self._execute_and_collect("idle_state := 17;")
+        self.assertEqual(content["status"], "ok")
+        self.flush_channels()
+        self.km.interrupt_kernel()
+        time.sleep(1.0)
+        self.assertTrue(self.km.is_alive())
+        with self.assertRaises(Empty):
+            self.kc.get_iopub_msg(timeout=0.5)
+        content, iopub = self._execute_and_collect("idle_state;")
+        self.assertEqual(content["status"], "ok")
+        results = [m for m in iopub if m["msg_type"] == "execute_result"]
+        self.assertEqual(results[0]["content"]["data"]["text/plain"], "17")
+
+    def test_comm_open_on_control(self):
+        """comm_open has no reply; on Control this once killed the kernel."""
+        self.flush_channels()
+        msg = self.kc.session.msg("comm_open", content={
+            "comm_id": "control-comm", "target_name": "t", "data": {}})
+        self.kc.control_channel.send(msg)
+        close = self.kc.get_iopub_msg(timeout=10)
+        self.assertEqual(close["msg_type"], "comm_close")
+        with self.assertRaises(Empty):
+            self.kc.get_iopub_msg(timeout=0.5)
+        self.assertTrue(self.km.is_alive())
+
     def test_kernel_info_on_control(self):
         """JupyterLab 4 / jupyter_server sends kernel_info_request on the
         Control channel as a liveness probe. If we don't reply there, Lab

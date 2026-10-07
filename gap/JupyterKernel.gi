@@ -431,10 +431,12 @@ function(conf)
                  " ids-len=", Length(msg.ids), "\n");
         if IsBound(kernel!.MsgHandlers.(t)) then
             reply := kernel!.MsgHandlers.(t)(msg);
-            JupyterLog("    HandleControlMsg: handler returned, sending\n");
-            reply.ids := msg.ids;
-            JupyterMsgSend(kernel, kernel!.Control, reply);
-            JupyterLog("    HandleControlMsg: send done\n");
+            JupyterLog("    HandleControlMsg: handler returned\n");
+            if reply <> fail then
+                reply.ids := msg.ids;
+                JupyterMsgSend(kernel, kernel!.Control, reply);
+                JupyterLog("    HandleControlMsg: send done\n");
+            fi;
             return true;
         fi;
         Print("unhandled control message type: ", t, "\n");
@@ -469,39 +471,61 @@ function(conf)
         OutputLogTo(kernel!.StdOut);
     end;
 
+    kernel.PollOnce := function(topoll)
+        local poll, raw, msg;
+        poll := ZmqPoll(topoll, [], 100);
+        if poll <> [] then
+            JupyterLog("PollOnce: poll=", poll, "\n");
+        fi;
+        if 1 in poll then
+            raw := ZmqReceiveList(kernel!.HB);
+            ZmqSend(kernel!.HB, raw);
+            JupyterLog("  HB echoed\n");
+        fi;
+        if 2 in poll then
+            msg := JupyterMsgRecv(kernel, kernel!.Control);
+            if msg <> fail then
+                kernel!.HandleControlMsg(msg);
+            fi;
+        fi;
+        if 3 in poll then
+            msg := JupyterMsgRecv(kernel, kernel!.Shell);
+            if msg <> fail then
+                kernel!.HandleShellMsg(msg);
+            fi;
+        fi;
+        if 4 in poll then
+            ZmqReceiveList(kernel!.StdIn);
+            JupyterLog("  StdIn drained\n");
+        fi;
+    end;
+
     kernel.Loop := function()
-        local topoll, poll, raw, iter, msg;
+        local topoll, errText, errBuf, ok;
         JupyterLog("Loop: entering\n");
         kernel!.SignalStarting();
         JupyterLog("Loop: SignalStarting sent\n");
         topoll := [ kernel!.HB, kernel!.Control, kernel!.Shell, kernel!.StdIn ];
-        iter := 0;
         while not kernel!.quitting do
-            iter := iter + 1;
-            poll := ZmqPoll(topoll, [], 100);
-            if poll <> [] then
-                JupyterLog("Loop iter ", iter, ": poll=", poll, "\n");
-            fi;
-            if 1 in poll then
-                raw := ZmqReceiveList(kernel!.HB);
-                ZmqSend(kernel!.HB, raw);
-                JupyterLog("  HB echoed\n");
-            fi;
-            if 2 in poll then
-                msg := JupyterMsgRecv(kernel, kernel!.Control);
-                if msg <> fail then
-                    kernel!.HandleControlMsg(msg);
-                fi;
-            fi;
-            if 3 in poll then
-                msg := JupyterMsgRecv(kernel, kernel!.Shell);
-                if msg <> fail then
-                    kernel!.HandleShellMsg(msg);
-                fi;
-            fi;
-            if 4 in poll then
-                ZmqReceiveList(kernel!.StdIn);
-                JupyterLog("  StdIn drained\n");
+            # An error outside user code must not kill the kernel. The
+            # common case is SIGINT on an idle kernel, which is a no-op;
+            # anything else is a kernel bug and is shown on stderr.
+            errText := "";
+            errBuf := OutputTextString(errText, true);
+            SetPrintFormattingStatus(errBuf, false);
+            MakeReadWriteGlobal("ERROR_OUTPUT");
+            ERROR_OUTPUT := errBuf;
+            MakeReadOnlyGlobal("ERROR_OUTPUT");
+            ok := CALL_WITH_CATCH(kernel!.PollOnce, [topoll])[1];
+            MakeReadWriteGlobal("ERROR_OUTPUT");
+            ERROR_OUTPUT := kernel!.StdErr;
+            MakeReadOnlyGlobal("ERROR_OUTPUT");
+            CloseStream(errBuf);
+            if not ok and PositionSublist(errText, "user interrupt") <> fail then
+                JupyterLog("Loop: interrupt outside user code ignored\n");
+            elif Length(errText) > 0 then
+                WriteAll(kernel!.StdErr, errText);
+                FlushOutputStream(kernel!.StdErr);
             fi;
         od;
         JupyterLog("Loop: exited because quitting=true\n");

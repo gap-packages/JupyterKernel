@@ -2,7 +2,29 @@ OutputStreamZmqType := NewType(
     StreamsFamily,
     IsOutputTextStream and IsOutputStreamZmqRep );
 
-JUPYTER_STREAM_FLUSH_THRESHOLD := 4096;
+# ZMQ PUB drops messages beyond 1000 queued, status:idle included, so a
+# flood of lines must not become a flood of messages. A newline flushes
+# while credit lasts: bursts of up to JUPYTER_STREAM_FLUSH_BURST messages,
+# refilled at one per JUPYTER_STREAM_FLUSH_COST nanoseconds. Otherwise
+# output waits for the next newline with credit, the size threshold, or
+# the end of the request.
+JUPYTER_STREAM_FLUSH_COST := 50000000;
+JUPYTER_STREAM_FLUSH_BURST := 100;
+JUPYTER_STREAM_FLUSH_THRESHOLD := 2^20;
+
+BindGlobal("JUPYTER_StreamTakeCredit",
+function(stream)
+    local now;
+    now := NanosecondsSinceEpoch();
+    stream!.credit := Minimum(JUPYTER_STREAM_FLUSH_BURST * JUPYTER_STREAM_FLUSH_COST,
+                              stream!.credit + now - stream!.lastcheck);
+    stream!.lastcheck := now;
+    if stream!.credit < JUPYTER_STREAM_FLUSH_COST then
+        return false;
+    fi;
+    stream!.credit := stream!.credit - JUPYTER_STREAM_FLUSH_COST;
+    return true;
+end);
 
 InstallMethod( OutputStreamZmq,
     "output stream to Jupyter ZeroMQ",
@@ -16,7 +38,10 @@ function(kernel, socket, streamname)
                          , socket := socket
                          , format := false
                          , streamname := streamname
-                         , buffer := "" ) );
+                         , buffer := ""
+                         , credit := JUPYTER_STREAM_FLUSH_BURST
+                                     * JUPYTER_STREAM_FLUSH_COST
+                         , lastcheck := NanosecondsSinceEpoch() ) );
 end);
 
 
@@ -83,7 +108,7 @@ function( stream, string )
                string{[1..Minimum(80, Length(string))]}, "')\n");
     Append( stream!.buffer, string );
     if Length(stream!.buffer) >= JUPYTER_STREAM_FLUSH_THRESHOLD
-       or '\n' in string then
+       or ('\n' in string and JUPYTER_StreamTakeCredit(stream)) then
         JupyterLog("        WriteAll: flushing\n");
         FlushOutputStream(stream);
     fi;
@@ -99,8 +124,8 @@ function(stream, byte)
         Error( "<byte> must be an integer between 0 and 255" );
     fi;
     Add( stream!.buffer, CharInt(byte) );
-    if byte = INT_CHAR('\n')
-       or Length(stream!.buffer) >= JUPYTER_STREAM_FLUSH_THRESHOLD then
+    if Length(stream!.buffer) >= JUPYTER_STREAM_FLUSH_THRESHOLD
+       or (byte = INT_CHAR('\n') and JUPYTER_StreamTakeCredit(stream)) then
         FlushOutputStream(stream);
     fi;
     return true;

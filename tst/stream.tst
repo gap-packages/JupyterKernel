@@ -1,5 +1,5 @@
-# Tests for OutputStreamZmq batching: print is buffered until newline
-# or until the threshold is hit, and a single FlushOutputStream call drains
+# Tests for OutputStreamZmq batching: print is buffered until a newline
+# with flush credit, or until the threshold is hit, and a single FlushOutputStream call drains
 # the buffer to one stream message rather than one-per-byte.
 #
 # We don't need a real ZMQ socket: we monkey-patch JupyterMsgSend to record
@@ -12,9 +12,12 @@ gap> START_TEST("JupyterKernel: stream.tst");
 gap> kernel := Objectify(NewType(NewFamily("FakeKern3"), IsObject and IsComponentObjectRep), \
 >      rec( ZmqIdentity := "id", Username := "u", SessionID := "s",
 >           SessionKey := "k", ProtocolVersion := "5.3", Silent := false ));;
-gap> stream := Objectify(OutputStreamZmqType, \
+gap> newStream := {} -> Objectify(OutputStreamZmqType, \
 >      rec( kernel := kernel, socket := "fakesock", format := false,
->           streamname := "stdout", buffer := "" ));;
+>           streamname := "stdout", buffer := "",
+>           credit := JUPYTER_STREAM_FLUSH_BURST * JUPYTER_STREAM_FLUSH_COST,
+>           lastcheck := NanosecondsSinceEpoch() ));;
+gap> stream := newStream();;
 
 # Capture every JupyterMsgSend call.
 gap> sends := [];;
@@ -74,6 +77,21 @@ gap> WriteAll(stream, bigstring);
 true
 gap> Length(sends);
 1
+
+# Once the burst credit is spent, newlines no longer flush.
+gap> savedBurst := JUPYTER_STREAM_FLUSH_BURST;; savedCost := JUPYTER_STREAM_FLUSH_COST;;
+gap> JUPYTER_STREAM_FLUSH_BURST := 2;; JUPYTER_STREAM_FLUSH_COST := 10^15;;
+gap> stream := newStream();; sends := [];;
+gap> for i in [1..3] do WriteAll(stream, Concatenation(String(i), "\n")); od;
+gap> sends;
+[ "1\n", "2\n" ]
+gap> stream!.buffer;
+"3\n"
+gap> FlushOutputStream(stream);
+gap> sends;
+[ "1\n", "2\n", "3\n" ]
+gap> JUPYTER_STREAM_FLUSH_BURST := savedBurst;; JUPYTER_STREAM_FLUSH_COST := savedCost;;
+gap> stream := newStream();;
 
 # FlushOutputStream on an empty buffer is a no-op.
 gap> sends := [];;

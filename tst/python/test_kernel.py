@@ -434,25 +434,19 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual(results[0]["content"]["data"]["text/plain"], "42")
 
     def test_long_output_stress(self):
-        """A burst of newline-separated output lines must arrive intact
-        and finish in reasonable time. Catches regressions in the
-        per-flush batching loop and in the iopub stream encoder."""
+        """100000 lines must all arrive, followed by status idle. ZMQ PUB
+        drops messages beyond 1000 queued, so one message per line lost
+        output and the idle status."""
+        n = 100000
         content, iopub = self._execute_and_collect(
-            'for i in [1..2000] do Print(i, "\\n"); od;', timeout=60
+            f'for i in [1..{n}] do Print(i, "\\n"); od;', timeout=60
         )
         self.assertEqual(content["status"], "ok")
         all_text = "".join(
             m["content"]["text"] for m in iopub
             if m["msg_type"] == "stream" and m["content"]["name"] == "stdout"
         )
-        # First and last lines made it.
-        self.assertTrue(all_text.startswith("1\n"),
-                        f"missing leading line, head={all_text[:40]!r}")
-        self.assertTrue(all_text.rstrip().endswith("\n2000")
-                        or all_text.endswith("2000\n"),
-                        f"missing trailing line, tail={all_text[-40:]!r}")
-        # Right total count.
-        self.assertEqual(all_text.count("\n"), 2000)
+        self.assertEqual(all_text, "".join(f"{i}\n" for i in range(1, n + 1)))
 
     def test_help_magic(self):
         """A cell starting with `?` must dispatch to the help path
@@ -469,8 +463,8 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
 
     def test_stream_batching(self):
         """100 byte-sized prints with no newlines must NOT produce 100
-        separate stream messages — the kernel buffers stdout and
-        flushes on newline / 4096-byte threshold."""
+        separate stream messages — GAP and the kernel buffer stdout until a
+        newline."""
         self.flush_channels()
         self.kc.execute('for i in [1..100] do Print("x"); od; Print("\\n");')
         stream_msgs = 0

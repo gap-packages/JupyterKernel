@@ -41,9 +41,9 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   (`function`/`end`, `if`/`fi`, `for`/`od`, `while`/`od`,
   `repeat`/`until`) plus brackets, so multi-line cells in the JupyterLab
   console behave properly.
-- **Stream batching.** Output is buffered and flushed on newlines or
-  at 4096 bytes, so a tight `Print` loop produces a handful of stream
-  messages instead of one per byte.
+- **Stream batching.** Output is flushed on newlines at up to 20
+  messages per second after a burst of 100, so long output arrives
+  complete instead of overflowing IOPub.
 - **Tightened wire protocol.** ZMQ envelopes are now threaded through
   request-reply pairs (Shell, Control, StdIn are all ROUTER on the
   kernel side per spec). Messages with a wrong signature or malformed

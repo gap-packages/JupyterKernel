@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gap-jupyter"
-version = "2.0.0"
+dynamic = ["version"]
 description = "Jupyter kernel for the GAP computer algebra system"
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -47,6 +47,12 @@ server = [
 Homepage = "https://github.com/gap-packages/JupyterKernel"
 Issues = "https://github.com/gap-packages/JupyterKernel/issues"
 
+# PackageInfo.g is the single source of the version; GAP's release
+# tooling only updates that file.
+[tool.hatch.version]
+path = "PackageInfo.g"
+pattern = 'Version := "(?P<version>[^"]+)"'
+
 [tool.hatch.build.targets.wheel]
 packages = ["gap_jupyter_kernel"]
 
@@ -66,6 +72,7 @@ include = [
     "package.json",
     "tsconfig.json",
     "install.json",
+    "PackageInfo.g",
     "README.md",
     "COPYRIGHT.md",
 ]

@@ -35,6 +35,15 @@ gap> back.content.foo;
 gap> back.header.msg_type;
 "kernel_info_request"
 
+# JupyterLab sends `subshell_id: null`, which decodes to fail and must
+# encode back to null when echoed in a parent header.
+gap> raw := JupyterMsgEncode(kernel, JupyterMsg(kernel, "status",
+>               rec(subshell_id := fail), rec(), rec()));;
+gap> JsonStringToGap(raw[5]);
+rec( subshell_id := fail )
+gap> PositionSublist(raw[5], "null") <> fail;
+true
+
 # A wrong key or malformed frames give fail, and nothing reveals the
 # expected signature.
 gap> wrong := Objectify(NewType(NewFamily("FakeKern2"), IsObject and IsComponentObjectRep), \

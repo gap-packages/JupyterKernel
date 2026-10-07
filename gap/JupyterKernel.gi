@@ -535,30 +535,54 @@ function(conf)
         fi;
     end;
 
+    # Runs until quitting; returns early only by an error. All of it runs
+    # inside Loop's CALL_WITH_CATCH, with ERROR_OUTPUT captured throughout:
+    # GAP raises a pending SIGINT at the next statement, and one outside
+    # the catch would kill the kernel.
+    kernel.Serve := function(topoll)
+        local errText, errBuf;
+        errText := "";
+        kernel!.LoopErrText := errText;
+        errBuf := OutputTextString(errText, true);
+        SetPrintFormattingStatus(errBuf, false);
+        MakeReadWriteGlobal("ERROR_OUTPUT");
+        ERROR_OUTPUT := errBuf;
+        MakeReadOnlyGlobal("ERROR_OUTPUT");
+        while not kernel!.quitting do
+            kernel!.PollOnce(topoll);
+            if Length(errText) > 0 then
+                WriteAll(kernel!.StdErr, ShallowCopy(errText));
+                FlushOutputStream(kernel!.StdErr);
+                # errBuf appends to errText, so empty it in place
+                while Length(errText) > 0 do
+                    Remove(errText);
+                od;
+            fi;
+        od;
+        MakeReadWriteGlobal("ERROR_OUTPUT");
+        ERROR_OUTPUT := kernel!.StdErr;
+        MakeReadOnlyGlobal("ERROR_OUTPUT");
+        CloseStream(errBuf);
+    end;
+
     kernel.Loop := function()
-        local topoll, errText, errBuf, ok;
+        local topoll;
         kernel!.SignalStarting();
         topoll := [ kernel!.HB, kernel!.Control, kernel!.Shell, kernel!.StdIn ];
         while not kernel!.quitting do
             # An error outside user code must not kill the kernel. The
             # common case is SIGINT on an idle kernel, which is a no-op;
             # anything else is a kernel bug and is shown on stderr.
-            errText := "";
-            errBuf := OutputTextString(errText, true);
-            SetPrintFormattingStatus(errBuf, false);
-            MakeReadWriteGlobal("ERROR_OUTPUT");
-            ERROR_OUTPUT := errBuf;
-            MakeReadOnlyGlobal("ERROR_OUTPUT");
-            ok := CALL_WITH_CATCH(kernel!.PollOnce, [topoll])[1];
-            MakeReadWriteGlobal("ERROR_OUTPUT");
-            ERROR_OUTPUT := kernel!.StdErr;
-            MakeReadOnlyGlobal("ERROR_OUTPUT");
-            CloseStream(errBuf);
-            if not ok and PositionSublist(errText, "user interrupt") <> fail then
-                JupyterLog("interrupt outside user code ignored\n");
-            elif Length(errText) > 0 then
-                WriteAll(kernel!.StdErr, errText);
-                FlushOutputStream(kernel!.StdErr);
+            if not CALL_WITH_CATCH(kernel!.Serve, [topoll])[1] then
+                MakeReadWriteGlobal("ERROR_OUTPUT");
+                ERROR_OUTPUT := kernel!.StdErr;
+                MakeReadOnlyGlobal("ERROR_OUTPUT");
+                if PositionSublist(kernel!.LoopErrText, "user interrupt") <> fail then
+                    JupyterLog("interrupt outside user code ignored\n");
+                else
+                    WriteAll(kernel!.StdErr, kernel!.LoopErrText);
+                    FlushOutputStream(kernel!.StdErr);
+                fi;
             fi;
         od;
     end;

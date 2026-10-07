@@ -73,6 +73,9 @@ jobs:
     name: JupyterLab + GAP kernel (${{ matrix.os }})
     runs-on: ${{ matrix.os }}-latest
     needs: labextension-build
+    # A dead kernel makes some framework calls wait forever; normal runs
+    # take about 4 minutes.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -210,6 +213,7 @@ jobs:
     name: Experimental GAP kernel inside Cygwin
     runs-on: windows-latest
     needs: labextension-build
+    timeout-minutes: 45
     defaults:
       run:
         shell: C:\cygwin64\bin\bash.exe --login -o igncr '{0}'

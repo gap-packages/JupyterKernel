@@ -396,6 +396,26 @@ function(conf)
                                   , rec() ) );
     end;
 
+    # After a failed cell, abort the execute_requests already queued, so
+    # "Run All" stops at the first error. Other requests are handled.
+    kernel.AbortQueuedExecutes := function()
+        local msg, reply;
+        while ZmqPoll([kernel!.Shell], [], 0) <> [] do
+            msg := JupyterMsgRecv(kernel, kernel!.Shell);
+            if msg <> fail and msg.header.msg_type = "execute_request" then
+                kernel!.CurrentMsg := msg.header;
+                kernel!.SignalBusy();
+                reply := JupyterMsg(kernel, "execute_reply", msg.header,
+                                    rec(status := "aborted"), rec());
+                reply.ids := msg.ids;
+                JupyterMsgSend(kernel, kernel!.Shell, reply);
+                kernel!.SignalIdle();
+            elif msg <> fail then
+                kernel!.HandleShellMsg(msg);
+            fi;
+        od;
+    end;
+
     kernel.HandleShellMsg := function(msg)
         local t, reply;
         kernel!.CurrentMsg := msg.header;
@@ -414,6 +434,12 @@ function(conf)
             fi;
             kernel!.SignalIdle();
             JupyterLog("    HandleShellMsg: SignalIdle done\n");
+            if t = "execute_request" and reply.content.status = "error"
+               and not msg.content.silent
+               and not (IsBound(msg.content.stop_on_error)
+                        and msg.content.stop_on_error = false) then
+                kernel!.AbortQueuedExecutes();
+            fi;
             return true;
         else
             Print("unhandled shell message type: ", t, "\n");

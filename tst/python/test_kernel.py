@@ -446,6 +446,33 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual(self._stream_and_results('Print("next\\n");'),
                          ["next\n"])
 
+    def _queue_and_reply_statuses(self, cells, **execute_kwargs):
+        self.flush_channels()
+        ids = [self.kc.execute(c, **execute_kwargs) for c in cells]
+        statuses = {}
+        deadline = time.time() + 30
+        while len(statuses) < len(ids) and time.time() < deadline:
+            try:
+                reply = self.kc.get_shell_msg(timeout=2)
+            except Empty:
+                continue
+            if reply["parent_header"].get("msg_id") in ids:
+                statuses[reply["parent_header"]["msg_id"]] = reply["content"]["status"]
+        return [statuses.get(i) for i in ids]
+
+    def test_error_aborts_queued_cells(self):
+        """Run All must stop at the first failing cell."""
+        self.assertEqual(
+            self._queue_and_reply_statuses(["1/0;", "aborted_marker := 1;"]),
+            ["error", "aborted"])
+        self.assertEqual(
+            self._queue_and_reply_statuses(["1/0;", "kept_marker := 1;"],
+                                           stop_on_error=False),
+            ["error", "ok"])
+        out = self._stream_and_results(
+            'IsBound(aborted_marker); IsBound(kept_marker);')
+        self.assertEqual(out, ["false", "true"])
+
     def test_results_in_statement_order(self):
         self.assertEqual(
             self._stream_and_results('Print("a\\n"); 1; Print("b"); 2; 3;; 4;'),

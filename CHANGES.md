@@ -54,8 +54,10 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
 
 - Notebook-7 / JupyterLab-4 liveness probe (`kernel_info_request` on
   Control) is now answered.
-- Output streams are flushed before the `execute_reply` so trailing
-  output isn't dropped or reordered.
+- Output and results arrive in statement order, and a line without a
+  trailing newline stays in its own cell.
+- A failing cell aborts the cells already queued behind it
+  (`stop_on_error`), so "Run All" stops at the first error.
 - Error replies include `ename`, `evalue`, and `traceback` per the
   spec; `1/0;` no longer drops the message client-side.
 - Make `JupyterSplashTikZ` accept code that already contains a
@@ -78,6 +80,10 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
 - **HPC-GAP.** Not supported (issue #108).
 - **Tight C-level loops** are not interruptible by SIGINT until they
   return to the GAP interpreter.
+- **Errors do not stop a cell.** After an error or interrupt, the
+  remaining statements of the cell still run, and the error is reported
+  after their output. Stopping needs support in GAP's
+  `READ_ALL_COMMANDS`.
 
 ## 1.5.1 (2024-07-07)
 

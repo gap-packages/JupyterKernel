@@ -66,10 +66,8 @@ __pycache__/
 
 # JupyterLab labextension build artefacts.
 /node_modules/
-/gap_jupyter_kernel/labextension/
 *.tsbuildinfo
 .eslintcache
 .stylelintcache
 *.tgz
 yarn.lock
-package-lock.json

@@ -9,8 +9,8 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
 ### Breaking
 
 - **Install procedure has changed.** `pip install .` now installs both
-  the kernel spec and the JupyterLab extension via a `pyproject.toml`
-  / `hatch_jupyter_builder` build pipeline. The old
+  the kernel spec and the JupyterLab extension via `pyproject.toml`,
+  without needing Node.js or npm. The old
   `bin/jupyter-kernel-gap` shell script, the `etc/gap-mode/` nbextension,
   and `setup.py` are gone.
 - **Cross-platform launcher.** The kernel is now started by a Python
@@ -31,7 +31,7 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
 - **JupyterLab extension** for GAP syntax highlighting, packaged as a
   prebuilt labextension (`jupyterlab-gap-mode`). End users get
   highlighting automatically with `pip install`; only contributors
-  need Node.
+  changing the extension need Node.js.
 - **End-to-end protocol tests** via `jupyter_kernel_test` in
   `tst/python/`, exercised in CI on Linux + macOS.
 - **CI on Linux, macOS, and Windows.** Linux and macOS run the supported

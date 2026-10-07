@@ -144,9 +144,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      # No Node.js here: the wheel must build from the committed labextension.
       - name: 'Build the wheel'
         run: |
           pip install build
@@ -179,6 +177,29 @@ jobs:
         with:
           name: gap-jupyter-wheel
           path: dist/*.whl
+
+  # The built labextension is committed so that installing needs no Node.js.
+  # Rebuild it from src/ and fail if the committed copy is stale.
+  labextension-up-to-date:
+    name: committed labextension matches src
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 'Rebuild the labextension'
+        run: |
+          pip install 'jupyterlab>=4.5,<4.6'
+          npm ci
+          npm run build:prod
+      - name: 'Compare with the committed copy'
+        run: |
+          git status --porcelain gap_jupyter_kernel/labextension
+          test -z "$(git status --porcelain gap_jupyter_kernel/labextension)"
 
   # Experimental Windows support. GAP's Windows distribution is entirely
   # Cygwin-based, so keep the Python client and GAP in that same environment.

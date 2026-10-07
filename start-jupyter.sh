@@ -29,13 +29,11 @@ if [ ! -x "$VENV/bin/jupyter" ] || [ "$(cat "$SENTINEL" 2>/dev/null || true)" !=
     python3 -m venv "$VENV"
     "$VENV/bin/pip" install --upgrade pip
 
-    echo "==> Installing gap-jupyter[server] — this needs Node.js (>= 18)"
-    echo "    and downloads ~200MB on first run"
+    echo "==> Installing gap-jupyter[server] — this downloads ~200MB on first run"
     if ! "$VENV/bin/pip" install "$HERE[server]"; then
         echo
         echo "Install failed. Common causes:"
-        echo "  - Node.js (>= 18) not installed; the labextension build needs it."
-        echo "  - No network, or PyPI / npm registry unreachable."
+        echo "  - No network, or PyPI unreachable."
         echo "  - Python < 3.8."
         echo "Re-read the pip output above for the specific reason."
         exit 1

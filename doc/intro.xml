@@ -45,9 +45,7 @@ or registering for your user only
 </Log>
 
 This installs the Python launcher, the <C>gap-4</C> kernel specification, and
-the <C>jupyterlab-gap-mode</C> syntax-highlighting extension. End users who
-install a wheel do not need Node.js; building from a source checkout requires
-Node.js 18 or later.
+the <C>jupyterlab-gap-mode</C> syntax-highlighting extension.
 
 If &GAP; is not in your <C>PATH</C>, set the environment variable
 <C>JUPYTER_GAP_EXECUTABLE</C> to the absolute path of the &GAP; executable.

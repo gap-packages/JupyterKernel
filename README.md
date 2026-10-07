@@ -33,7 +33,7 @@ From the package directory:
 
 That creates a venv under `~/.cache/gap-jupyter/venv`, installs the
 kernel + JupyterLab into it, then opens a JupyterLab session.
-Subsequent runs reuse the venv. Requires Python 3.8+ and Node.js 18+.
+Subsequent runs reuse the venv. Requires Python 3.8+.
 The kernel auto-discovers GAP via `JUPYTER_GAP_EXECUTABLE`, `$PATH`,
 or the conventional `<gap-root>/gap` next to the `pkg/`
 directory — in that order.
@@ -55,11 +55,10 @@ That single command:
 JupyterLab and Notebook 7 discover both at startup; `GAP 4` shows up in
 the kernel selector and GAP cells get highlighted automatically.
 
+No Node.js or npm is needed.
+
 If GAP is not on your `PATH`, set `JUPYTER_GAP_EXECUTABLE` to the absolute
 path of the `gap` binary; the launcher reads it on every start.
-
-Building from source requires Node.js 18+ (only contributors need it; end
-users install from a wheel that already contains the prebuilt JS).
 
 ### Running
 
@@ -107,10 +106,16 @@ The mode tokenises GAP keywords (`function`/`end`, `if`/`fi`, `for`/`od`
 …), comments (`#`-to-end-of-line), strings, character literals, numbers,
 and the standard operators (`:=`, `..`, `->`, `<>`).
 
-Source for the mode lives in `src/`; rebuild with:
+#### Rebuilding the extension (contributors only)
 
-    npm install
-    jupyter labextension build .
+The built extension in `gap_jupyter_kernel/labextension/` is committed, so
+installing needs neither Node.js nor npm. Its source is in `src/` and
+`style/`; after changing either, rebuild with Node.js 18+ and commit the
+result (CI fails if the committed copy is stale):
+
+    pip install 'jupyterlab>=4.5,<4.6'
+    npm ci
+    npm run build:prod
 
 ### Interrupting a running computation
 

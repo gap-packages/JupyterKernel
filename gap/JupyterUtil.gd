@@ -38,3 +38,10 @@ DeclareGlobalFunction("ISO8601Stamp");
 #!   <F>JupyterUtil.gi</F> to silence.
 DeclareGlobalFunction("JupyterLog");
 
+#! @Description
+#!   Writes the concatenation of its arguments, followed by a newline, to
+#!   the standard error of the kernel process, which Jupyter shows in the
+#!   server's terminal. Unlike <C>ERROR_OUTPUT</C> and <C>*errout*</C>,
+#!   this output does not reach the notebook.
+DeclareGlobalFunction("JupyterServerLog");
+

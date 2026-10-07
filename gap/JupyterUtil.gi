@@ -14,6 +14,13 @@ function(arg)
     fi;
 end);
 
+InstallGlobalFunction( JupyterServerLog,
+function(arg)
+    local s;
+    s := Concatenation("JupyterKernel: ", Concatenation(List(arg, String)), "\n");
+    IO_write(2, s, 0, Length(s));
+end);
+
 InstallMethod( JupyterRender, [ IsRecord ],
                r -> Objectify( JupyterRenderableType
                              , rec( data := rec( text\/plain := String(r) )

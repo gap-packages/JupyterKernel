@@ -155,6 +155,21 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
             self.kc.get_iopub_msg(timeout=0.5)
         self.assertTrue(self.km.is_alive())
 
+    def test_unhandled_message_prints_nothing(self):
+        """Unknown message types are logged on the server, not shown
+        in the notebook."""
+        self.flush_channels()
+        self.kc.shell_channel.send(self.kc.session.msg(
+            "comm_msg", content={"comm_id": "x", "data": {}}))
+        self.kc.control_channel.send(self.kc.session.msg("usage_request"))
+        deadline = time.time() + 2
+        while time.time() < deadline:
+            try:
+                msg = self.kc.get_iopub_msg(timeout=0.5)
+            except Empty:
+                continue
+            self.assertNotEqual(msg["msg_type"], "stream", msg["content"])
+
     def test_kernel_info_on_control(self):
         """JupyterLab 4 / jupyter_server sends kernel_info_request on the
         Control channel as a liveness probe. If we don't reply there, Lab

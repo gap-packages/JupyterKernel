@@ -110,7 +110,7 @@ end);
 # Returns fail for a message JupyterMsgDecode rejects.
 InstallGlobalFunction(JupyterMsgRecv,
 function(kernel, sock)
-    local raw, result, note;
+    local raw, result;
     raw := ZmqReceiveList(sock);
     if IsBound(kernel!.ProtocolLog) then
         AppendTo(kernel!.ProtocolLog, raw);
@@ -118,10 +118,7 @@ function(kernel, sock)
     fi;
     result := JupyterMsgDecode(kernel, raw);
     if result = fail then
-        # Write to the server's terminal directly: GAP's own output streams,
-        # *errout* included, are copied to IOPub.
-        note := "JupyterKernel: dropped malformed or wrongly signed message\n";
-        IO_write(2, note, 0, Length(note));
+        JupyterServerLog("dropped malformed or wrongly signed message");
     fi;
     return result;
 end);

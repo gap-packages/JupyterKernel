@@ -442,7 +442,7 @@ function(conf)
             fi;
             return true;
         else
-            Print("unhandled shell message type: ", t, "\n");
+            JupyterServerLog("unhandled shell message type: ", t);
             kernel!.SignalIdle();
             return fail;
         fi;
@@ -471,7 +471,7 @@ function(conf)
             fi;
             return true;
         fi;
-        Print("unhandled control message type: ", t, "\n");
+        JupyterServerLog("unhandled control message type: ", t);
         return fail;
     end;
 

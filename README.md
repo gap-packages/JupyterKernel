@@ -130,16 +130,13 @@ interruptible until they return to the interpreter.
 
 ### Troubleshooting
 
-If the kernel does not start, first check that the package loads in plain
-GAP:
+The kernel reports startup problems in the terminal running Jupyter. To
+check that the package loads in plain GAP:
 
-    gap -c 'LoadPackage("JupyterKernel"); QUIT;'
+    gap -q -c 'Print(LoadPackage("JupyterKernel", ">= 2.0"), "\n"); QUIT;'
 
-If that prints `fail`, follow the diagnostic instructions GAP prints to find
-which dependency is missing. If it prints `true` but Jupyter still cannot
-start the kernel, check that `python -m gap_jupyter_kernel /tmp/dummy.json`
-runs (it will error out parsing the dummy file, but the launcher itself
-should be reachable).
+If that prints `fail`, run `SetInfoLevel(InfoPackageLoading, 4);
+LoadPackage("JupyterKernel");` in GAP to see which dependency is missing.
 
 ## Documentation
 

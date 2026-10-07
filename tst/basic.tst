@@ -53,4 +53,11 @@ gap> v := JUPYTER_InspectValue(Objectify(NewType(NewFamily("UTF8ViewTest"),
 >             IsUTF8ViewTest and IsComponentObjectRep), rec()));;
 gap> v{[Length(v) - 4 .. Length(v)]} = "\316\261..." and Length(v) <= JUPYTER_INSPECT_WIDTH;
 true
+
+# Help links: every GAP root path, not just the last, maps to the website.
+gap> ForAll(GAPInfo.RootPaths, r -> PositionSublist(
+>        HELP_VIEWER_INFO.jupyter_online.show(["Foo", "x",
+>            Concatenation(r, "pkg/foo/doc/chap1.html")])!.data.("text/html"),
+>        "https://docs.gap-system.org/pkg/foo/doc/chap1.html") <> fail);
+true
 gap> STOP_TEST("basic.tst", 1);

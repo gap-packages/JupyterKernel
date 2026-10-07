@@ -80,6 +80,11 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
 - **HPC-GAP.** Not supported (issue #108).
 - **Tight C-level loops** are not interruptible by SIGINT until they
   return to the GAP interpreter.
+- **No heartbeat during a computation.** The kernel is a single GAP
+  process, so the heartbeat and the Control channel are only answered
+  between requests: a `shutdown_request` waits for the running cell, and
+  clients that judge liveness by the heartbeat, such as `jupyter console
+  --existing`, may report a long computation as a dead kernel.
 - **Errors do not stop a cell.** After an error or interrupt, the
   remaining statements of the cell still run, and the error is reported
   after their output. Stopping needs support in GAP's

@@ -217,6 +217,13 @@ function(conf)
             MakeReadOnlyGlobal("ERROR_OUTPUT");
             CloseStream(errBuf);
 
+            # GAP holds an unterminated line until "\c"; without it the line
+            # would open the next cell's output. Flush before sending results
+            # so they follow the output that preceded them.
+            Print("\c");
+            FlushOutputStream(kernel!.StdOut);
+            FlushOutputStream(kernel!.StdErr);
+
             content := rec( status := "ok"
                           , execution_count := kernel!.ExecutionCount
                           , user_expressions := rec() );

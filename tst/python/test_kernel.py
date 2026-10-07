@@ -433,6 +433,26 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["content"]["data"]["text/plain"], "42")
 
+    def _stream_and_results(self, code):
+        content, iopub = self._execute_and_collect(code)
+        self.assertEqual(content["status"], "ok")
+        return [m["content"]["text"] if m["msg_type"] == "stream"
+                else m["content"]["data"]["text/plain"]
+                for m in iopub if m["msg_type"] in ("stream", "execute_result")]
+
+    def test_unterminated_output_stays_in_its_cell(self):
+        self.assertEqual(self._stream_and_results('Print("no newline"); 42;'),
+                         ["no newline", "42"])
+        self.assertEqual(self._stream_and_results('Print("next\\n");'),
+                         ["next\n"])
+
+    def test_result_follows_output_after_flood(self):
+        """Output batched after a flood must still precede the result."""
+        out = self._stream_and_results(
+            'for i in [1..300] do Print(i, "\\n"); od; Print("tail\\n"); 42;')
+        self.assertEqual(out[-1], "42")
+        self.assertTrue(out[-2].endswith("tail\n"))
+
     def test_long_output_stress(self):
         """100000 lines must all arrive, followed by status idle. ZMQ PUB
         drops messages beyond 1000 queued, so one message per line lost

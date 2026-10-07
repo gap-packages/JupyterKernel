@@ -531,6 +531,13 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         content, _ = self._execute_and_collect("?ThisIsNotAGapSymbol")
         self.assertEqual(content["status"], "ok")
 
+    def test_help_line_then_code(self):
+        """Only the first line of a `?` cell is the help topic; the rest
+        runs as code, as in GAP's REPL."""
+        content, _ = self._execute_and_collect("?Group\nhelp_then_code := 5;")
+        self.assertEqual(content["status"], "ok")
+        self.assertEqual(self._stream_and_results("help_then_code;"), ["5"])
+
     def test_stream_batching(self):
         """100 byte-sized prints with no newlines must NOT produce 100
         separate stream messages — GAP and the kernel buffer stdout until a

@@ -139,7 +139,7 @@ function(conf)
         execute_request := function(msg)
             local publ, res, r, rep, str, data, metadata, t, content,
                   errBuf, errText, savedErr, errored, ename, run,
-                  code, helpres, i, silent, storeHistory, sendResult;
+                  code, helpres, i, j, silent, storeHistory, sendResult;
 
             code := msg.content.code;
             silent := msg.content.silent;
@@ -158,10 +158,8 @@ function(conf)
                                           , rec() ) );
             fi;
 
-            # Dispatch leading '?'/'??' to JUPYTER_HELP, bypassing the
-            # READ_ALL_COMMANDS path. GAP's REPL treats `?topic` as a help
-            # query rather than an expression, so users typing it in a
-            # cell expect the same. JUPYTER_HELP itself handles the
+            # As in GAP's REPL, a leading `?topic` line is a help query and
+            # any following lines are code. JUPYTER_HELP itself handles the
             # `??topic` case (substring search) once we hand it the
             # post-`?` text.
             i := 1;
@@ -169,7 +167,11 @@ function(conf)
                 i := i + 1;
             od;
             if i <= Length(code) and code[i] = '?' then
-                helpres := JUPYTER_HELP(code{[i+1..Length(code)]});
+                j := Position(code, '\n', i);
+                if j = fail then
+                    j := Length(code) + 1;
+                fi;
+                helpres := JUPYTER_HELP(code{[i+1..j-1]});
                 if not silent and IsJupyterRenderable(helpres) then
                     metadata := JupyterRenderableMetadata(helpres);
                     data := JupyterRenderableData(helpres);
@@ -181,14 +183,18 @@ function(conf)
                                                              , execution_count := kernel!.ExecutionCount )
                                                         , rec() ) );
                 fi;
+                Print("\c");
                 FlushOutputStream(kernel!.StdOut);
                 FlushOutputStream(kernel!.StdErr);
-                kernel!.Silent := false;
-                return JupyterMsg( kernel, "execute_reply", msg.header,
-                                   rec( status := "ok",
-                                        execution_count := kernel!.ExecutionCount,
-                                        user_expressions := rec() ),
-                                   rec() );
+                code := code{[j+1..Length(code)]};
+                if ForAll(code, c -> c in " \t\n\r") then
+                    kernel!.Silent := false;
+                    return JupyterMsg( kernel, "execute_reply", msg.header,
+                                       rec( status := "ok",
+                                            execution_count := kernel!.ExecutionCount,
+                                            user_expressions := rec() ),
+                                       rec() );
+                fi;
             fi;
 
             str := InputTextString(code);

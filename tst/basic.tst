@@ -40,4 +40,17 @@ gap> List([0 .. 5], cp -> JUPYTER_ByteOffset(code, cp));
 [ 0, 2, 3, 7, 8, 8 ]
 gap> List([0, 2, 3, 7, 8], b -> JUPYTER_CodePointOffset(code, b));
 [ 0, 1, 2, 3, 4 ]
+
+# Inspection values are cut to one line of JUPYTER_INSPECT_WIDTH bytes,
+# never inside a UTF-8 character.
+gap> v := JUPYTER_InspectValue(List([1 .. 1000], i -> i^2));;
+gap> Length(v) = JUPYTER_INSPECT_WIDTH and EndsWith(v, "...");
+true
+gap> IsUTF8ViewTest := NewFilter("IsUTF8ViewTest");;
+gap> InstallMethod(ViewString, [IsUTF8ViewTest],
+>        o -> Concatenation(ListWithIdenticalEntries(80, "\316\261")));
+gap> v := JUPYTER_InspectValue(Objectify(NewType(NewFamily("UTF8ViewTest"),
+>             IsUTF8ViewTest and IsComponentObjectRep), rec()));;
+gap> v{[Length(v) - 4 .. Length(v)]} = "\316\261..." and Length(v) <= JUPYTER_INSPECT_WIDTH;
+true
 gap> STOP_TEST("basic.tst", 1);

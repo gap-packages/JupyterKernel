@@ -1,6 +1,23 @@
 # Object/identifier inspection (Shift-Tab). Identifier extraction is
 # shared with JUPYTER_Complete via JUPYTER_ExtractIdentifier.
 
+# One table cell: an attribute value can be huge, such as AsList of a
+# large group.
+BindGlobal("JUPYTER_INSPECT_WIDTH", 80);
+BindGlobal("JUPYTER_InspectValue",
+function(v)
+    local s, n;
+    s := ReplacedString(ViewString(v), "\n", " ");
+    if Length(s) > JUPYTER_INSPECT_WIDTH then
+        n := JUPYTER_INSPECT_WIDTH - 3;
+        while JUPYTER_IsUTF8Continuation(s[n + 1]) do
+            n := n - 1;
+        od;
+        s := Concatenation(s{[1 .. n]}, "...");
+    fi;
+    return s;
+end);
+
 # Format known properties and attributes of an object as a plain-text table.
 BindGlobal("JUPYTER_FormatKnown",
 function(obj)
@@ -24,7 +41,7 @@ function(obj)
     Append(res, "\n\nAttributes:\n\n");
     Append( res, JoinStringsWithSeparator(
                      List(attrs, x -> STRINGIFY(String(x, -len), ": ",
-                                                ValueGlobal(x)(obj))),
+                                                JUPYTER_InspectValue(ValueGlobal(x)(obj)))),
                      "\n") );
     return res;
 end);

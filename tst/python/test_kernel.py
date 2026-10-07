@@ -182,6 +182,13 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertIn("Group", content["matches"])
         self.assertEqual(code[content["cursor_start"]:content["cursor_end"]], "Gro")
 
+    def test_inspect_reply_is_bounded(self):
+        self._execute_and_collect("insp_G := SymmetricGroup(7);; AsList(insp_G);;")
+        self.kc.inspect("insp_G", 6)
+        content = self.get_non_kernel_info_reply(timeout=30)["content"]
+        self.assertTrue(content["found"])
+        self.assertLess(len(content["data"]["text/plain"]), 10000)
+
     def test_kernel_info_on_control(self):
         """JupyterLab 4 / jupyter_server sends kernel_info_request on the
         Control channel as a liveness probe. If we don't reply there, Lab

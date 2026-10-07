@@ -104,6 +104,11 @@ def main() -> int:
     gap = _find_gap()
     script = _bootstrap_script(sys.argv[1])
     _redirect_stdin_to_devnull()
+    # The kernel copies GAP's stdout to the notebook with OutputLogTo;
+    # the original would echo every cell's output to the server's terminal.
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    os.dup2(devnull, 1)
+    os.close(devnull)
     try:
         os.execvp(gap, [gap, "-q", "-T", "--alwaystrace", "-c", script])
     except OSError as e:

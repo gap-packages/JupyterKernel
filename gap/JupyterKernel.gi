@@ -505,6 +505,9 @@ function(conf)
         MakeReadWriteGlobal("ERROR_OUTPUT");
         ERROR_OUTPUT := kernel!.StdErr;
         MakeReadOnlyGlobal("ERROR_OUTPUT");
+        # The notebook wraps long lines itself; GAP's wrapping would add
+        # a '\' at column 80.
+        SetPrintFormattingStatus("*stdout*", false);
         OutputLogTo(kernel!.StdOut);
     end;
 

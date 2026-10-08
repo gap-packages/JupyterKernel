@@ -137,9 +137,10 @@ function(conf)
         end,
 
         execute_request := function(msg)
-            local publ, res, r, rep, str, data, metadata, t, content,
+            local publ, rep, str, data, metadata, t, content,
                   errBuf, errText, savedErr, errored, ename, run,
-                  code, helpres, i, j, silent, storeHistory, sendResult;
+                  code, helpres, i, j, silent, storeHistory, sendResult,
+                  failed;
 
             code := msg.content.code;
             silent := msg.content.silent;
@@ -212,12 +213,6 @@ function(conf)
             ERROR_OUTPUT := errBuf;
             MakeReadOnlyGlobal("ERROR_OUTPUT");
 
-            # Wrap the eval in CALL_WITH_CATCH so a SIGINT mid-execution
-            # (sent by Jupyter when the user clicks the interrupt button —
-            # see kernel.json's interrupt_mode: signal) unwinds cleanly to
-            # an execute_reply with status="error" rather than killing the
-            # kernel. With -T, GAP's SIGINT handler raises a normal "user
-            # interrupt at ..." error that CALL_WITH_CATCH captures.
             # Called for each statement with a value not ending in ';;'.
             # GAP holds an unterminated line until "\c"; flushing first keeps
             # results in statement order and partial lines in this cell.
@@ -236,9 +231,49 @@ function(conf)
                 fi;
             end;
 
+            # Wrap the eval in CALL_WITH_CATCH so a SIGINT mid-execution
+            # (sent by Jupyter when the user clicks the interrupt button —
+            # see kernel.json's interrupt_mode: signal) unwinds cleanly to
+            # an execute_reply with status="error" rather than killing the
+            # kernel. With -T, GAP's SIGINT handler raises a normal "user
+            # interrupt at ..." error that CALL_WITH_CATCH captures.
             t := NanosecondsSinceEpoch();
-            run := CALL_WITH_CATCH(
-                READ_ALL_COMMANDS, [str, false, false, sendResult]);
+            if IsBound(READ_EVAL_COMMANDS) then
+                # Stops at the first failing statement, whose error text
+                # comes with it.
+                failed := fail;
+                run := CALL_WITH_CATCH(READ_EVAL_COMMANDS,
+                    [ str, rec(captureErrors := true), function(r)
+                        if r.status = "error" then
+                            failed := r.errors;
+                            return false;
+                        fi;
+                        if not silent and r.errors <> "" then
+                            Print("\c");
+                            FlushOutputStream(kernel!.StdOut);
+                            JupyterMsgSend(kernel, kernel!.IOPub,
+                                JupyterMsg(kernel, "stream", msg.header,
+                                    rec(name := "stderr", text := r.errors),
+                                    rec()));
+                        fi;
+                        if r.status = "ok" and IsBound(r.value)
+                           and not r.dualSemicolon then
+                            sendResult(r.value);
+                        fi;
+                        return r.status = "ok";
+                    end ]);
+                errored := run[1] = false or failed <> fail;
+                if failed <> fail then
+                    errText := Concatenation(failed, errText);
+                fi;
+            else
+                run := CALL_WITH_CATCH(
+                    READ_ALL_COMMANDS, [str, false, false, sendResult]);
+                # A failed run means READ_ALL_COMMANDS itself bailed out,
+                # typically on a SIGINT between statements.
+                errored := run[1] = false
+                           or ForAny(run[2], r -> r[1] = false);
+            fi;
             if IsBound(UPDATE_STAT) then
                 UPDATE_STAT( "time", QuoInt((NanosecondsSinceEpoch() - t), 1000000) );
             fi;
@@ -255,28 +290,10 @@ function(conf)
             content := rec( status := "ok"
                           , execution_count := kernel!.ExecutionCount
                           , user_expressions := rec() );
-            errored := false;
             ename := "GAPError";
-            if run[1] = false then
-                # READ_ALL_COMMANDS itself bailed out — typically because a
-                # SIGINT fired between statements before the per-statement
-                # catch could be set up. errText holds GAP's error message.
-                errored := true;
-                if PositionSublist(errText, "user interrupt") <> fail then
-                    ename := "KeyboardInterrupt";
-                fi;
-                res := [];
-            else
-                res := run[2];
+            if errored and PositionSublist(errText, "user interrupt") <> fail then
+                ename := "KeyboardInterrupt";
             fi;
-            for r in res do
-                if r[1] = false then
-                    errored := true;
-                    if PositionSublist(errText, "user interrupt") <> fail then
-                        ename := "KeyboardInterrupt";
-                    fi;
-                fi;
-            od;
 
             if errored then
                 if not silent then

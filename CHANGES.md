@@ -85,10 +85,10 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   between requests: a `shutdown_request` waits for the running cell, and
   clients that judge liveness by the heartbeat, such as `jupyter console
   --existing`, may report a long computation as a dead kernel.
-- **Errors do not stop a cell.** After an error or interrupt, the
-  remaining statements of the cell still run, and the error is reported
-  after their output. Stopping needs support in GAP's
-  `READ_ALL_COMMANDS`.
+- **Errors do not stop a cell** on GAP versions without
+  `READ_EVAL_COMMANDS`: after an error or interrupt, the remaining
+  statements of the cell still run, and the error is reported after their
+  output.
 
 ## 1.5.1 (2024-07-07)
 

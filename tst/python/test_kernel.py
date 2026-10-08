@@ -507,6 +507,17 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
             'IsBound(aborted_marker); IsBound(kept_marker);')
         self.assertEqual(out, ["false", "true"])
 
+    def test_error_stops_cell(self):
+        """With READ_EVAL_COMMANDS, a cell stops at its first error."""
+        if self._stream_and_results("IsBound(READ_EVAL_COMMANDS);") != ["true"]:
+            self.skipTest("this GAP has no READ_EVAL_COMMANDS")
+        content, iopub = self._execute_and_collect(
+            'x := 1/0; Print("still runs\\n"); stop_marker := 1;')
+        self.assertEqual(content["status"], "error")
+        self.assertIn("must not be zero", content["evalue"])
+        self.assertEqual([m for m in iopub if m["msg_type"] == "stream"], [])
+        self.assertEqual(self._stream_and_results("IsBound(stop_marker);"), ["false"])
+
     def test_results_in_statement_order(self):
         self.assertEqual(
             self._stream_and_results('Print("a\\n"); 1; Print("b"); 2; 3;; 4;'),

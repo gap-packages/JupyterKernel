@@ -28,3 +28,18 @@ DeclareGlobalFunction("JUPYTER_Inspect");
 #!   Don't trust this function.
 DeclareGlobalFunction("ISO8601Stamp");
 
+#! @Description
+#!   Diagnostic trace of the messages the kernel receives and sends.
+#!   When <C>JUPYTER_TRACE.enabled</C> is <K>true</K>, appends its
+#!   arguments to the file <C>JUPYTER_TRACE.file</C>, which must be set
+#!   first. Arguments are evaluated even when tracing is off, so callers
+#!   should pass only cheap ones.
+DeclareGlobalFunction("JupyterLog");
+
+#! @Description
+#!   Writes the concatenation of its arguments, followed by a newline, to
+#!   the standard error of the kernel process, which Jupyter shows in the
+#!   server's terminal. Unlike <C>ERROR_OUTPUT</C> and <C>*errout*</C>,
+#!   this output does not reach the notebook.
+DeclareGlobalFunction("JupyterServerLog");
+

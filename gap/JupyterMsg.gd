@@ -13,4 +13,6 @@ DeclareGlobalFunction("JupyterMsgRecv");
 DeclareGlobalFunction("JupyterMsgDecode");
 DeclareGlobalFunction("JupyterMsgEncode");
 
+DeclareGlobalFunction("JUPYTER_ComputeHMAC");
+
 

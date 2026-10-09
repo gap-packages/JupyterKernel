@@ -10,8 +10,8 @@ SetPackageInfo( rec(
 
 PackageName := "JupyterKernel",
 Subtitle := "Jupyter kernel written in GAP",
-Version := "1.5.1",
-Date := "07/07/2024", # dd/mm/yyyy format
+Version := "2.0.0",
+Date := "08/05/2026", # dd/mm/yyyy format
 License := "BSD-3-Clause",
 
 Persons := [
@@ -35,6 +35,16 @@ Persons := [
     WWWHome      := "https://github.com/mcmartins",
     Institution  := "Universidade Aberta",
     Place        := "Lisbon, PT"
+  ),
+  rec(
+    LastName     := "Jefferson",
+    FirstNames   := "Chris",
+    IsAuthor     := true,
+    IsMaintainer := false,
+    Email        := "chris@bubblescope.net",
+    WWWHome      := "https://heather.cafe/",
+    Institution  := "University of St Andrews",
+    Place        := "St Andrews",
   ),
   rec(
     LastName      := "Konovalov",
@@ -141,7 +151,7 @@ PackageDoc := rec(
 ),
 
 Dependencies := rec(
-  GAP := ">= 4.10",
+  GAP := ">= 4.11",
   NeededOtherPackages := [ [ "GAPDoc", ">= 1.6.1" ]
                          , [ "io",     ">= 4.5.4" ]
                          , [ "json",   ">= 2.0.0" ]
@@ -160,5 +170,4 @@ TestFile := "tst/testinstall.g",
 Keywords := [ "Jupyter", "User Interface" ],
 
 ));
-
 

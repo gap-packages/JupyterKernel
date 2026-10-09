@@ -1,0 +1,5 @@
+{
+    "packageManager": "python",
+    "packageName": "gap-jupyter",
+    "uninstallInstructions": "Use `pip uninstall gap-jupyter` to remove the package and the bundled labextension."
+}

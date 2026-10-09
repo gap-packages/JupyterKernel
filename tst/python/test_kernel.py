@@ -518,6 +518,22 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual([m for m in iopub if m["msg_type"] == "stream"], [])
         self.assertEqual(self._stream_and_results("IsBound(stop_marker);"), ["false"])
 
+    def test_last(self):
+        """last, last2 and last3 follow GAP's REPL, also across cells."""
+        self.assertEqual(self._stream_and_results("5;"), ["5"])
+        self.assertEqual(self._stream_and_results("last;"), ["5"])
+        self.assertEqual(self._stream_and_results("7; 8; [last, last2, last3];"),
+                         ["7", "8", "[ 8, 7, 5 ]"])
+        content, _ = self._execute_and_collect("1/0;")
+        self.assertEqual(content["status"], "error")
+        self.assertEqual(self._stream_and_results("last;"), ["[ 8, 7, 5 ]"])
+
+    def test_last_after_dual_semicolon(self):
+        """As in GAP's REPL, ';;' hides a value but still sets last."""
+        if self._stream_and_results("IsBound(READ_EVAL_COMMANDS);") != ["true"]:
+            self.skipTest("this GAP has no READ_EVAL_COMMANDS")
+        self.assertEqual(self._stream_and_results("x_last := 9;; last;"), ["9"])
+
     def test_results_in_statement_order(self):
         self.assertEqual(
             self._stream_and_results('Print("a\\n"); 1; Print("b"); 2; 3;; 4;'),

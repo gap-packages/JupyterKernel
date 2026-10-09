@@ -32,6 +32,13 @@ end);
 # otherwise "complete". We do not try to distinguish syntactically invalid
 # input from incomplete input — the evaluator will report syntax errors
 # more precisely than the parser would.
+# As GAP's REPL does after each statement with a value, ';;' included.
+BindGlobal("JUPYTER_UpdateLast", function(val)
+    UPDATE_STAT("last3", last2);
+    UPDATE_STAT("last2", last);
+    UPDATE_STAT("last", val);
+end);
+
 BindGlobal("JUPYTER_IS_IDENT_CHAR", function(c)
     return (c >= 'a' and c <= 'z')
         or (c >= 'A' and c <= 'Z')
@@ -256,9 +263,11 @@ function(conf)
                                     rec(name := "stderr", text := r.errors),
                                     rec()));
                         fi;
-                        if r.status = "ok" and IsBound(r.value)
-                           and not r.dualSemicolon then
-                            sendResult(r.value);
+                        if r.status = "ok" and IsBound(r.value) then
+                            JUPYTER_UpdateLast(r.value);
+                            if not r.dualSemicolon then
+                                sendResult(r.value);
+                            fi;
                         fi;
                         return r.status = "ok";
                     end ]);
@@ -267,16 +276,19 @@ function(conf)
                     errText := Concatenation(failed, errText);
                 fi;
             else
-                run := CALL_WITH_CATCH(
-                    READ_ALL_COMMANDS, [str, false, false, sendResult]);
+                # Only displayed values reach the callback, so values of
+                # statements ending in ';;' do not update last here.
+                run := CALL_WITH_CATCH(READ_ALL_COMMANDS, [str, false, false,
+                    function(val)
+                        JUPYTER_UpdateLast(val);
+                        sendResult(val);
+                    end]);
                 # A failed run means READ_ALL_COMMANDS itself bailed out,
                 # typically on a SIGINT between statements.
                 errored := run[1] = false
                            or ForAny(run[2], r -> r[1] = false);
             fi;
-            if IsBound(UPDATE_STAT) then
-                UPDATE_STAT( "time", QuoInt((NanosecondsSinceEpoch() - t), 1000000) );
-            fi;
+            UPDATE_STAT( "time", QuoInt((NanosecondsSinceEpoch() - t), 1000000) );
 
             MakeReadWriteGlobal("ERROR_OUTPUT");
             ERROR_OUTPUT := savedErr;

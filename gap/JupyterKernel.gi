@@ -260,7 +260,7 @@ function(conf)
 
         t := msg.header.msg_type;
         if IsBound(kernel!.MsgHandlers.(t)) then
-            if t in [ "interrupt_request", "shutdown_request" ] then 
+            if t in [ "interrupt_request", "kernel_info_request", "shutdown_request" ] then
                 JupyterMsgSend(kernel, kernel!.Control, kernel!.MsgHandlers.(t)(msg) );
             fi;
             return true;

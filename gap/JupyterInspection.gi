@@ -99,7 +99,6 @@ function(str, pos)
 
     return rec( status := "ok",
                 found := found,
-                data := rec( text\/html := "",
-                             text\/plain := textplain ),
+                data := rec( text\/plain := textplain ),
                 metadata := rec() );
 end);

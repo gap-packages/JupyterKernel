@@ -56,8 +56,8 @@ true
 
 # Help links: every GAP root path, not just the last, maps to the website.
 gap> ForAll(GAPInfo.RootPaths, r -> PositionSublist(
->        HELP_VIEWER_INFO.jupyter_online.show(["Foo", "x",
->            Concatenation(r, "pkg/foo/doc/chap1.html")])!.data.("text/html"),
+>        HELP_VIEWER_INFO.jupyter_online.render(
+>            Concatenation(r, "pkg/foo/doc/chap1.html"))!.data.("text/html"),
 >        "https://docs.gap-system.org/pkg/foo/doc/chap1.html") <> fail);
 true
 gap> STOP_TEST("basic.tst", 1);

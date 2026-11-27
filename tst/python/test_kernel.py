@@ -700,6 +700,66 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual(content["status"], "ok")
         self.assertEqual(self._stream_and_results("help_then_code;"), ["5"])
 
+    def test_exec_output_is_captured_in_statement_order(self):
+        self.assertEqual(
+            self._stream_and_results('Print("before"); Exec("printf", "child"); 7;'),
+            ["before", "child", "7"])
+        content, output = self._execute_and_collect('Exec("echo hidden");', silent=True)
+        self.assertEqual(content["status"], "ok")
+        self.assertFalse(any(m["msg_type"] == "stream" for m in output))
+
+    def test_process_output_is_captured_without_changing_explicit_files(self):
+        content, output = self._execute_and_collect(
+            'Process(DirectoryCurrent(), PathSystemProgram("cat"), '
+            'InputTextString("process output\\n"), OutputTextUser(), []);')
+        self.assertEqual(content["status"], "ok")
+        self.assertIn("process output\n", "".join(
+            m["content"]["text"] for m in output if m["msg_type"] == "stream"))
+        self.assertEqual(self._stream_and_results(
+            'fn := Filename(DirectoryTemporary(), "process-output");; '
+            'out := OutputTextFile(fn, false);; '
+            'Process(DirectoryCurrent(), PathSystemProgram("echo"), '
+            'InputTextNone(), out, ["file output"]);; CloseStream(out); '
+            's := InputTextFile(fn);; Print(ReadAll(s)); CloseStream(s);'),
+            ["file output\n"])
+
+    def test_exec_large_output_arrives_with_idle(self):
+        content, output = self._execute_and_collect(
+            'Exec("i=0; while [ $i -lt 5000 ]; do echo line; i=$((i+1)); done");')
+        self.assertEqual(content["status"], "ok")
+        text = "".join(m["content"]["text"] for m in output if m["msg_type"] == "stream")
+        self.assertEqual(text, "line\n" * 5000)
+
+    def test_help_pager_and_navigation_are_visible(self):
+        content, output = self._execute_and_collect("?books")
+        self.assertEqual(content["status"], "ok")
+        text = "".join(m["content"]["text"] for m in output if m["msg_type"] == "stream")
+        self.assertIn("available help books", text)
+        content, output = self._execute_and_collect("?GAPDoc Example: Title page")
+        self.assertEqual(content["status"], "ok")
+        self.assertTrue(any(m["msg_type"] == "display_data" for m in output))
+        for code in ["?>", "?<", "?>>", "?<<", "?GAPDoc Example:chapters", "?GAPDoc Example:sections"]:
+            content, output = self._execute_and_collect(code)
+            self.assertEqual(content["status"], "ok", code)
+            self.assertTrue(any(m["msg_type"] in ("stream", "display_data") for m in output), code)
+
+    def test_numbered_help_matches_are_visible(self):
+        content, _ = self._execute_and_collect("??homomorphism")
+        self.assertEqual(content["status"], "ok")
+        content, output = self._execute_and_collect("?2")
+        self.assertEqual(content["status"], "ok")
+        self.assertTrue(any(m["msg_type"] == "display_data" for m in output))
+
+    def test_help_inside_cell_does_not_replace_last(self):
+        if self._stream_and_results("IsBound(READ_EVAL_COMMANDS);") != ["true"]:
+            self.skipTest("this GAP has no READ_EVAL_COMMANDS")
+        content, output = self._execute_and_collect("73;\n?GAPDoc Example: Title page\nlast;")
+        self.assertEqual(content["status"], "ok")
+        results = [m["content"]["data"]["text/plain"] for m in output
+                   if m["msg_type"] == "execute_result"]
+        self.assertEqual(results, ["73", "73"])
+        self.assertTrue(any(m["msg_type"] == "display_data" for m in output))
+
     def test_stream_batching(self):
         """100 byte-sized prints with no newlines must NOT produce 100
         separate stream messages — GAP and the kernel buffer stdout until a

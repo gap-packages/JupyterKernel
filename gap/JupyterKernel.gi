@@ -10,6 +10,37 @@
 _KERNEL := "";
 
 
+BindGlobal("JUPYTER_ProcessUserOutput", function(dir, program, input, output, args)
+    local result;
+    if not IsGAPJupyterKernel(_KERNEL) or not IsBound(_KERNEL!.StdOut)
+       or IsClosedStream(output) or output![2] <> "*stdout*" then
+        TryNextMethod();
+    fi;
+    Print("\c");
+    FlushOutputStream(_KERNEL!.StdOut);
+    result := Process(dir, program, input, _KERNEL!.StdOut, args);
+    FlushOutputStream(_KERNEL!.StdOut);
+    return result;
+end);
+
+# Let Process perform its normal stream capture for subprocesses directed at
+# the notebook's stdout. Plain GAP sessions and explicit output files use the
+# original methods.
+InstallMethod(Process, "stdout in a Jupyter kernel",
+    [IsDirectory and IsDirectoryRep, IsString, IsInputTextStream,
+     IsOutputTextStream and IsOutputTextFileRep, IsList],
+    1, JUPYTER_ProcessUserOutput);
+InstallMethod(Process, "stdout in a Jupyter kernel",
+    [IsDirectory and IsDirectoryRep, IsString,
+     IsInputTextStream and IsInputTextFileRep,
+     IsOutputTextStream and IsOutputTextFileRep, IsList],
+    1, JUPYTER_ProcessUserOutput);
+InstallMethod(Process, "stdout in a Jupyter kernel",
+    [IsDirectory and IsDirectoryRep, IsString, IsInputTextNone,
+     IsOutputTextStream and IsOutputTextFileRep, IsList],
+    1, JUPYTER_ProcessUserOutput);
+
+
 InstallGlobalFunction( JUPYTER_LogProtocol,
 function(filename)
     _KERNEL!.ProtocolLog := OutputTextFile(filename, false);
@@ -278,7 +309,8 @@ function(conf)
                                     rec(name := "stderr", text := r.errors),
                                     rec()));
                         fi;
-                        if r.status = "ok" and IsBound(r.value) then
+                        if r.status = "ok" and IsBound(r.value)
+                           and r.symbol <> GAPInfo.KernelInfo.ScannerSymbols.S_HELP then
                             JUPYTER_UpdateLast(r.value);
                             if not r.dualSemicolon then
                                 sendResult(r.value);
@@ -735,9 +767,10 @@ InstallMethod( Run
                  # function — instead execute_request intercepts a
                  # leading `?` and dispatches to JUPYTER_HELP directly.
                  SetUserPreference("browse", "SelectHelpMatches", false);
-                 SetUserPreference("Pager", "tail");
-                 SetUserPreference("PagerOptions", "");
-                 SetHelpViewer("jupyter_online");
+                 MakeReadWriteGlobal("Pager");
+                 Pager := JUPYTER_Pager;
+                 MakeReadOnlyGlobal("Pager");
+                 SetHelpViewer("jupyter_online", "jupyter_text");
                  x!.BindSockets();
                  x!.Loop();
                  QUIT_GAP(0);

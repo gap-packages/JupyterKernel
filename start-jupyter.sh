@@ -45,13 +45,16 @@ if [ ! -x "$VENV/bin/jupyter" ] || [ "$(cat "$SENTINEL" 2>/dev/null || true)" !=
     echo "$PKGVER" > "$SENTINEL"
 fi
 
-# Sanity-check that the kernel can find GAP. We don't want jupyter
-# to come up only for the kernel to die on first cell execution.
+# A wheel cannot find GAP relative to this source directory, so pass the
+# source-layout fallback through to the installed launcher.
 if [ -z "${JUPYTER_GAP_EXECUTABLE:-}" ] \
-   && ! command -v gap >/dev/null 2>&1 \
-   && [ ! -x "$HERE/../../gap" ]; then
-    echo "Warning: no GAP binary found. Set JUPYTER_GAP_EXECUTABLE to" >&2
-    echo "the gap binary, or put 'gap' on PATH, before opening a notebook." >&2
+   && ! command -v gap >/dev/null 2>&1; then
+    if [ -x "$HERE/../../gap" ]; then
+        export JUPYTER_GAP_EXECUTABLE="$(cd "$HERE/../.." && pwd)/gap"
+    else
+        echo "Warning: no GAP binary found. Set JUPYTER_GAP_EXECUTABLE to" >&2
+        echo "the gap binary, or put 'gap' on PATH, before opening a notebook." >&2
+    fi
 fi
 
 exec "$VENV/bin/jupyter" lab "$@"

@@ -47,7 +47,19 @@ BindGlobal("JUPYTER_IS_IDENT_CHAR", function(c)
 end);
 
 BindGlobal("JUPYTER_IsCompleteCode", function(code)
-    local i, n, c, depth, j, ident;
+    local i, n, c, depth, j, ident, result, stream;
+
+    if IsBoundGlobal("CHECK_ALL_COMMANDS") then
+        stream := InputTextString(code);
+        result := ValueGlobal("CHECK_ALL_COMMANDS")(stream);
+        CloseStream(stream);
+        if result.status = "error" then
+            return rec(status := "invalid");
+        elif result.status = "incomplete" then
+            return rec(status := "incomplete", indent := "");
+        fi;
+        return rec(status := "complete");
+    fi;
 
     depth := 0;
     i := 1;
@@ -249,10 +261,13 @@ function(conf)
                 # Stops at the first failing statement, whose error text
                 # comes with it.
                 failed := fail;
-                run := CALL_WITH_CATCH(READ_EVAL_COMMANDS,
+                run := CALL_WITH_CATCH(ValueGlobal("READ_EVAL_COMMANDS"),
                     [ str, rec(captureErrors := true), function(r)
                         if r.status = "error" then
                             failed := r.errors;
+                            return false;
+                        elif r.status = "return" then
+                            failed := "'return' must not be used at the top level of a cell\n";
                             return false;
                         fi;
                         if not silent and r.errors <> "" then
@@ -438,6 +453,92 @@ function(conf)
                                   , rec() ) );
     end;
 
+    kernel.ErrorReply := function(msg, ename, text)
+        local t, content;
+        t := msg.header.msg_type;
+        if Length(t) < 8 or t{[Length(t)-7..Length(t)]} <> "_request" then
+            return fail;
+        fi;
+        content := rec(status := "error", ename := ename,
+                       evalue := text, traceback := [text]);
+        if t = "execute_request" then
+            content.execution_count := kernel!.ExecutionCount;
+        elif t = "complete_request" then
+            content.matches := [];
+            content.cursor_start := msg.content.cursor_pos;
+            content.cursor_end := msg.content.cursor_pos;
+            content.metadata := rec();
+        elif t = "inspect_request" then
+            content.found := false;
+            content.data := rec();
+            content.metadata := rec();
+        elif t = "debug_request" then
+            content := rec(seq := 0, type := "response", success := false,
+                           message := text);
+            if IsBound(msg.content.seq) then
+                content.request_seq := msg.content.seq;
+            fi;
+            if IsBound(msg.content.command) then
+                content.command := msg.content.command;
+            fi;
+        fi;
+        return JupyterMsg(kernel,
+            Concatenation(t{[1..Length(t)-8]}, "_reply"),
+            msg.header, content, rec());
+    end;
+
+    # A handler failure must still finish the request. This catch also covers
+    # help queries, completion and inspection, which are outside cell evaluation.
+    kernel.CallHandler := function(msg)
+        local t, text, stream, savedErr, run, silent, ename, content;
+        t := msg.header.msg_type;
+        if not IsBound(kernel!.MsgHandlers.(t)) then
+            JupyterServerLog("unhandled message type: ", t);
+            return kernel!.ErrorReply(msg, "NotImplementedError",
+                                     Concatenation("unsupported message type: ", t));
+        fi;
+        silent := t = "execute_request" and IsBound(msg.content.silent)
+                  and msg.content.silent;
+        text := "";
+        stream := OutputTextString(text, true);
+        SetPrintFormattingStatus(stream, false);
+        savedErr := ERROR_OUTPUT;
+        MakeReadWriteGlobal("ERROR_OUTPUT");
+        ERROR_OUTPUT := stream;
+        MakeReadOnlyGlobal("ERROR_OUTPUT");
+        run := CALL_WITH_CATCH(kernel!.MsgHandlers.(t), [msg]);
+        MakeReadWriteGlobal("ERROR_OUTPUT");
+        ERROR_OUTPUT := savedErr;
+        MakeReadOnlyGlobal("ERROR_OUTPUT");
+        CloseStream(stream);
+        Print("\c");
+        FlushOutputStream(kernel!.StdOut);
+        FlushOutputStream(kernel!.StdErr);
+        kernel!.Silent := false;
+        if run[1] then
+            if not silent and text <> "" then
+                WriteAll(kernel!.StdErr, text);
+                FlushOutputStream(kernel!.StdErr);
+            fi;
+            return run[2];
+        fi;
+        if text = "" then
+            text := "kernel request failed";
+        fi;
+        ename := "GAPError";
+        if PositionSublist(text, "user interrupt") <> fail then
+            ename := "KeyboardInterrupt";
+        fi;
+        if t = "execute_request" and not silent then
+            content := rec(ename := ename, evalue := text, traceback := [text]);
+            JupyterMsgSend(kernel, kernel!.IOPub,
+                JupyterMsg(kernel, "error", msg.header, content, rec()));
+        else
+            JupyterServerLog(text);
+        fi;
+        return kernel!.ErrorReply(msg, ename, text);
+    end;
+
     # After a failed cell, abort the execute_requests already queued, so
     # "Run All" stops at the first error. Other requests are handled.
     kernel.AbortQueuedExecutes := function()
@@ -448,7 +549,9 @@ function(conf)
                 kernel!.CurrentMsg := msg.header;
                 kernel!.SignalBusy();
                 reply := JupyterMsg(kernel, "execute_reply", msg.header,
-                                    rec(status := "aborted"), rec());
+                                    rec(status := "aborted",
+                                        execution_count := kernel!.ExecutionCount),
+                                    rec());
                 reply.ids := msg.ids;
                 JupyterMsgSend(kernel, kernel!.Shell, reply);
                 kernel!.SignalIdle();
@@ -464,8 +567,8 @@ function(conf)
         JupyterLog("recv shell ", msg.header.msg_type, "\n");
         kernel!.SignalBusy();
         t := msg.header.msg_type;
-        if IsBound(kernel!.MsgHandlers.(t)) then
-            reply := kernel!.MsgHandlers.(t)(msg);
+        reply := kernel!.CallHandler(msg);
+        if reply <> fail or IsBound(kernel!.MsgHandlers.(t)) then
             if reply <> fail then
                 reply.ids := msg.ids;
                 JupyterMsgSend(kernel, kernel!.Shell, reply);
@@ -479,7 +582,6 @@ function(conf)
             fi;
             return true;
         else
-            JupyterServerLog("unhandled shell message type: ", t);
             kernel!.SignalIdle();
             return fail;
         fi;
@@ -495,15 +597,14 @@ function(conf)
         kernel!.CurrentMsg := msg.header;
         t := msg.header.msg_type;
         JupyterLog("recv control ", t, "\n");
-        if IsBound(kernel!.MsgHandlers.(t)) then
-            reply := kernel!.MsgHandlers.(t)(msg);
+        reply := kernel!.CallHandler(msg);
+        if reply <> fail or IsBound(kernel!.MsgHandlers.(t)) then
             if reply <> fail then
                 reply.ids := msg.ids;
                 JupyterMsgSend(kernel, kernel!.Control, reply);
             fi;
             return true;
         fi;
-        JupyterServerLog("unhandled control message type: ", t);
         return fail;
     end;
 
@@ -532,9 +633,8 @@ function(conf)
         MakeReadWriteGlobal("ERROR_OUTPUT");
         ERROR_OUTPUT := kernel!.StdErr;
         MakeReadOnlyGlobal("ERROR_OUTPUT");
-        # The notebook wraps long lines itself; GAP's wrapping would add
-        # a '\' at column 80.
-        SetPrintFormattingStatus("*stdout*", false);
+        # Keep GAP's indentation while leaving wrapping to the notebook.
+        SizeScreen([4096]);
         OutputLogTo(kernel!.StdOut);
     end;
 

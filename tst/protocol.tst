@@ -35,6 +35,18 @@ gap> ic := kernel!.MsgHandlers.is_complete_request( \
 >     rec( header := rec(), content := rec( code := "f := function(x)" ) ) );;
 gap> ic.content.status;
 "incomplete"
+
+# A native parser reports "error", which Jupyter calls "invalid".
+gap> if not IsBoundGlobal("CHECK_ALL_COMMANDS") then
+>     BindGlobal("CHECK_ALL_COMMANDS", function(s)
+>         Assert(0, IsInputStream(s));
+>         return rec(status := "error");
+>     end);
+>     Assert(0, JUPYTER_IsCompleteCode("x := ;").status = "invalid");
+>     MakeReadWriteGlobal("CHECK_ALL_COMMANDS");
+>     UnbindGlobal("CHECK_ALL_COMMANDS");
+> fi;
+
 gap> ic := kernel!.MsgHandlers.is_complete_request( \
 >     rec( header := rec(), content := rec( code := "[1,2,3" ) ) );;
 gap> ic.content.status;

@@ -158,6 +158,103 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
             self.kc.get_iopub_msg(timeout=0.5)
         self.assertTrue(self.km.is_alive())
 
+    def _receive_request(self, msg_id, reply_type, timeout=15):
+        deadline = time.time() + timeout
+        output = []
+        while time.time() < deadline:
+            message = self.kc.get_iopub_msg(timeout=max(0.1, deadline - time.time()))
+            if message["parent_header"].get("msg_id") != msg_id:
+                continue
+            output.append(message)
+            if (message["msg_type"] == "status"
+                    and message["content"]["execution_state"] == "idle"):
+                break
+        else:
+            self.fail("request did not finish with idle")
+        while time.time() < deadline:
+            reply = self.kc.get_shell_msg(timeout=max(0.1, deadline - time.time()))
+            if reply["parent_header"].get("msg_id") == msg_id:
+                self.assertEqual(reply["msg_type"], reply_type)
+                return reply["content"], output
+        self.fail("request did not receive a reply")
+
+    def test_completion_failure_finishes_request(self):
+        self._execute_and_collect(
+            'review_complete := JUPYTER_Complete;; '
+            'MakeReadWriteGlobal("JUPYTER_Complete"); '
+            'JUPYTER_Complete := function(code, pos) Error("completion failure"); end;;')
+        try:
+            content, _ = self._receive_request(self.kc.complete("Gro", 3), "complete_reply")
+            self.assertEqual(content["status"], "error")
+            self.assertIn("completion failure", content["evalue"])
+            self.assertEqual(content["matches"], [])
+        finally:
+            self._execute_and_collect(
+                'JUPYTER_Complete := review_complete;; MakeReadOnlyGlobal("JUPYTER_Complete");')
+
+    def test_help_interrupt_finishes_request(self):
+        self._execute_and_collect(
+            'review_help := JUPYTER_HELP;; MakeReadWriteGlobal("JUPYTER_HELP"); '
+            'JUPYTER_HELP := function(topic) while true do od; end;;')
+        try:
+            msg_id = self.kc.execute("?Group")
+            while True:
+                message = self.kc.get_iopub_msg(timeout=10)
+                if (message["parent_header"].get("msg_id") == msg_id
+                        and message["msg_type"] == "execute_input"):
+                    break
+            self.km.interrupt_kernel()
+            content, _ = self._receive_request(msg_id, "execute_reply")
+            self.assertEqual(content["status"], "error")
+            self.assertEqual(content["ename"], "KeyboardInterrupt")
+        finally:
+            self._execute_and_collect(
+                'JUPYTER_HELP := review_help;; MakeReadOnlyGlobal("JUPYTER_HELP");')
+
+    def test_silent_help_failure_resets_silent(self):
+        self._execute_and_collect(
+            'review_help := JUPYTER_HELP;; MakeReadWriteGlobal("JUPYTER_HELP"); '
+            'JUPYTER_HELP := function(topic) Error("help failure"); end;; '
+            'review_history := _KERNEL!.MsgHandlers.history_request;; '
+            '_KERNEL!.MsgHandlers.history_request := function(msg) '
+            'return JupyterMsg(_KERNEL, "history_reply", msg.header, '
+            'rec(history := [], silent_flag := _KERNEL!.Silent), rec()); end;;')
+        try:
+            content, output = self._execute_and_collect("?Group", silent=True)
+            self.assertEqual(content["status"], "error")
+            self.assertFalse(any(m["msg_type"] in ("error", "stream") for m in output))
+            content, _ = self._receive_request(self.kc.history(), "history_reply")
+            self.assertFalse(content["silent_flag"])
+        finally:
+            self._execute_and_collect(
+                'JUPYTER_HELP := review_help;; MakeReadOnlyGlobal("JUPYTER_HELP"); '
+                '_KERNEL!.MsgHandlers.history_request := review_history;;')
+
+    def test_unsupported_requests_receive_replies(self):
+        message = self.kc.session.msg("unsupported_request")
+        self.kc.shell_channel.send(message)
+        content, _ = self._receive_request(message["header"]["msg_id"], "unsupported_reply")
+        self.assertEqual(content["ename"], "NotImplementedError")
+        for request_type, data in [
+            ("usage_request", {}),
+            ("debug_request", {"seq": 17, "type": "request", "command": "initialize"}),
+        ]:
+            request = self.kc.session.msg(request_type, content=data)
+            self.kc.control_channel.send(request)
+            deadline = time.time() + 10
+            while time.time() < deadline:
+                reply = self.kc.get_control_msg(timeout=max(0.1, deadline - time.time()))
+                if reply["parent_header"].get("msg_id") == request["header"]["msg_id"]:
+                    break
+            else:
+                self.fail("unsupported control request received no reply")
+            self.assertEqual(reply["msg_type"], request_type.replace("_request", "_reply"))
+            if request_type == "debug_request":
+                self.assertFalse(reply["content"]["success"])
+                self.assertEqual(reply["content"]["request_seq"], 17)
+            else:
+                self.assertEqual(reply["content"]["status"], "error")
+
     def test_unhandled_message_prints_nothing(self):
         """Unknown message types are logged on the server, not shown
         in the notebook."""
@@ -491,6 +588,7 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
             except Empty:
                 continue
             if reply["parent_header"].get("msg_id") in ids:
+                self.assertIn("execution_count", reply["content"])
                 statuses[reply["parent_header"]["msg_id"]] = reply["content"]["status"]
         return [statuses.get(i) for i in ids]
 
@@ -528,6 +626,14 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual(content["status"], "error")
         self.assertEqual(self._stream_and_results("last;"), ["[ 8, 7, 5 ]"])
 
+    def test_top_level_return_is_an_error(self):
+        if self._stream_and_results("IsBound(READ_EVAL_COMMANDS);") != ["true"]:
+            self.skipTest("this GAP has no READ_EVAL_COMMANDS")
+        content, _ = self._execute_and_collect("return 3; review_after_return := true;")
+        self.assertEqual(content["status"], "error")
+        self.assertIn("top level", content["evalue"])
+        self.assertEqual(self._stream_and_results("IsBound(review_after_return);"), ["false"])
+
     def test_last_after_dual_semicolon(self):
         """As in GAP's REPL, ';;' hides a value but still sets last."""
         if self._stream_and_results("IsBound(READ_EVAL_COMMANDS);") != ["true"]:
@@ -543,6 +649,14 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual(
             self._stream_and_results("Print(ListWithIdenticalEntries(100, 'x'), \"\\n\");"),
             ["x" * 100 + "\n"])
+
+    def test_printed_functions_keep_indentation(self):
+        out = self._stream_and_results(
+            'f := function(x) local y; y := x; if y > 1 then return y; fi; '
+            'return 0; end;; Print(f, "\\n"); Display(f);')
+        text = "".join(out)
+        self.assertRegex(text, r"(?m)^ +local y;")
+        self.assertRegex(text, r"(?m)^ +return y;")
 
     def test_result_follows_output_after_flood(self):
         """Output batched after a flood must still precede the result."""

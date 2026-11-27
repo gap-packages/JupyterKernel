@@ -18,9 +18,13 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 VENV=${GAP_JUPYTER_VENV:-${XDG_CACHE_HOME:-$HOME/.cache}/gap-jupyter/venv}
 SENTINEL=$VENV/.gap-jupyter-installed-version
 
-# Use the version recorded in pyproject.toml as a sentinel: when the
+# Use the version recorded in PackageInfo.g as a sentinel: when the
 # package source bumps version, drop the venv and reinstall.
-PKGVER=$(awk -F'"' '/^version *= *"/ {print $2; exit}' "$HERE/pyproject.toml")
+PKGVER=$(awk -F'"' '/^Version *:= *"/ {print $2; exit}' "$HERE/PackageInfo.g")
+if [ -z "$PKGVER" ]; then
+    echo "Cannot read the package version from $HERE/PackageInfo.g" >&2
+    exit 1
+fi
 
 if [ ! -x "$VENV/bin/jupyter" ] || [ "$(cat "$SENTINEL" 2>/dev/null || true)" != "$PKGVER" ]; then
     echo "==> Setting up venv at $VENV (gap-jupyter $PKGVER)"

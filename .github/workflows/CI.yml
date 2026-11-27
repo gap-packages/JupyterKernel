@@ -51,6 +51,11 @@ jobs:
       - uses: gap-actions/setup-gap@v3
         with:
           gap-version: ${{ matrix.gap-version }}
+      - name: 'Install json compatible with the minimum GAP version'
+        if: ${{ matrix.gap-version == 'minimal' }}
+        run: |
+          curl -fsSL https://github.com/gap-packages/json/releases/download/v2.4.0/json-2.4.0.tar.gz -o "$RUNNER_TEMP/json.tar.gz"
+          tar -xzf "$RUNNER_TEMP/json.tar.gz" -C "$GAPROOT/pkg"
       - uses: gap-actions/build-pkg@v3
         with:
           extra-pkgs: "io profiling crypting json ZeroMQInterface"
@@ -148,6 +153,8 @@ jobs:
         with:
           python-version: '3.12'
       # No Node.js here: the wheel must build from the committed labextension.
+      - name: 'Check package versions agree'
+        run: python dev/check-versions.py
       - name: 'Build the wheel'
         run: |
           pip install build

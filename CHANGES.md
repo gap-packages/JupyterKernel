@@ -8,6 +8,8 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
 
 ### Breaking
 
+- Requires GAP 4.12 or later and json 2.4.0 or later; the compatibility
+  override of json's encoder has been removed.
 - **Install procedure has changed.** `pip install .` now installs both
   the kernel spec and the JupyterLab extension via `pyproject.toml`,
   without needing Node.js or npm. The old

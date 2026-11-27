@@ -20,8 +20,10 @@ are:
 - `libzmq3-dev`
 - `m4`
 
-The required GAP packages are listed in `PackageInfo.g` (`io`, `json`,
-`uuid`, `ZeroMQInterface`, `crypting`, `GAPDoc`).
+Requires GAP 4.12 or later and json 2.4.0 or later. Update json separately
+if your GAP distribution bundles an older version. The other required GAP
+packages are listed in `PackageInfo.g` (`io`, `uuid`, `ZeroMQInterface`,
+`crypting`, `GAPDoc`).
 
 ### Installing the kernel
 
@@ -116,6 +118,9 @@ result (CI fails if the committed copy is stale):
     pip install 'jupyterlab>=4.5,<4.6'
     npm ci
     npm run build:prod
+
+When bumping `PackageInfo.g`, update the npm package and bundled extension
+versions too. CI checks them with `python dev/check-versions.py`.
 
 ### Interrupting a running computation
 

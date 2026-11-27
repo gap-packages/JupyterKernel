@@ -101,6 +101,8 @@ this is not yet an end-user JupyterLab installation path for Windows.
   When &Jupyter; starts a &GAP; kernel, the kernel specification invokes
   <C>python -m gap_jupyter_kernel</C>. This launcher finds &GAP;, replaces
   itself with the &GAP; process, loads this package, and runs the kernel.
+  A small Python helper answers heartbeat requests while &GAP; is busy and
+  exits automatically when &GAP; exits.
 </Subsection>
 
 <Subsection>
@@ -119,9 +121,9 @@ this is not yet an end-user JupyterLab installation path for Windows.
   are rendered and sent back to the &Jupyter; frontend.
  
   In principle, rich rendering of content, as exemplified in the function
-  <C>JUPYTER_DotSplash</C> is possible.
+  <C>JupyterSplashDot</C> is possible.
 
-  Tab-completion is handled by the &GAP; function <C>JUPYTER_completion</C>, and
+  Tab-completion is handled by the &GAP; function <C>JUPYTER_Complete</C>, and
   inspection is handled by <C>JUPYTER_Inspect</C>.
 
   Changing these functions, one can change the behaviour of Tab-completion and
@@ -149,10 +151,11 @@ this is not yet an end-user JupyterLab installation path for Windows.
   On Windows, only the experimental Cygwin kernel path described above is
   tested; the full JupyterLab / &Jupyter; Server stack is not supported.
 
-  Output from <Ref BookName="ref" Func="Exec"/> and help commands that use
-  the external pager (including <C>?books</C> and <C>?chapters</C>) is discarded.
-  These bypass &GAP;'s output logging, and the launcher's stdout is redirected
-  to avoid duplicating cell output in the server terminal.
+  Stdout from <Ref BookName="ref" Func="Exec"/> and <C>Process</C> is captured
+  when the command finishes. Subprocess stderr remains in the Jupyter server
+  terminal. Native extensions that write directly to OS stdout still bypass
+  notebook capture. Help listings use a notebook pager, so commands such as
+  <C>?books</C>, <C>?chapters</C> and <C>?2</C> display their output in the cell.
   Some objects are also not
   <Ref Oper="JupyterRenderable" Label="for IsObject, IsObject"/>, and as such are not working in the current version of &JupyterKernel;.
 

@@ -19,8 +19,9 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   launcher (`python -m gap_jupyter_kernel <connection_file>`), which
   `os.execvp`s into GAP. The launcher and kernel protocol are tested on
   Windows under Cygwin, where the bash launcher used to fail (issue #140).
-- **Single-process kernel.** The 1.x design `IO_fork`'d a worker
-  child; this release runs everything in one process. The fork-side
+- **Single GAP process.** The 1.x design `IO_fork`'d a worker
+  child; evaluation now stays in one GAP process. A small Python helper
+  serves heartbeat requests during computations and exits with GAP. The fork-side
   IOPub status `starting` was missing, which is what caused the
   Notebook 7 "Nudge" warnings (issue #138).
 - **Real interrupts.** `interrupt_mode` is now `signal`. The notebook
@@ -61,6 +62,8 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   trailing newline stays in its own cell.
 - Printed functions retain indentation. Handler failures return an error
   reply and end the request instead of leaving the frontend busy.
+- `Exec` and `Process` stdout appears in the notebook. Help uses GAP's
+  standard navigation and a notebook pager, including `?books`, `?2` and `?<`.
 - A failing cell aborts the cells already queued behind it
   (`stop_on_error`), so "Run All" stops at the first error.
 - Error replies include `ename`, `evalue`, and `traceback` per the
@@ -83,16 +86,15 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   work; the kernel acknowledges `comm_open` / `comm_info_request` but
   does not implement widget state.
 - **HPC-GAP.** Not supported (issue #108).
-- **External output.** Output from `Exec` and pager-based help commands such
-  as `?books` and `?chapters` is discarded because it bypasses GAP's output
-  logging. Printed lines longer than 4096 columns may still wrap.
+- **External output.** Subprocess stdout is delivered when the command
+  finishes; subprocess stderr remains in the Jupyter server terminal. Native
+  extensions that write directly to OS stdout still bypass notebook capture.
+  Printed lines longer than 4096 columns may still wrap.
 - **Tight C-level loops** are not interruptible by SIGINT until they
   return to the GAP interpreter.
-- **No heartbeat during a computation.** The kernel is a single GAP
-  process, so the heartbeat and the Control channel are only answered
-  between requests: a `shutdown_request` waits for the running cell, and
-  clients that judge liveness by the heartbeat, such as `jupyter console
-  --existing`, may report a long computation as a dead kernel.
+- **Control waits during a computation.** Control requests, including
+  `shutdown_request`, wait for the running cell. Interrupts and heartbeat
+  replies remain available while it runs.
 - **Errors do not stop a cell** on GAP versions without
   `READ_EVAL_COMMANDS`: after an error or interrupt, the remaining
   statements of the cell still run, and the error is reported after their

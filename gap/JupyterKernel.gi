@@ -694,7 +694,9 @@ function(conf)
                                              , kernel!.ZmqIdentity);
         kernel!.Control := ZmqRouterSocket(    Concatenation(address, String(conf.control_port))
                                              , kernel!.ZmqIdentity);
-        kernel!.HB      := ZmqRouterSocket(    Concatenation(address, String(conf.hb_port)));
+        if IO_getenv("JUPYTER_HEARTBEAT_FD") = fail then
+            kernel!.HB := ZmqRouterSocket(Concatenation(address, String(conf.hb_port)));
+        fi;
 
         kernel!.StdOut := OutputStreamZmq(kernel, kernel!.IOPub);
         kernel!.StdErr := OutputStreamZmq(kernel, kernel!.IOPub, "stderr");
@@ -712,23 +714,23 @@ function(conf)
         poll := ZmqPoll(topoll, [], 100);
         if poll <> [] then
         fi;
-        if 1 in poll then
+        if 4 in poll then
             raw := ZmqReceiveList(kernel!.HB);
             ZmqSend(kernel!.HB, raw);
         fi;
-        if 2 in poll then
+        if 1 in poll then
             msg := JupyterMsgRecv(kernel, kernel!.Control);
             if msg <> fail then
                 kernel!.HandleControlMsg(msg);
             fi;
         fi;
-        if 3 in poll then
+        if 2 in poll then
             msg := JupyterMsgRecv(kernel, kernel!.Shell);
             if msg <> fail then
                 kernel!.HandleShellMsg(msg);
             fi;
         fi;
-        if 4 in poll then
+        if 3 in poll then
             ZmqReceiveList(kernel!.StdIn);
         fi;
     end;
@@ -767,7 +769,8 @@ function(conf)
     kernel.Loop := function()
         local topoll;
         kernel!.SignalStarting();
-        topoll := [ kernel!.HB, kernel!.Control, kernel!.Shell, kernel!.StdIn ];
+        topoll := [ kernel!.Control, kernel!.Shell, kernel!.StdIn ];
+        if IsBound(kernel!.HB) then Add(topoll, kernel!.HB); fi;
         while not kernel!.quitting do
             # An error outside user code must not kill the kernel. The
             # common case is SIGINT on an idle kernel, which is a no-op;
@@ -828,7 +831,14 @@ end);
 
 InstallGlobalFunction( JUPYTER_KernelStart_GAP,
 function(configfile)
-    local instream, conf, kernel;
+    local instream, conf, kernel, heartbeatFd;
+    heartbeatFd := IO_getenv("JUPYTER_HEARTBEAT_FD");
+    if heartbeatFd <> fail then
+        # Subprocesses must not keep the helper alive after GAP exits.
+        if IO_fcntl(Int(heartbeatFd), IO.F_SETFD, IO.FD_CLOEXEC) = fail then
+            Error("could not configure heartbeat lifetime pipe");
+        fi;
+    fi;
     instream := InputTextFile(configfile);
     conf := JsonStreamToGap(instream);
     CloseStream(instream);

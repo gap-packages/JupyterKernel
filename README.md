@@ -133,6 +133,10 @@ Caveat: GAP only checks for an interrupt at GAP-level statement boundaries.
 Tight C-level loops — e.g. some `Factors(BigInteger)` calls — will not be
 interruptible until they return to the interpreter.
 
+A Python helper keeps heartbeat replies available during computations and
+exits automatically with GAP. Control requests such as shutdown still wait
+for the running computation; use the interrupt button to stop it first.
+
 ### Troubleshooting
 
 The kernel reports startup problems in the terminal running Jupyter. To

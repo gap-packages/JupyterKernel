@@ -24,6 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "jupyter_client>=8.0",
+    "pyzmq>=23",
 ]
 
 [project.optional-dependencies]

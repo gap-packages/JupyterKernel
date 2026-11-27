@@ -202,6 +202,26 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertIn("dispatch failure", content["evalue"])
         self.assertEqual(self._stream_and_results("6*7;"), ["42"])
 
+    def test_heartbeat_during_computation(self):
+        msg_id = self.kc.execute("while true do od;")
+        while True:
+            message = self.kc.get_iopub_msg(timeout=10)
+            if (message["parent_header"].get("msg_id") == msg_id
+                    and message["msg_type"] == "execute_input"):
+                break
+        info = self.km.get_connection_info()
+        try:
+            with zmq.Context() as context, context.socket(zmq.REQ) as heartbeat:
+                heartbeat.linger = 0
+                heartbeat.connect(f"tcp://{info['ip']}:{info['hb_port']}")
+                heartbeat.send_multipart([b"busy", b"heartbeat"])
+                self.assertTrue(heartbeat.poll(3000), "heartbeat stopped during execution")
+                self.assertEqual(heartbeat.recv_multipart(), [b"busy", b"heartbeat"])
+        finally:
+            self.km.interrupt_kernel()
+        content, _ = self._receive_request(msg_id, "execute_reply")
+        self.assertEqual(content["ename"], "KeyboardInterrupt")
+
     def test_help_interrupt_finishes_request(self):
         self._execute_and_collect(
             'review_help := JUPYTER_HELP;; MakeReadWriteGlobal("JUPYTER_HELP"); '

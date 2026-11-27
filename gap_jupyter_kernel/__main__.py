@@ -19,14 +19,52 @@ is replaced by GAP at the same PID. Jupyter records the PID returned by
 ``Popen`` and, with ``interrupt_mode: "signal"``, sends SIGINT to that
 PID when the user hits the interrupt button. If we kept Python around as
 a parent, the signal would land on Python and never reach GAP.
+
+A separate Python helper serves heartbeat requests while GAP is busy. Its
+lifetime pipe closes when GAP exits; it never executes GAP code.
 """
 
 import os
+import select
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 REQUIRED_VERSION = ">= 2.0"
+
+
+def _start_heartbeat(connection_file: str):
+    """The inherited writer ties the helper's lifetime to the GAP process."""
+    lifetime_read, lifetime_write = os.pipe()
+    ready_read, ready_write = os.pipe()
+    helper = None
+    try:
+        helper = subprocess.Popen(
+            [sys.executable, "-m", "gap_jupyter_kernel.heartbeat", connection_file,
+             str(lifetime_read), str(ready_write)],
+            pass_fds=(lifetime_read, ready_write),
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        os.close(lifetime_read)
+        lifetime_read = None
+        os.close(ready_write)
+        ready_write = None
+        if not select.select([ready_read], [], [], 10)[0] or os.read(ready_read, 1) != b"1":
+            raise RuntimeError("heartbeat helper did not start")
+        os.set_inheritable(lifetime_write, True)
+        return lifetime_write, helper
+    except BaseException:
+        os.close(lifetime_write)
+        if helper is not None:
+            helper.terminate()
+            helper.wait(timeout=5)
+        raise
+    finally:
+        for descriptor in (lifetime_read, ready_read, ready_write):
+            if descriptor is not None:
+                os.close(descriptor)
 
 
 def _find_gap() -> str:
@@ -64,7 +102,10 @@ if LoadPackage("JupyterKernel", "{REQUIRED_VERSION}") <> true then
                  " LoadPackage(\\"JupyterKernel\\");\\n");
     QUIT_GAP(1);
 fi;
-JUPYTER_KernelStart_GAP("{escaped}");
+run := CALL_WITH_CATCH(JUPYTER_KernelStart_GAP, ["{escaped}"]);
+if not run[1] then
+    QUIT_GAP(1);
+fi;
 QUIT_GAP(0);
 """
 
@@ -103,6 +144,11 @@ def main() -> int:
         sys.exit("usage: python -m gap_jupyter_kernel <connection_file>")
     gap = _find_gap()
     script = _bootstrap_script(sys.argv[1])
+    try:
+        heartbeat_fd, heartbeat = _start_heartbeat(sys.argv[1])
+    except (OSError, RuntimeError) as error:
+        sys.exit(f"gap-jupyter: could not start heartbeat: {error}")
+    os.environ["JUPYTER_HEARTBEAT_FD"] = str(heartbeat_fd)
     _redirect_stdin_to_devnull()
     # The kernel copies GAP's stdout to the notebook with OutputLogTo;
     # the original would echo every cell's output to the server's terminal.
@@ -112,6 +158,8 @@ def main() -> int:
     try:
         os.execvp(gap, [gap, "-q", "-T", "--alwaystrace", "-c", script])
     except OSError as e:
+        os.close(heartbeat_fd)
+        heartbeat.wait(timeout=5)
         sys.exit(f"gap-jupyter: failed to exec {gap!r}: {e}")
 
 

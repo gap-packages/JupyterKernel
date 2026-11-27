@@ -113,9 +113,10 @@ this is not yet an end-user JupyterLab installation path for Windows.
 
   After entering code into a cell and instructing &Jupyter; to execute that code,
   the jupyter frontend sends the code to the &GAP; session where it is executed by
-  using the &GAP; function <C>READ_ALL_COMMANDS</C>, resulting values of the
-  execution are rendered using <C>ViewString</C> and sent back to the &Jupyter;
-  frontend.
+  using <C>READ_EVAL_COMMANDS</C> when available, so execution can stop at
+  the first error. On &GAP; versions without it, <C>READ_ALL_COMMANDS</C>
+  continues with the remaining statements after an error. Resulting values
+  are rendered and sent back to the &Jupyter; frontend.
  
   In principle, rich rendering of content, as exemplified in the function
   <C>JUPYTER_DotSplash</C> is possible.
@@ -148,13 +149,18 @@ this is not yet an end-user JupyterLab installation path for Windows.
   On Windows, only the experimental Cygwin kernel path described above is
   tested; the full JupyterLab / &Jupyter; Server stack is not supported.
 
-  At current, the output of the function <Ref BookName="ref" Func="Exec"/> will print output in the terminal,
-  rather than the &Jupyter; notebook it is currently executing in. Some objects are also not 
+  Output from <Ref BookName="ref" Func="Exec"/> and help commands that use
+  the external pager (including <C>?books</C> and <C>?chapters</C>) is discarded.
+  These bypass &GAP;'s output logging, and the launcher's stdout is redirected
+  to avoid duplicating cell output in the server terminal.
+  Some objects are also not
   <Ref Oper="JupyterRenderable" Label="for IsObject, IsObject"/>, and as such are not working in the current version of &JupyterKernel;.
 
   The function <Ref BookName="ref" Func="LogTo"/> does also currently not work in the current version of &JupyterKernel;.
 
-  The variables <C>last</C>, <C>last2</C> and <C>last3</C> (see <Ref BookName="ref" Label="Main Loop"/>) are also unsupported in the current version.
+  The variables <C>last</C>, <C>last2</C> and <C>last3</C> are updated after
+  displayed values. Values hidden by <C>;;</C> also update them when &GAP;
+  provides <C>READ_EVAL_COMMANDS</C>.
 
   If you happen to notice problems of this kind, feel free to report them
   on the <URL Text="issue tracker">https://github.com/gap-packages/JupyterKernel/issues</URL>.

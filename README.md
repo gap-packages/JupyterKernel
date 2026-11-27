@@ -143,6 +143,18 @@ check that the package loads in plain GAP:
 If that prints `fail`, run `SetInfoLevel(InfoPackageLoading, 4);
 LoadPackage("JupyterKernel");` in GAP to see which dependency is missing.
 
+## Running the tests
+
+In a Python virtual environment, from the package directory:
+
+    python -m pip install '.[test]'
+    python -m pytest tst/python/ -v
+
+The `[test]` extra installs `jupyter_kernel_test` and pytest. GAP must be
+able to load this checkout and its compiled dependencies. Set
+`JUPYTER_GAP_EXECUTABLE` to select a particular GAP binary. The GAP-side
+tests can also be run with `gap -q -T tst/testinstall.g`.
+
 ## Documentation
 
 Information and documentation can be found in the manual, available

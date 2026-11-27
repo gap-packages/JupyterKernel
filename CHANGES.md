@@ -39,7 +39,8 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
 - **CI on Linux, macOS, and Windows.** Linux and macOS run the supported
   JupyterLab path. Windows runs the experimental kernel and notebook execution
   path entirely inside Cygwin.
-- **`is_complete_request` heuristic** that tracks GAP block keywords
+- **`is_complete_request`** uses GAP's native parser when available, with a
+  fallback heuristic that tracks GAP block keywords
   (`function`/`end`, `if`/`fi`, `for`/`od`, `while`/`od`,
   `repeat`/`until`) plus brackets, so multi-line cells in the JupyterLab
   console behave properly.
@@ -58,6 +59,8 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   Control) is now answered.
 - Output and results arrive in statement order, and a line without a
   trailing newline stays in its own cell.
+- Printed functions retain indentation. Handler failures return an error
+  reply and end the request instead of leaving the frontend busy.
 - A failing cell aborts the cells already queued behind it
   (`stop_on_error`), so "Run All" stops at the first error.
 - Error replies include `ename`, `evalue`, and `traceback` per the
@@ -80,6 +83,9 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   work; the kernel acknowledges `comm_open` / `comm_info_request` but
   does not implement widget state.
 - **HPC-GAP.** Not supported (issue #108).
+- **External output.** Output from `Exec` and pager-based help commands such
+  as `?books` and `?chapters` is discarded because it bypasses GAP's output
+  logging. Printed lines longer than 4096 columns may still wrap.
 - **Tight C-level loops** are not interruptible by SIGINT until they
   return to the GAP interpreter.
 - **No heartbeat during a computation.** The kernel is a single GAP

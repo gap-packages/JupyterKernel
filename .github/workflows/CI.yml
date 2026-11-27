@@ -37,7 +37,9 @@ jobs:
       - uses: actions/checkout@v7
       - name: 'Install libzmq (Linux)'
         if: ${{ runner.os == 'Linux' }}
-        run: sudo apt-get install -y libzmq3-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libzmq3-dev
       - name: 'Install zeromq (macOS)'
         if: ${{ runner.os == 'macOS' }}
         run: brew install zeromq
@@ -91,7 +93,9 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         # graphviz provides `dot`, used by JupyterSplashDot in the demo
         # notebooks executed below.
-        run: sudo apt-get install -y libzmq3-dev graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libzmq3-dev graphviz
       - name: 'Install zeromq + graphviz (macOS)'
         if: ${{ runner.os == 'macOS' }}
         run: brew install zeromq graphviz

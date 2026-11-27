@@ -9,7 +9,6 @@
 # cell.
 _KERNEL := "";
 
-
 BindGlobal("JUPYTER_ProcessUserOutput", function(dir, program, input, output, args)
     local result;
     if not IsGAPJupyterKernel(_KERNEL) or not IsBound(_KERNEL!.StdOut)
@@ -596,6 +595,7 @@ function(conf)
     kernel.HandleShellMsg := function(msg)
         local t, reply;
         kernel!.CurrentMsg := msg.header;
+        kernel!.ActiveShell := rec(msg := msg, replySent := false, idleSent := false);
         JupyterLog("recv shell ", msg.header.msg_type, "\n");
         kernel!.SignalBusy();
         t := msg.header.msg_type;
@@ -604,8 +604,11 @@ function(conf)
             if reply <> fail then
                 reply.ids := msg.ids;
                 JupyterMsgSend(kernel, kernel!.Shell, reply);
+                kernel!.ActiveShell.replySent := true;
             fi;
             kernel!.SignalIdle();
+            kernel!.ActiveShell.idleSent := true;
+            Unbind(kernel!.ActiveShell);
             if t = "execute_request" and reply.content.status = "error"
                and not msg.content.silent
                and not (IsBound(msg.content.stop_on_error)
@@ -615,8 +618,42 @@ function(conf)
             return true;
         else
             kernel!.SignalIdle();
+            Unbind(kernel!.ActiveShell);
             return fail;
         fi;
+    end;
+
+    kernel.RecoverShellRequest := function(text)
+        local active, msg, reply, silent, ename;
+        active := kernel!.ActiveShell;
+        Unbind(kernel!.ActiveShell);
+        msg := active.msg;
+        kernel!.CurrentMsg := msg.header;
+        silent := msg.header.msg_type = "execute_request"
+                  and IsBound(msg.content.silent) and msg.content.silent;
+        kernel!.Silent := silent;
+        Print("\c");
+        FlushOutputStream(kernel!.StdOut);
+        FlushOutputStream(kernel!.StdErr);
+        kernel!.Silent := false;
+        if text = "" then text := "kernel request failed"; fi;
+        ename := "GAPError";
+        if PositionSublist(text, "user interrupt") <> fail then
+            ename := "KeyboardInterrupt";
+        fi;
+        if not active.replySent then
+            reply := kernel!.ErrorReply(msg, ename, text);
+            if reply <> fail then
+                if msg.header.msg_type = "execute_request" and not silent then
+                    JupyterMsgSend(kernel, kernel!.IOPub,
+                        JupyterMsg(kernel, "error", msg.header,
+                            rec(ename := ename, evalue := text, traceback := [text]), rec()));
+                fi;
+                reply.ids := msg.ids;
+                JupyterMsgSend(kernel, kernel!.Shell, reply);
+            fi;
+        fi;
+        if not active.idleSent then kernel!.SignalIdle(); fi;
     end;
 
     # Control carries shutdown_request and, since JupyterLab 4, liveness
@@ -705,6 +742,7 @@ function(conf)
         errText := "";
         kernel!.LoopErrText := errText;
         errBuf := OutputTextString(errText, true);
+        kernel!.LoopErrStream := errBuf;
         SetPrintFormattingStatus(errBuf, false);
         MakeReadWriteGlobal("ERROR_OUTPUT");
         ERROR_OUTPUT := errBuf;
@@ -738,7 +776,13 @@ function(conf)
                 MakeReadWriteGlobal("ERROR_OUTPUT");
                 ERROR_OUTPUT := kernel!.StdErr;
                 MakeReadOnlyGlobal("ERROR_OUTPUT");
-                if PositionSublist(kernel!.LoopErrText, "user interrupt") <> fail then
+                CloseStream(kernel!.LoopErrStream);
+                if IsBound(kernel!.ActiveShell) then
+                    if not CALL_WITH_CATCH(kernel!.RecoverShellRequest,
+                                          [kernel!.LoopErrText])[1] then
+                        JupyterServerLog("could not recover shell request");
+                    fi;
+                elif PositionSublist(kernel!.LoopErrText, "user interrupt") <> fail then
                     JupyterLog("interrupt outside user code ignored\n");
                 else
                     WriteAll(kernel!.StdErr, kernel!.LoopErrText);

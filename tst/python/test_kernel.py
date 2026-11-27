@@ -192,6 +192,16 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
             self._execute_and_collect(
                 'JUPYTER_Complete := review_complete;; MakeReadOnlyGlobal("JUPYTER_Complete");')
 
+    def test_dispatch_failure_finishes_request(self):
+        self._execute_and_collect(
+            'review_busy := _KERNEL!.SignalBusy;; '
+            '_KERNEL!.SignalBusy := function() '
+            '_KERNEL!.SignalBusy := review_busy; Error("dispatch failure"); end;;')
+        content, _ = self._receive_request(self.kc.complete("Gro", 3), "complete_reply")
+        self.assertEqual(content["status"], "error")
+        self.assertIn("dispatch failure", content["evalue"])
+        self.assertEqual(self._stream_and_results("6*7;"), ["42"])
+
     def test_help_interrupt_finishes_request(self):
         self._execute_and_collect(
             'review_help := JUPYTER_HELP;; MakeReadWriteGlobal("JUPYTER_HELP"); '

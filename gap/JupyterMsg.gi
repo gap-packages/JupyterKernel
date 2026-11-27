@@ -103,7 +103,25 @@ end);
 
 InstallGlobalFunction(JupyterMsgSend,
 function(kernel, sock, msg)
-    local raw;
+    local raw, remaining;
+    # PUB silently drops messages when its queue fills, even status:idle.
+    # Pace all IOPub traffic: results cannot be merged like stream output.
+    # Allow 100 messages per 200 ms.
+    if IsBound(kernel!.IOPub) and IsIdenticalObj(sock, kernel!.IOPub) then
+        if not IsBound(kernel!.IOPubBurst) then
+            kernel!.IOPubBurst := 0;
+            kernel!.IOPubWindow := NanosecondsSinceEpoch();
+        fi;
+        kernel!.IOPubBurst := kernel!.IOPubBurst + 1;
+        if kernel!.IOPubBurst >= 100 then
+            kernel!.IOPubBurst := 0;
+            remaining := 200000000 - (NanosecondsSinceEpoch() - kernel!.IOPubWindow);
+            if remaining > 0 then
+                IO_select([], [], [], 0, QuoInt(remaining + 999, 1000));
+            fi;
+            kernel!.IOPubWindow := NanosecondsSinceEpoch();
+        fi;
+    fi;
     JupyterLog("sent ", msg.header.msg_type, "\n");
     raw := JupyterMsgEncode(kernel, msg);
     if IsBound(kernel!.ProtocolLog) then

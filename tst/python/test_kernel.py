@@ -695,6 +695,17 @@ class GapKernelTests(jupyter_kernel_test.KernelTests):
         self.assertEqual(out[-1], "42")
         self.assertTrue(out[-2].endswith("tail\n"))
 
+    def test_many_results_arrive_with_idle(self):
+        """Results cannot be batched; a burst must not overflow IOPub."""
+        n = 10000
+        content, iopub = self._execute_and_collect(
+            "".join(f"{i};\n" for i in range(n)), timeout=60)
+        self.assertEqual(content["status"], "ok")
+        self.assertEqual(
+            [m["content"]["data"]["text/plain"] for m in iopub
+             if m["msg_type"] == "execute_result"],
+            [str(i) for i in range(n)])
+
     def test_long_output_stress(self):
         """100000 lines must all arrive, followed by status idle. ZMQ PUB
         drops messages beyond 1000 queued, so one message per line lost

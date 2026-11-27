@@ -60,6 +60,8 @@ for the classic Notebook (5/6) and the bundled CodeMirror 5 nbextension.
   Control) is now answered.
 - Output and results arrive in statement order, and a line without a
   trailing newline stays in its own cell.
+- IOPub traffic is paced so large sequences of results do not overrun the
+  subscriber queue and lose results or the final idle status.
 - Printed functions retain indentation. Handler failures return an error
   reply and end the request instead of leaving the frontend busy.
 - `Exec` and `Process` stdout appears in the notebook. Help uses GAP's

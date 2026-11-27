@@ -1,0 +1,4 @@
+/* GAP syntax-highlighting labextension. The CodeMirror 6 highlight tags
+ * returned by the StreamLanguage are styled by JupyterLab's active theme
+ * (jp-mod-* classes). Nothing extra to declare here, but the file must
+ * exist so the labextension build can ship a style entry. */
